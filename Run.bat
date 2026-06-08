@@ -2,7 +2,6 @@
 :: Scrybe - Quick launch (Debug)
 ::
 :: Just run this to launch Scrybe from source.
-:: This intentionally does not fetch or auto-pull: Scrybe is a local-only repo.
 ::
 :: Usage:
 ::   Run.bat             launch the app

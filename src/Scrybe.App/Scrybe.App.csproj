@@ -15,7 +15,6 @@
     <Product>Scrybe</Product>
     <Company>Julien Bombled</Company>
     <Description>Local-first OCR clipboard extraction and keystroke injection utility for constrained consoles.</Description>
-    <InformationalVersion>$(VersionPrefix)</InformationalVersion>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
