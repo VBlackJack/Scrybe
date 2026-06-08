@@ -14,26 +14,14 @@
  * limitations under the License.
  */
 
-namespace Scrybe.App;
+namespace Scrybe.App.Views;
 
-/// <summary>Central tab ordering for the shell window.</summary>
-internal static class ShellTabs
+/// <summary>Snippet manager tab content.</summary>
+public sealed partial class SnippetManagerView : System.Windows.Controls.UserControl
 {
-    /// <summary>Home and status tab.</summary>
-    public const int Home = 0;
-
-    /// <summary>Snippet manager tab.</summary>
-    public const int Snippets = 1;
-
-    /// <summary>Secret manager tab.</summary>
-    public const int Secrets = 2;
-
-    /// <summary>Capture history manager tab.</summary>
-    public const int History = 3;
-
-    /// <summary>Settings tab.</summary>
-    public const int Settings = 4;
-
-    /// <summary>About tab.</summary>
-    public const int About = 5;
+    /// <summary>Initializes the snippet manager view.</summary>
+    public SnippetManagerView()
+    {
+        InitializeComponent();
+    }
 }

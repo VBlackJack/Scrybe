@@ -73,6 +73,16 @@ public sealed partial class SecretManagerViewModel : ObservableObject
     /// <summary>The protected secrets shown in the list.</summary>
     public ObservableCollection<SecretEntry> Secrets { get; }
 
+    /// <summary>Reloads the visible secrets from the current library state.</summary>
+    public void Reload()
+    {
+        Secrets.Clear();
+        foreach (SecretEntry secret in _library.Secrets)
+        {
+            Secrets.Add(secret);
+        }
+    }
+
     /// <summary>Updates the in-memory plaintext field from the WPF password box.</summary>
     /// <param name="value">The current password-box value.</param>
     public void SetSecretValue(string value) => SecretValue = value;
@@ -126,7 +136,7 @@ public sealed partial class SecretManagerViewModel : ObservableObject
             .ConfigureAwait(true);
         SecretValue = string.Empty;
         SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
-        Refresh();
+        Reload();
         SelectedSecret = Secrets.FirstOrDefault(secret => string.Equals(secret.Id, saved.Id, StringComparison.Ordinal));
         StatusMessage = _localization["Secrets.Saved"];
         IsStatusError = false;
@@ -153,18 +163,9 @@ public sealed partial class SecretManagerViewModel : ObservableObject
         }
 
         await _library.DeleteAsync(SelectedSecret.Id).ConfigureAwait(true);
-        Refresh();
+        Reload();
         New();
         StatusMessage = _localization["Secrets.Deleted"];
         IsStatusError = false;
-    }
-
-    private void Refresh()
-    {
-        Secrets.Clear();
-        foreach (SecretEntry secret in _library.Secrets)
-        {
-            Secrets.Add(secret);
-        }
     }
 }

@@ -93,6 +93,93 @@ public sealed class ManagerViewModelTests
         store.SaveCount.Should().Be(saveCountAfterArrange);
     }
 
+    [Fact]
+    public async Task HistoryManager_DeleteCancelled_KeepsHistoryAndDoesNotPersistDelete()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("managed history entry");
+        int saveCountAfterArrange = store.SaveCount;
+        DenyingConfirmationService confirmation = new();
+        HistoryManagerViewModel viewModel = new(
+            library,
+            new TestClipboardService(),
+            new TestNotificationService(),
+            new TestLocalizationManager(),
+            confirmation);
+
+        await viewModel.DeleteCommand.ExecuteAsync(null);
+
+        confirmation.CallCount.Should().Be(1);
+        library.Entries.Should().ContainSingle();
+        store.SavedEntries.Should().ContainSingle();
+        store.SaveCount.Should().Be(saveCountAfterArrange);
+    }
+
+    [Fact]
+    public async Task HistoryManager_ClearAllCancelled_KeepsHistoryAndDoesNotPersistClear()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("managed history entry");
+        int saveCountAfterArrange = store.SaveCount;
+        DenyingConfirmationService confirmation = new();
+        HistoryManagerViewModel viewModel = new(
+            library,
+            new TestClipboardService(),
+            new TestNotificationService(),
+            new TestLocalizationManager(),
+            confirmation);
+
+        await viewModel.ClearAllCommand.ExecuteAsync(null);
+
+        confirmation.CallCount.Should().Be(1);
+        library.Entries.Should().ContainSingle();
+        store.SavedEntries.Should().ContainSingle();
+        store.SaveCount.Should().Be(saveCountAfterArrange);
+    }
+
+    [Fact]
+    public async Task HistoryManager_CopySelected_CopiesRevealedText()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("managed history entry");
+        TestClipboardService clipboard = new();
+        TestNotificationService notification = new();
+        HistoryManagerViewModel viewModel = new(
+            library,
+            clipboard,
+            notification,
+            new TestLocalizationManager(),
+            new DenyingConfirmationService());
+
+        await viewModel.CopyCommand.ExecuteAsync(null);
+
+        clipboard.Text.Should().Be("managed history entry");
+        notification.CallCount.Should().Be(1);
+        viewModel.IsStatusError.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task HistoryManager_SelectedPreview_UsesFullRevealedText()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        string text = string.Concat(Enumerable.Repeat("managed history long entry ", 8));
+        await library.AddAsync(text);
+        HistoryManagerViewModel viewModel = new(
+            library,
+            new TestClipboardService(),
+            new TestNotificationService(),
+            new TestLocalizationManager(),
+            new DenyingConfirmationService());
+
+        viewModel.Entries.Should().ContainSingle();
+        viewModel.Entries.Single().Preview.Should().NotBe(text);
+        viewModel.SelectedPreview.Should().Be(text);
+    }
+
     private sealed class DenyingConfirmationService : IConfirmationService
     {
         public int CallCount { get; private set; }
@@ -112,6 +199,19 @@ public sealed class ManagerViewModelTests
             "Manager.DeleteConfirmMessage" => "Delete snippet \"{0}\"?",
             "Secrets.DeleteConfirmTitle" => "Delete secret",
             "Secrets.DeleteConfirmMessage" => "Delete secret \"{0}\"?",
+            "History.DeleteConfirmTitle" => "Delete history entry",
+            "History.DeleteConfirmMessage" => "Delete history entry from {0}?",
+            "History.ClearConfirmTitle" => "Clear history",
+            "History.ClearConfirmMessage" => "Clear history?",
+            "History.Copied" => "{0} characters copied",
+            "History.Missing" => "Missing",
+            "History.CopyFailed" => "Copy failed",
+            "History.Deleted" => "Deleted",
+            "History.DeleteFailed" => "Delete failed",
+            "History.Cleared" => "Cleared",
+            "History.ClearFailed" => "Clear failed",
+            "Notify.CopiedFromHistory" => "{0} characters copied from history",
+            "AppTitle" => "Scrybe",
             _ => key,
         };
 
@@ -187,13 +287,22 @@ public sealed class ManagerViewModelTests
 
     private sealed class TestClipboardService : IClipboardService
     {
-        public Task SetTextAsync(string text, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public string? Text { get; private set; }
+
+        public Task SetTextAsync(string text, CancellationToken cancellationToken = default)
+        {
+            Text = text;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class TestNotificationService : INotificationService
     {
+        public int CallCount { get; private set; }
+
         public void Notify(string title, string message)
         {
+            CallCount++;
         }
     }
 }

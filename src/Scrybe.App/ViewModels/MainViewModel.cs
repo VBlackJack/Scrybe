@@ -107,7 +107,10 @@ public sealed partial class MainViewModel : ObservableObject
         CaptureHistoryLibrary historyLibrary,
         AboutInfoProvider aboutInfoProvider,
         SettingsViewModel settingsViewModel,
-        AboutViewModel aboutViewModel)
+        AboutViewModel aboutViewModel,
+        SnippetManagerViewModel snippetManagerViewModel,
+        SecretManagerViewModel secretManagerViewModel,
+        HistoryManagerViewModel historyManagerViewModel)
     {
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(settings);
@@ -117,6 +120,9 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(aboutInfoProvider);
         ArgumentNullException.ThrowIfNull(settingsViewModel);
         ArgumentNullException.ThrowIfNull(aboutViewModel);
+        ArgumentNullException.ThrowIfNull(snippetManagerViewModel);
+        ArgumentNullException.ThrowIfNull(secretManagerViewModel);
+        ArgumentNullException.ThrowIfNull(historyManagerViewModel);
 
         _localization = localization;
         _settings = settings;
@@ -126,6 +132,9 @@ public sealed partial class MainViewModel : ObservableObject
         _aboutInfoProvider = aboutInfoProvider;
         Settings = settingsViewModel;
         About = aboutViewModel;
+        SnippetManager = snippetManagerViewModel;
+        SecretManager = secretManagerViewModel;
+        HistoryManager = historyManagerViewModel;
         _title = localization["AppTitle"];
         _tagline = localization["AppTagline"];
         _versionText = aboutInfoProvider.GetAboutInfo().Version;
@@ -152,17 +161,17 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>About tab view model.</summary>
     public AboutViewModel About { get; }
 
+    /// <summary>Snippet manager tab view model.</summary>
+    public SnippetManagerViewModel SnippetManager { get; }
+
+    /// <summary>Secret manager tab view model.</summary>
+    public SecretManagerViewModel SecretManager { get; }
+
+    /// <summary>Capture history manager tab view model.</summary>
+    public HistoryManagerViewModel HistoryManager { get; }
+
     /// <summary>Raised when the user requests immediate capture from the hub.</summary>
     public event EventHandler? CaptureRequested;
-
-    /// <summary>Raised when the user opens snippet management from the hub.</summary>
-    public event EventHandler? ManageSnippetsRequested;
-
-    /// <summary>Raised when the user opens secret management from the hub.</summary>
-    public event EventHandler? ManageSecretsRequested;
-
-    /// <summary>Raised when the user opens capture history from the hub.</summary>
-    public event EventHandler? OpenHistoryRequested;
 
     /// <summary>Raised when the user selects a different cleanup mode from the hub.</summary>
     public event EventHandler<OcrCleanupMode>? CleanupModeChanged;
@@ -192,6 +201,24 @@ public sealed partial class MainViewModel : ObservableObject
         SelectedTabIndex = ShellTabs.Home;
     }
 
+    /// <summary>Navigate to the snippet manager tab.</summary>
+    public void ShowSnippetsTab()
+    {
+        SelectedTabIndex = ShellTabs.Snippets;
+    }
+
+    /// <summary>Navigate to the secret manager tab.</summary>
+    public void ShowSecretsTab()
+    {
+        SelectedTabIndex = ShellTabs.Secrets;
+    }
+
+    /// <summary>Navigate to the history manager tab.</summary>
+    public void ShowHistoryTab()
+    {
+        SelectedTabIndex = ShellTabs.History;
+    }
+
     /// <summary>Navigate to the settings tab.</summary>
     public void ShowSettingsTab()
     {
@@ -211,16 +238,29 @@ public sealed partial class MainViewModel : ObservableObject
     private void OpenSettings() => ShowSettingsTab();
 
     [RelayCommand]
-    private void ManageSnippets() => ManageSnippetsRequested?.Invoke(this, EventArgs.Empty);
+    private void ManageSnippets() => ShowSnippetsTab();
 
     [RelayCommand]
-    private void ManageSecrets() => ManageSecretsRequested?.Invoke(this, EventArgs.Empty);
+    private void ManageSecrets() => ShowSecretsTab();
 
     [RelayCommand]
-    private void OpenHistory() => OpenHistoryRequested?.Invoke(this, EventArgs.Empty);
+    private void OpenHistory() => ShowHistoryTab();
 
     [RelayCommand]
     private void OpenAbout() => ShowAboutTab();
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        if (value == ShellTabs.History)
+        {
+            HistoryManager.Reload();
+        }
+
+        if (value == ShellTabs.Home)
+        {
+            RefreshStatus();
+        }
+    }
 
     partial void OnSelectedCleanupModeChanged(OcrCleanupMode value)
     {

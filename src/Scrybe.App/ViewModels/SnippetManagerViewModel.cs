@@ -79,6 +79,16 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     /// <summary>The snippets shown in the list.</summary>
     public ObservableCollection<Snippet> Snippets { get; }
 
+    /// <summary>Reloads the visible snippets from the current library state.</summary>
+    public void Reload()
+    {
+        Snippets.Clear();
+        foreach (Snippet snippet in _library.Snippets)
+        {
+            Snippets.Add(snippet);
+        }
+    }
+
     partial void OnSelectedSnippetChanged(Snippet? value)
     {
         if (value is null)
@@ -125,7 +135,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             ParseParameters(ParametersText));
 
         await _library.SaveAsync(snippet).ConfigureAwait(true);
-        Refresh();
+        Reload();
         SelectedSnippet = Snippets.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.Ordinal));
         StatusMessage = _localization["Manager.Saved"];
         IsStatusError = false;
@@ -152,19 +162,10 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         }
 
         await _library.DeleteAsync(SelectedSnippet.Id).ConfigureAwait(true);
-        Refresh();
+        Reload();
         New();
         StatusMessage = _localization["Manager.Deleted"];
         IsStatusError = false;
-    }
-
-    private void Refresh()
-    {
-        Snippets.Clear();
-        foreach (Snippet snippet in _library.Snippets)
-        {
-            Snippets.Add(snippet);
-        }
     }
 
     private static string FormatParameters(IReadOnlyList<SnippetParameter> parameters)

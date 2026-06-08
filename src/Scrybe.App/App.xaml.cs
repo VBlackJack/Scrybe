@@ -113,6 +113,9 @@ public partial class App : System.Windows.Application
         await _serviceProvider.GetRequiredService<SnippetLibrary>().LoadAsync().ConfigureAwait(true);
         await _serviceProvider.GetRequiredService<SecretLibrary>().LoadAsync().ConfigureAwait(true);
         await _serviceProvider.GetRequiredService<CaptureHistoryLibrary>().LoadAsync().ConfigureAwait(true);
+        _serviceProvider.GetRequiredService<SnippetManagerViewModel>().Reload();
+        _serviceProvider.GetRequiredService<SecretManagerViewModel>().Reload();
+        _serviceProvider.GetRequiredService<HistoryManagerViewModel>().Reload();
         _mainViewModel?.RefreshStatus();
 
         FileLogger.Info("Startup complete.");
@@ -138,9 +141,6 @@ public partial class App : System.Windows.Application
         if (_mainViewModel is not null)
         {
             _mainViewModel.CaptureRequested -= OnCaptureRequested;
-            _mainViewModel.ManageSnippetsRequested -= OnManageSnippetsRequested;
-            _mainViewModel.ManageSecretsRequested -= OnManageSecretsRequested;
-            _mainViewModel.OpenHistoryRequested -= OnShowHistoryRequested;
             _mainViewModel.CleanupModeChanged -= OnCleanupModeChanged;
             _mainViewModel.Settings.Saved -= OnSettingsSaved;
         }
@@ -177,6 +177,9 @@ public partial class App : System.Windows.Application
         services.AddSingleton<MainWindow>();
         services.AddSingleton<AboutViewModel>();
         services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<SnippetManagerViewModel>();
+        services.AddSingleton<SecretManagerViewModel>();
+        services.AddSingleton<HistoryManagerViewModel>();
 
         services.AddSingleton<IScreenCaptureService, WgcScreenCaptureService>();
         services.AddSingleton<IOcrEngine>(_ => new TesseractOcrEngine(tessdataDirectory, settings.OcrLanguage));
@@ -236,9 +239,6 @@ public partial class App : System.Windows.Application
 
         _mainViewModel = provider.GetRequiredService<MainViewModel>();
         _mainViewModel.CaptureRequested += OnCaptureRequested;
-        _mainViewModel.ManageSnippetsRequested += OnManageSnippetsRequested;
-        _mainViewModel.ManageSecretsRequested += OnManageSecretsRequested;
-        _mainViewModel.OpenHistoryRequested += OnShowHistoryRequested;
         _mainViewModel.CleanupModeChanged += OnCleanupModeChanged;
         _mainViewModel.Settings.Saved += OnSettingsSaved;
 
@@ -373,14 +373,33 @@ public partial class App : System.Windows.Application
         window.Activate();
     }
 
-    private void OnManageSnippetsRequested(object? sender, EventArgs e) => _snippetCoordinator!.ShowManager();
+    private void OnManageSnippetsRequested(object? sender, EventArgs e)
+    {
+        ShowShellWindow();
+        _mainViewModel?.ShowSnippetsTab();
+    }
 
-    private void OnManageSecretsRequested(object? sender, EventArgs e) => _secretCoordinator!.ShowManager();
+    private void OnManageSecretsRequested(object? sender, EventArgs e)
+    {
+        ShowShellWindow();
+        _mainViewModel?.ShowSecretsTab();
+    }
 
-    private void OnShowHistoryRequested(object? sender, EventArgs e) => _historyCoordinator!.ShowPalette();
+    private void OnShowHistoryRequested(object? sender, EventArgs e)
+    {
+        ShowShellWindow();
+        _mainViewModel?.ShowHistoryTab();
+    }
 
     private void OnHistoryEntriesChanged(object? sender, EventArgs e)
-        => Dispatcher.InvokeAsync(() => _mainViewModel?.RefreshStatus());
+        => Dispatcher.InvokeAsync(() =>
+        {
+            _mainViewModel?.RefreshStatus();
+            if (_mainViewModel?.SelectedTabIndex == ShellTabs.History)
+            {
+                _mainViewModel.HistoryManager.Reload();
+            }
+        });
 
     private void OnCleanupModeChanged(object? sender, OcrCleanupMode mode)
     {

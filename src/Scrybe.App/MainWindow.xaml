@@ -208,6 +208,18 @@
             </ScrollViewer>
         </TabItem>
 
+        <TabItem Header="{loc:Translate Shell.TabSnippets}">
+            <views:SnippetManagerView DataContext="{Binding SnippetManager}" />
+        </TabItem>
+
+        <TabItem Header="{loc:Translate Shell.TabSecrets}">
+            <views:SecretManagerView DataContext="{Binding SecretManager}" />
+        </TabItem>
+
+        <TabItem Header="{loc:Translate Shell.TabHistory}">
+            <views:HistoryView DataContext="{Binding HistoryManager}" />
+        </TabItem>
+
         <TabItem Header="{loc:Translate Shell.TabSettings}">
             <views:SettingsView DataContext="{Binding Settings}" />
         </TabItem>

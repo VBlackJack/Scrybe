@@ -32,30 +32,24 @@ public sealed class SecretCoordinator
     private readonly SecretLibrary _library;
     private readonly InjectionCoordinator _injection;
     private readonly ILocalizationManager _localization;
-    private readonly IConfirmationService _confirmation;
 
     private SecretPaletteWindow? _palette;
-    private SecretManagerWindow? _manager;
 
     /// <summary>Initializes the coordinator.</summary>
     /// <param name="library">The protected secret library.</param>
     /// <param name="injection">The injection coordinator.</param>
-    /// <param name="localization">Localization source for the manager view model.</param>
-    /// <param name="confirmation">Confirmation service for destructive actions.</param>
+    /// <param name="localization">Localization source for secret injection confirmations.</param>
     public SecretCoordinator(
         SecretLibrary library,
         InjectionCoordinator injection,
-        ILocalizationManager localization,
-        IConfirmationService confirmation)
+        ILocalizationManager localization)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(injection);
         ArgumentNullException.ThrowIfNull(localization);
-        ArgumentNullException.ThrowIfNull(confirmation);
         _library = library;
         _injection = injection;
         _localization = localization;
-        _confirmation = confirmation;
     }
 
     /// <summary>Opens (or focuses) the secret palette, remembering the current foreground target.</summary>
@@ -79,24 +73,6 @@ public sealed class SecretCoordinator
         window.Closed += (_, _) => _palette = null;
 
         _palette = window;
-        window.Show();
-        window.Activate();
-    }
-
-    /// <summary>Opens (or focuses) the secret management window.</summary>
-    public void ShowManager()
-    {
-        if (_manager is not null)
-        {
-            _manager.Activate();
-            return;
-        }
-
-        SecretManagerViewModel viewModel = new(_library, _localization, _confirmation);
-        SecretManagerWindow window = new(viewModel);
-        window.Closed += (_, _) => _manager = null;
-
-        _manager = window;
         window.Show();
         window.Activate();
     }

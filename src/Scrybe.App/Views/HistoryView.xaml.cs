@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-using System.Windows;
-using Scrybe.App.ViewModels;
-
 namespace Scrybe.App.Views;
 
-/// <summary>The snippet management window. Code-behind is limited to data-context wiring.</summary>
-public partial class SnippetManagerWindow : Window
+/// <summary>Managed capture-history tab content.</summary>
+public sealed partial class HistoryView : System.Windows.Controls.UserControl
 {
-    /// <summary>Initializes the management window bound to its view model.</summary>
-    /// <param name="viewModel">The manager view model.</param>
-    public SnippetManagerWindow(SnippetManagerViewModel viewModel)
+    /// <summary>Initializes the history view.</summary>
+    public HistoryView()
     {
-        ArgumentNullException.ThrowIfNull(viewModel);
-
         InitializeComponent();
-        DataContext = viewModel;
     }
 }
