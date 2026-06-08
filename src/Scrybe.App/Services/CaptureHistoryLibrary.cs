@@ -16,6 +16,7 @@
 
 using Scrybe.Core.History;
 using Scrybe.Core.Interfaces;
+using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 using Scrybe.Core.Security;
 
@@ -108,6 +109,37 @@ public sealed class CaptureHistoryLibrary
         {
             SecretMemory.Clear(chars);
         }
+    }
+
+    /// <summary>Replaces one entry's protected plaintext while preserving its identity and capture timestamp.</summary>
+    /// <param name="id">The history entry id.</param>
+    /// <param name="newText">The new plaintext to protect and persist.</param>
+    public async Task UpdateAsync(string id, string newText)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+
+        if (string.IsNullOrWhiteSpace(newText))
+        {
+            return;
+        }
+
+        int index = _entries.FindIndex(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
+        if (index < 0)
+        {
+            FileLogger.Warn($"Capture history update requested for missing entry '{id}'.");
+            return;
+        }
+
+        CaptureHistoryEntry current = _entries[index];
+        CaptureHistoryEntry updated = new(
+            current.Id,
+            _protector.Protect(newText),
+            newText.Length,
+            current.CapturedAtUtc);
+
+        _entries[index] = updated;
+        await _store.SaveAsync(_entries).ConfigureAwait(false);
+        EntriesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Clears every history entry and persists an empty history.</summary>

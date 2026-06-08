@@ -66,6 +66,8 @@
                              Foreground="{StaticResource TextPrimaryBrush}"
                              BorderBrush="{StaticResource BorderBrush}"
                              BorderThickness="1"
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              FontSize="{StaticResource FontSizeBody}">
                         <ListBox.Style>
                             <Style TargetType="{x:Type ListBox}">
@@ -77,12 +79,18 @@
                                 </Style.Triggers>
                             </Style>
                         </ListBox.Style>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListBoxItem}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="2,4">
                                     <TextBlock Text="{Binding Preview}"
                                                Foreground="{StaticResource TextPrimaryBrush}"
-                                               TextWrapping="Wrap" />
+                                               TextTrimming="CharacterEllipsis"
+                                               TextWrapping="NoWrap" />
                                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                         <TextBlock Text="{Binding Timestamp}"
                                                    Foreground="{StaticResource TextSecondaryBrush}"
@@ -119,11 +127,11 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="{loc:Translate History.Preview}" Style="{StaticResource HistoryHeaderStyle}" />
+                    <TextBlock Grid.Row="0" Text="{loc:Translate History.Edit}" Style="{StaticResource HistoryHeaderStyle}" />
 
                     <TextBox Grid.Row="1"
-                             Text="{Binding SelectedPreview}"
-                             IsReadOnly="True"
+                             Text="{Binding EditText, UpdateSourceTrigger=PropertyChanged}"
+                             IsEnabled="{Binding CanCopy}"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
                              VerticalScrollBarVisibility="Auto"
@@ -135,7 +143,16 @@
                              FontFamily="Consolas" />
 
                     <Grid Grid.Row="2" Margin="0,12,0,0">
-                        <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,180,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding StatusMessage}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,12,0">
                             <TextBlock.Style>
                                 <Style TargetType="{x:Type TextBlock}">
                                     <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
@@ -147,7 +164,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="{loc:Translate History.Delete}"
                                     Command="{Binding DeleteCommand}"
                                     IsEnabled="{Binding CanCopy}"
@@ -156,6 +173,15 @@
                                     Background="{StaticResource ErrorBrush}"
                                     Foreground="{StaticResource TextPrimaryBrush}"
                                     BorderThickness="0" />
+                            <Button Content="{loc:Translate History.SaveChanges}"
+                                    Command="{Binding SaveEditCommand}"
+                                    IsEnabled="{Binding CanSaveEdit}"
+                                    Margin="0,0,8,0"
+                                    Padding="{StaticResource PaddingButtonPrimary}"
+                                    Background="{StaticResource CardBrush}"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    BorderThickness="0"
+                                    FontWeight="SemiBold" />
                             <Button Content="{loc:Translate History.Copy}"
                                     Command="{Binding CopyCommand}"
                                     IsEnabled="{Binding CanCopy}"

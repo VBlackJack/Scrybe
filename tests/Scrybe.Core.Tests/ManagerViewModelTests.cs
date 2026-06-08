@@ -178,6 +178,81 @@ public sealed class ManagerViewModelTests
         viewModel.Entries.Should().ContainSingle();
         viewModel.Entries.Single().Preview.Should().NotBe(text);
         viewModel.SelectedPreview.Should().Be(text);
+        viewModel.EditText.Should().Be(text);
+    }
+
+    [Fact]
+    public async Task CaptureHistory_UpdateAsync_PreservesEntryIdentityTimestampAndPosition()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        DateTimeOffset capturedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        CaptureHistoryEntry newest = new("newest", "protected:newest text", 11, DateTimeOffset.UtcNow);
+        CaptureHistoryEntry edited = new("edited", "protected:old text", 8, capturedAt);
+        CaptureHistoryEntry oldest = new("oldest", "protected:oldest text", 11, DateTimeOffset.UtcNow.AddMinutes(-5));
+        await store.SaveAsync([newest, edited, oldest]);
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.LoadAsync();
+
+        await library.UpdateAsync("edited", "new edited history text");
+
+        library.Entries.Select(entry => entry.Id).Should().Equal("newest", "edited", "oldest");
+        CaptureHistoryEntry updated = library.Entries[1];
+        updated.Id.Should().Be("edited");
+        updated.CapturedAtUtc.Should().Be(capturedAt);
+        updated.CharCount.Should().Be("new edited history text".Length);
+        updated.ProtectedText.Should().Be("protected:new edited history text");
+        library.RevealText("edited").Should().Be("new edited history text");
+        store.SavedEntries.Select(entry => entry.Id).Should().Equal("newest", "edited", "oldest");
+    }
+
+    [Fact]
+    public async Task HistoryManager_SaveEdit_UpdatesStoredTextAndKeepsSelection()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("managed history original");
+        HistoryManagerViewModel viewModel = new(
+            library,
+            new TestClipboardService(),
+            new TestNotificationService(),
+            new TestLocalizationManager(),
+            new DenyingConfirmationService());
+        string selectedId = viewModel.SelectedEntry!.Id;
+
+        viewModel.EditText = "managed history edited";
+        await viewModel.SaveEditCommand.ExecuteAsync(null);
+
+        viewModel.SelectedEntry!.Id.Should().Be(selectedId);
+        viewModel.EditText.Should().Be("managed history edited");
+        viewModel.SelectedPreview.Should().Be("managed history edited");
+        viewModel.Entries.Should().ContainSingle(entry => entry.Id == selectedId && entry.CharCount == "managed history edited".Length);
+        library.RevealText(selectedId).Should().Be("managed history edited");
+        store.SavedEntries.Should().ContainSingle(entry => entry.Id == selectedId && entry.ProtectedText == "protected:managed history edited");
+        viewModel.StatusMessage.Should().Be("Saved");
+        viewModel.IsStatusError.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task HistoryManager_EmptyEdit_DisablesSaveAndDoesNotPersist()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("managed history original");
+        int saveCountAfterArrange = store.SaveCount;
+        HistoryManagerViewModel viewModel = new(
+            library,
+            new TestClipboardService(),
+            new TestNotificationService(),
+            new TestLocalizationManager(),
+            new DenyingConfirmationService());
+        string selectedId = viewModel.SelectedEntry!.Id;
+
+        viewModel.EditText = "   ";
+
+        viewModel.CanSaveEdit.Should().BeFalse();
+        viewModel.SaveEditCommand.CanExecute(null).Should().BeFalse();
+        store.SaveCount.Should().Be(saveCountAfterArrange);
+        library.RevealText(selectedId).Should().Be("managed history original");
     }
 
     private sealed class DenyingConfirmationService : IConfirmationService
@@ -206,6 +281,9 @@ public sealed class ManagerViewModelTests
             "History.Copied" => "{0} characters copied",
             "History.Missing" => "Missing",
             "History.CopyFailed" => "Copy failed",
+            "History.Saved" => "Saved",
+            "History.EmptyTextError" => "Empty text",
+            "History.SaveFailed" => "Save failed",
             "History.Deleted" => "Deleted",
             "History.DeleteFailed" => "Delete failed",
             "History.Cleared" => "Cleared",

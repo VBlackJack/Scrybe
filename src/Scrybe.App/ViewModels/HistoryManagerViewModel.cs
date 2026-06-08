@@ -41,6 +41,9 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
     private string _selectedPreview = string.Empty;
 
     [ObservableProperty]
+    private string _editText = string.Empty;
+
+    [ObservableProperty]
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
@@ -54,6 +57,9 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _canCopy;
+
+    [ObservableProperty]
+    private bool _canSaveEdit;
 
     /// <summary>Initializes the history manager from the protected history library.</summary>
     /// <param name="library">The protected capture-history library.</param>
@@ -116,7 +122,13 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
     partial void OnSelectedEntryChanged(HistoryPaletteListItem? value)
     {
         CanCopy = value is not null;
-        UpdateSelectedPreview(value);
+        UpdateSelectedText(value);
+        UpdateEditState();
+    }
+
+    partial void OnEditTextChanged(string value)
+    {
+        UpdateEditState();
     }
 
     [RelayCommand]
@@ -191,6 +203,41 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanSaveEdit))]
+    private async Task SaveEdit()
+    {
+        if (SelectedEntry is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(EditText))
+        {
+            StatusMessage = _localization["History.EmptyTextError"];
+            IsStatusError = true;
+            UpdateEditState();
+            return;
+        }
+
+        string selectedId = SelectedEntry.Id;
+        try
+        {
+            await _library.UpdateAsync(selectedId, EditText).ConfigureAwait(true);
+            Reload();
+            SelectedEntry = Entries.FirstOrDefault(entry => string.Equals(entry.Id, selectedId, StringComparison.Ordinal))
+                ?? SelectedEntry;
+            StatusMessage = _localization["History.Saved"];
+            IsStatusError = false;
+            FileLogger.Info("Capture history entry updated from manager.");
+        }
+        catch (Exception exception)
+        {
+            StatusMessage = _localization["History.SaveFailed"];
+            IsStatusError = true;
+            FileLogger.Error("Failed to save capture history entry from manager.", exception);
+        }
+    }
+
     [RelayCommand]
     private async Task ClearAll()
     {
@@ -230,25 +277,36 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
         HasEntries = Entries.Count > 0;
         IsEmpty = !HasEntries;
         CanCopy = SelectedEntry is not null;
-        UpdateSelectedPreview(SelectedEntry);
+        UpdateSelectedText(SelectedEntry);
+        UpdateEditState();
     }
 
-    private void UpdateSelectedPreview(HistoryPaletteListItem? entry)
+    private void UpdateSelectedText(HistoryPaletteListItem? entry)
     {
         if (entry is null)
         {
             SelectedPreview = string.Empty;
+            EditText = string.Empty;
             return;
         }
 
         try
         {
-            SelectedPreview = _library.RevealText(entry.Id) ?? entry.Preview;
+            string text = _library.RevealText(entry.Id) ?? entry.Preview;
+            SelectedPreview = text;
+            EditText = text;
         }
         catch (Exception exception)
         {
             SelectedPreview = entry.Preview;
+            EditText = entry.Preview;
             FileLogger.Error($"Failed to reveal capture history preview for '{entry.Id}'.", exception);
         }
+    }
+
+    private void UpdateEditState()
+    {
+        CanSaveEdit = SelectedEntry is not null && !string.IsNullOrWhiteSpace(EditText);
+        SaveEditCommand.NotifyCanExecuteChanged();
     }
 }
