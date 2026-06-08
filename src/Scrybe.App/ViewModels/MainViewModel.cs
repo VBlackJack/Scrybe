@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Scrybe.App.Services;
@@ -35,6 +34,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly AppSettings _settings;
     private readonly SnippetLibrary _snippetLibrary;
     private readonly SecretLibrary _secretLibrary;
+    private readonly AboutInfoProvider _aboutInfoProvider;
     private bool _initialized;
     private bool _suppressCleanupModeEvent;
 
@@ -92,20 +92,23 @@ public sealed partial class MainViewModel : ObservableObject
         ILocalizationManager localization,
         AppSettings settings,
         SnippetLibrary snippetLibrary,
-        SecretLibrary secretLibrary)
+        SecretLibrary secretLibrary,
+        AboutInfoProvider aboutInfoProvider)
     {
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(snippetLibrary);
         ArgumentNullException.ThrowIfNull(secretLibrary);
+        ArgumentNullException.ThrowIfNull(aboutInfoProvider);
 
         _localization = localization;
         _settings = settings;
         _snippetLibrary = snippetLibrary;
         _secretLibrary = secretLibrary;
+        _aboutInfoProvider = aboutInfoProvider;
         _title = localization["AppTitle"];
         _tagline = localization["AppTagline"];
-        _versionText = ResolveVersion();
+        _versionText = aboutInfoProvider.GetAboutInfo().Version;
         _cleanupModeChoices = BuildCleanupModeChoices();
         _selectedCleanupMode = settings.CleanupMode;
         _captureHotkeyText = string.Empty;
@@ -132,6 +135,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Raised when the user opens secret management from the hub.</summary>
     public event EventHandler? ManageSecretsRequested;
+
+    /// <summary>Raised when the user opens About from the hub.</summary>
+    public event EventHandler? AboutRequested;
 
     /// <summary>Raised when the user selects a different cleanup mode from the hub.</summary>
     public event EventHandler<OcrCleanupMode>? CleanupModeChanged;
@@ -163,6 +169,9 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ManageSecrets() => ManageSecretsRequested?.Invoke(this, EventArgs.Empty);
 
+    [RelayCommand]
+    private void OpenAbout() => AboutRequested?.Invoke(this, EventArgs.Empty);
+
     partial void OnSelectedCleanupModeChanged(OcrCleanupMode value)
     {
         if (!_initialized || _suppressCleanupModeEvent)
@@ -189,6 +198,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Title = _localization["AppTitle"];
         Tagline = _localization["AppTagline"];
+        VersionText = _aboutInfoProvider.GetAboutInfo().Version;
         CleanupModeChoices = BuildCleanupModeChoices();
         RefreshStatus();
     }
@@ -222,20 +232,4 @@ public sealed partial class MainViewModel : ObservableObject
         _ => mode.ToString(),
     };
 
-    /// <summary>Reads the informational version from the executing assembly, stripping any build metadata.</summary>
-    private static string ResolveVersion()
-    {
-        string? informational = Assembly
-            .GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion;
-
-        if (string.IsNullOrWhiteSpace(informational))
-        {
-            return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
-        }
-
-        int metadataSeparator = informational.IndexOf('+', StringComparison.Ordinal);
-        return metadataSeparator >= 0 ? informational[..metadataSeparator] : informational;
-    }
 }

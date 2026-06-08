@@ -24,7 +24,14 @@
     <Copyright>Copyright 2026 Julien Bombled</Copyright>
     <Version>0.0.0</Version>
     <InformationalVersion>0.0.0-dev</InformationalVersion>
+    <BuildDate></BuildDate>
+    <CommitHash></CommitHash>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="BuildDate" Value="$(BuildDate)" />
+    <AssemblyMetadata Include="CommitHash" Value="$(CommitHash)" />
+  </ItemGroup>
 
 </Project>

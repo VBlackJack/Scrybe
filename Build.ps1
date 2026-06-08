@@ -88,6 +88,15 @@ function Get-ProjectAssemblyName {
     return $assemblyName
 }
 
+function Get-CurrentCommitHash {
+    [string] $commit = (& git rev-parse --short HEAD).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($commit)) {
+        throw "Unable to resolve the current commit hash."
+    }
+
+    return $commit
+}
+
 function Get-VersionSequenceFromText {
     param(
         [Parameter(Mandatory = $true)]
@@ -364,6 +373,9 @@ function Publish-GitHubRelease {
 [object] $versionInfo = Resolve-BuildVersion -PropsPath $propsPath -ForcedVersion $Version
 [string] $assemblyName = Get-ProjectAssemblyName -ProjectPath $projectPath
 [string] $exePath = Join-Path $publishDirectory "$assemblyName.exe"
+[string] $buildDate = ''
+[string] $commitHash = ''
+[string[]] $buildMetadataProperties = @()
 [bool] $versionWasStamped = $false
 [bool] $releaseWasCommitted = $false
 
@@ -375,10 +387,20 @@ if ($Publish -and -not $DryRun) {
     Assert-PublishPreconditions
 }
 
+if ($Mode -eq 'Release') {
+    $buildDate = (Get-Date).ToString('yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
+    $commitHash = Get-CurrentCommitHash
+    $buildMetadataProperties = @("-p:BuildDate=$buildDate", "-p:CommitHash=$commitHash")
+}
+
 Write-Output "Scrybe build"
 Write-Output "Mode: $Mode"
 Write-Output "Build number: $($versionInfo.BuildNumber)"
 Write-Output "Assembly version: $($versionInfo.AssemblyVersion)"
+if ($Mode -eq 'Release') {
+    Write-Output "Build date: $buildDate"
+    Write-Output "Commit hash: $commitHash"
+}
 if ($DryRun) {
     Write-Output "Dry run: true"
 }
@@ -397,7 +419,8 @@ try {
     Invoke-Tool -FilePath 'dotnet' -Arguments @('test', $solutionPath, '--verbosity', 'normal')
 
     Write-Output "Building solution..."
-    Invoke-Tool -FilePath 'dotnet' -Arguments @('build', $solutionPath, '--configuration', $Mode)
+    [string[]] $buildArgs = @('build', $solutionPath, '--configuration', $Mode) + $buildMetadataProperties
+    Invoke-Tool -FilePath 'dotnet' -Arguments $buildArgs
 
     if (Test-Path -LiteralPath $publishDirectory) {
         Remove-Item -LiteralPath $publishDirectory -Recurse -Force
@@ -419,7 +442,7 @@ try {
         '-p:PublishTrimmed=false',
         '-p:DebugType=embedded',
         '-p:DebugSymbols=false'
-    )
+    ) + $buildMetadataProperties
 
     if ($NoRestore) {
         $publishArgs += '--no-restore'

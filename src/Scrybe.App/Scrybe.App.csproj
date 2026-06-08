@@ -43,6 +43,11 @@
     <ProjectReference Include="..\Scrybe.Ocr\Scrybe.Ocr.csproj" />
   </ItemGroup>
 
+  <!-- Make the executable icon available to WPF views. -->
+  <ItemGroup>
+    <Resource Include="Assets\Scrybe.ico" />
+  </ItemGroup>
+
   <!-- Ship the JSON locale files next to the executable so they load at runtime. -->
   <ItemGroup>
     <None Include="..\..\locales\*.json" Link="locales\%(Filename)%(Extension)">

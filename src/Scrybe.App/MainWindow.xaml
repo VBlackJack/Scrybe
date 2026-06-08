@@ -27,7 +27,7 @@
             <Setter Property="Padding" Value="{StaticResource PaddingSectionCard}" />
             <Setter Property="Margin" Value="0,0,0,16" />
         </Style>
-        <Style x:Key="HubActionButtonStyle" TargetType="Button">
+        <Style x:Key="HubActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AppButtonStyle}">
             <Setter Property="Padding" Value="{StaticResource PaddingButtonPrimary}" />
             <Setter Property="Margin" Value="0,0,8,0" />
             <Setter Property="MinWidth" Value="0" />
@@ -36,12 +36,17 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource AppFocusVisualStyle}" />
         </Style>
         <Style x:Key="HubSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource HubActionButtonStyle}">
             <Setter Property="Background" Value="{StaticResource CardBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style x:Key="HubVersionButtonStyle" TargetType="Button" BasedOn="{StaticResource AppButtonStyle}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="0" />
         </Style>
         <Style x:Key="HubFieldLabelStyle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
@@ -76,8 +81,12 @@
                            AutomationProperties.Name="{Binding Tagline}"
                            MaxWidth="440" />
 
-                <TextBlock Style="{StaticResource AppVersionTextStyle}"
-                           Text="{Binding VersionText}" />
+                <Button Command="{Binding OpenAboutCommand}"
+                        Style="{StaticResource HubVersionButtonStyle}"
+                        AutomationProperties.Name="{loc:Translate About.Title}">
+                    <TextBlock Style="{StaticResource AppVersionTextStyle}"
+                               Text="{Binding VersionText}" />
+                </Button>
 
             </StackPanel>
 

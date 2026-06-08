@@ -56,6 +56,7 @@ public partial class App : System.Windows.Application
     private SnippetCoordinator? _snippetCoordinator;
     private SecretCoordinator? _secretCoordinator;
     private SettingsWindow? _settingsWindow;
+    private AboutWindow? _aboutWindow;
     private MainViewModel? _mainViewModel;
     private bool _isShutdownRequested;
 
@@ -127,6 +128,7 @@ public partial class App : System.Windows.Application
             _trayIconService.ManageSecretsRequested -= OnManageSecretsRequested;
             _trayIconService.CleanupModeChanged -= OnCleanupModeChanged;
             _trayIconService.SettingsRequested -= OnSettingsRequested;
+            _trayIconService.ShowAboutRequested -= OnAboutRequested;
         }
 
         if (_mainViewModel is not null)
@@ -135,6 +137,7 @@ public partial class App : System.Windows.Application
             _mainViewModel.SettingsRequested -= OnSettingsRequested;
             _mainViewModel.ManageSnippetsRequested -= OnManageSnippetsRequested;
             _mainViewModel.ManageSecretsRequested -= OnManageSecretsRequested;
+            _mainViewModel.AboutRequested -= OnAboutRequested;
             _mainViewModel.CleanupModeChanged -= OnCleanupModeChanged;
         }
 
@@ -160,8 +163,10 @@ public partial class App : System.Windows.Application
         services.AddSingleton(settings);
         services.AddSingleton<ISettingsStore>(_ => BuildSettingsStore());
         services.AddSingleton<ILocalizationManager>(_ => new LocalizationManager(localesDirectory));
+        services.AddSingleton<AboutInfoProvider>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
+        services.AddTransient<AboutViewModel>();
         services.AddTransient<SettingsViewModel>();
 
         services.AddSingleton<IScreenCaptureService, WgcScreenCaptureService>();
@@ -214,6 +219,7 @@ public partial class App : System.Windows.Application
         _mainViewModel.SettingsRequested += OnSettingsRequested;
         _mainViewModel.ManageSnippetsRequested += OnManageSnippetsRequested;
         _mainViewModel.ManageSecretsRequested += OnManageSecretsRequested;
+        _mainViewModel.AboutRequested += OnAboutRequested;
         _mainViewModel.CleanupModeChanged += OnCleanupModeChanged;
 
         _trayIconService = provider.GetRequiredService<TrayIconService>();
@@ -223,6 +229,7 @@ public partial class App : System.Windows.Application
         _trayIconService.ManageSecretsRequested += OnManageSecretsRequested;
         _trayIconService.CleanupModeChanged += OnCleanupModeChanged;
         _trayIconService.SettingsRequested += OnSettingsRequested;
+        _trayIconService.ShowAboutRequested += OnAboutRequested;
         _trayIconService.Initialize();
 
         _hotkeyService = provider.GetRequiredService<IHotkeyService>();
@@ -377,6 +384,37 @@ public partial class App : System.Windows.Application
         AppSettings settings = _serviceProvider!.GetRequiredService<AppSettings>();
         _trayIconService?.UpdateCleanupMode(settings.CleanupMode);
         _mainViewModel?.RefreshStatus();
+    }
+
+    private void OnAboutRequested(object? sender, EventArgs e)
+    {
+        if (_aboutWindow is not null)
+        {
+            _aboutWindow.Activate();
+            return;
+        }
+
+        AboutViewModel viewModel = _serviceProvider!.GetRequiredService<AboutViewModel>();
+        AboutWindow window = new(viewModel);
+        if (MainWindow is Window owner && owner.IsVisible)
+        {
+            window.Owner = owner;
+        }
+
+        window.Closed += OnAboutWindowClosed;
+        _aboutWindow = window;
+        window.Show();
+        window.Activate();
+    }
+
+    private void OnAboutWindowClosed(object? sender, EventArgs e)
+    {
+        if (sender is AboutWindow window)
+        {
+            window.Closed -= OnAboutWindowClosed;
+        }
+
+        _aboutWindow = null;
     }
 
     private void OnHotkeyPressed(object? sender, string id)

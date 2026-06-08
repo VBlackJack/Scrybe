@@ -30,7 +30,7 @@ namespace Scrybe.App.Services;
 
 /// <summary>
 /// Owns the system-tray <see cref="NotifyIcon"/>: a generated Dracula-accent icon plus a localized
-/// context menu offering Capture and Quit, and a balloon used for brief confirmations. It raises
+/// context menu and a balloon used for brief confirmations. It raises
 /// <see cref="CaptureRequested"/> instead of depending on the capture coordinator, which keeps the
 /// dependency graph acyclic.
 /// </summary>
@@ -69,6 +69,9 @@ public sealed class TrayIconService : IDisposable, INotificationService
     /// <summary>Raised when the user requests the main hub from the tray.</summary>
     public event EventHandler? ShowHubRequested;
 
+    /// <summary>Raised when the user opens About from the tray.</summary>
+    public event EventHandler? ShowAboutRequested;
+
     /// <summary>Raised when the user opens snippet management from the tray.</summary>
     public event EventHandler? ManageSnippetsRequested;
 
@@ -103,6 +106,9 @@ public sealed class TrayIconService : IDisposable, INotificationService
         ToolStripMenuItem settingsItem = new(_localization["Tray.Settings"]);
         settingsItem.Click += OnSettingsRequested;
 
+        ToolStripMenuItem aboutItem = new(_localization["Tray.About"]);
+        aboutItem.Click += OnShowAboutRequested;
+
         ToolStripMenuItem modeMenu = BuildCleanupModeMenu();
 
         ToolStripMenuItem quitItem = new(_localization["Tray.Quit"]);
@@ -114,6 +120,7 @@ public sealed class TrayIconService : IDisposable, INotificationService
         menu.Items.Add(snippetsItem);
         menu.Items.Add(secretsItem);
         menu.Items.Add(settingsItem);
+        menu.Items.Add(aboutItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(quitItem);
 
@@ -165,6 +172,8 @@ public sealed class TrayIconService : IDisposable, INotificationService
     private void OnCaptureRequested(object? sender, EventArgs e) => CaptureRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnShowHubRequested(object? sender, EventArgs e) => ShowHubRequested?.Invoke(this, EventArgs.Empty);
+
+    private void OnShowAboutRequested(object? sender, EventArgs e) => ShowAboutRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnManageSnippetsRequested(object? sender, EventArgs e) => ManageSnippetsRequested?.Invoke(this, EventArgs.Empty);
 
