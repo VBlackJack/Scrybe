@@ -111,4 +111,16 @@ public sealed class AppSettings
 
     /// <summary>Key for the secret-palette hotkey.</summary>
     public string SecretPaletteHotkeyKey { get; set; } = AppConstants.DefaultSecretPaletteHotkeyKey;
+
+    /// <summary>Whether OCR captures are recorded into the protected history. Default: <see langword="true"/>.</summary>
+    public bool EnableCaptureHistory { get; set; } = true;
+
+    /// <summary>Maximum number of OCR captures retained in protected history.</summary>
+    public int CaptureHistoryMaxEntries { get; set; } = AppConstants.DefaultCaptureHistoryMaxEntries;
+
+    /// <summary>Modifiers for the capture-history palette hotkey.</summary>
+    public string HistoryPaletteHotkeyModifiers { get; set; } = AppConstants.DefaultHistoryPaletteHotkeyModifiers;
+
+    /// <summary>Key for the capture-history palette hotkey.</summary>
+    public string HistoryPaletteHotkeyKey { get; set; } = AppConstants.DefaultHistoryPaletteHotkeyKey;
 }

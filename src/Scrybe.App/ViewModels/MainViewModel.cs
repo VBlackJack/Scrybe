@@ -34,6 +34,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly AppSettings _settings;
     private readonly SnippetLibrary _snippetLibrary;
     private readonly SecretLibrary _secretLibrary;
+    private readonly CaptureHistoryLibrary _historyLibrary;
     private readonly AboutInfoProvider _aboutInfoProvider;
     private bool _initialized;
     private bool _suppressCleanupModeEvent;
@@ -72,6 +73,9 @@ public sealed partial class MainViewModel : ObservableObject
     private string _secretPaletteHotkeyText;
 
     [ObservableProperty]
+    private string _historyPaletteHotkeyText;
+
+    [ObservableProperty]
     private string _injectionModeText;
 
     [ObservableProperty]
@@ -83,28 +87,35 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _secretCount;
 
+    [ObservableProperty]
+    private int _historyCount;
+
     /// <summary>Initializes a new instance using the supplied application state.</summary>
     /// <param name="localization">Source of localized, user-facing strings.</param>
     /// <param name="settings">Live application settings.</param>
     /// <param name="snippetLibrary">Loaded snippet library.</param>
     /// <param name="secretLibrary">Loaded secret library.</param>
+    /// <param name="historyLibrary">Loaded protected capture-history library.</param>
     public MainViewModel(
         ILocalizationManager localization,
         AppSettings settings,
         SnippetLibrary snippetLibrary,
         SecretLibrary secretLibrary,
+        CaptureHistoryLibrary historyLibrary,
         AboutInfoProvider aboutInfoProvider)
     {
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(snippetLibrary);
         ArgumentNullException.ThrowIfNull(secretLibrary);
+        ArgumentNullException.ThrowIfNull(historyLibrary);
         ArgumentNullException.ThrowIfNull(aboutInfoProvider);
 
         _localization = localization;
         _settings = settings;
         _snippetLibrary = snippetLibrary;
         _secretLibrary = secretLibrary;
+        _historyLibrary = historyLibrary;
         _aboutInfoProvider = aboutInfoProvider;
         _title = localization["AppTitle"];
         _tagline = localization["AppTagline"];
@@ -116,6 +127,7 @@ public sealed partial class MainViewModel : ObservableObject
         _abortHotkeyText = string.Empty;
         _snippetPaletteHotkeyText = string.Empty;
         _secretPaletteHotkeyText = string.Empty;
+        _historyPaletteHotkeyText = string.Empty;
         _injectionModeText = string.Empty;
         _cleanupModeText = string.Empty;
 
@@ -136,6 +148,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Raised when the user opens secret management from the hub.</summary>
     public event EventHandler? ManageSecretsRequested;
 
+    /// <summary>Raised when the user opens capture history from the hub.</summary>
+    public event EventHandler? OpenHistoryRequested;
+
     /// <summary>Raised when the user opens About from the hub.</summary>
     public event EventHandler? AboutRequested;
 
@@ -150,10 +165,14 @@ public sealed partial class MainViewModel : ObservableObject
         AbortHotkeyText = HotkeyDisplayFormatter.Format(_settings.AbortHotkeyModifiers, _settings.AbortHotkeyKey);
         SnippetPaletteHotkeyText = HotkeyDisplayFormatter.Format(_settings.PaletteHotkeyModifiers, _settings.PaletteHotkeyKey);
         SecretPaletteHotkeyText = HotkeyDisplayFormatter.Format(_settings.SecretPaletteHotkeyModifiers, _settings.SecretPaletteHotkeyKey);
+        HistoryPaletteHotkeyText = HotkeyDisplayFormatter.Format(
+            _settings.HistoryPaletteHotkeyModifiers,
+            _settings.HistoryPaletteHotkeyKey);
         InjectionModeText = InjectionModeLabel(_settings.InjectionMode);
         CleanupModeText = CleanupModeLabel(_settings.CleanupMode);
         SnippetCount = _snippetLibrary.Snippets.Count;
         SecretCount = _secretLibrary.Secrets.Count;
+        HistoryCount = _historyLibrary.Entries.Count;
         SynchronizeSelectedCleanupMode();
     }
 
@@ -168,6 +187,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void ManageSecrets() => ManageSecretsRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void OpenHistory() => OpenHistoryRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
     private void OpenAbout() => AboutRequested?.Invoke(this, EventArgs.Empty);

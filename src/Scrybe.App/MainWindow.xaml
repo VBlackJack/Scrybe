@@ -95,11 +95,15 @@
                     <TextBlock Text="{loc:Translate Hub.ActionsTitle}"
                                Style="{StaticResource HubSectionHeaderStyle}" />
 
-                    <UniformGrid Columns="4" Margin="0,0,0,12">
+                    <UniformGrid Columns="3" Margin="0,0,0,12">
                         <Button Content="{loc:Translate Hub.Capture}"
                                 Command="{Binding CaptureCommand}"
                                 Style="{StaticResource HubActionButtonStyle}"
                                 AutomationProperties.Name="{loc:Translate Hub.Capture}" />
+                        <Button Content="{loc:Translate Hub.CaptureHistory}"
+                                Command="{Binding OpenHistoryCommand}"
+                                Style="{StaticResource HubSecondaryButtonStyle}"
+                                AutomationProperties.Name="{loc:Translate Hub.CaptureHistory}" />
                         <Button Content="{loc:Translate Hub.Settings}"
                                 Command="{Binding OpenSettingsCommand}"
                                 Style="{StaticResource HubSecondaryButtonStyle}"
@@ -149,6 +153,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.InjectionMode}" Style="{StaticResource HubFieldLabelStyle}" />
@@ -159,6 +164,8 @@
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SnippetCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.SecretCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SecretCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.HistoryCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HistoryCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
                     </Grid>
 
                     <TextBlock Text="{loc:Translate Hub.HotkeysTitle}"
@@ -176,6 +183,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.CaptureHotkey}" Style="{StaticResource HubFieldLabelStyle}" />
@@ -188,6 +196,8 @@
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SnippetPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.SecretPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
                         <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SecretPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Translate Hub.HistoryPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding HistoryPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
                     </Grid>
                 </StackPanel>
             </Border>

@@ -78,6 +78,9 @@ public sealed class TrayIconService : IDisposable, INotificationService
     /// <summary>Raised when the user opens secret management from the tray.</summary>
     public event EventHandler? ManageSecretsRequested;
 
+    /// <summary>Raised when the user opens capture history from the tray.</summary>
+    public event EventHandler? ShowHistoryRequested;
+
     /// <summary>Raised when the user selects a cleanup mode from the tray submenu.</summary>
     public event EventHandler<OcrCleanupMode>? CleanupModeChanged;
 
@@ -96,6 +99,9 @@ public sealed class TrayIconService : IDisposable, INotificationService
 
         ToolStripMenuItem captureItem = new(_localization["Tray.Capture"]);
         captureItem.Click += OnCaptureRequested;
+
+        ToolStripMenuItem historyItem = new(_localization["Tray.History"]);
+        historyItem.Click += OnShowHistoryRequested;
 
         ToolStripMenuItem snippetsItem = new(_localization["Tray.ManageSnippets"]);
         snippetsItem.Click += OnManageSnippetsRequested;
@@ -116,6 +122,7 @@ public sealed class TrayIconService : IDisposable, INotificationService
 
         menu.Items.Add(openItem);
         menu.Items.Add(captureItem);
+        menu.Items.Add(historyItem);
         menu.Items.Add(modeMenu);
         menu.Items.Add(snippetsItem);
         menu.Items.Add(secretsItem);
@@ -178,6 +185,8 @@ public sealed class TrayIconService : IDisposable, INotificationService
     private void OnManageSnippetsRequested(object? sender, EventArgs e) => ManageSnippetsRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnManageSecretsRequested(object? sender, EventArgs e) => ManageSecretsRequested?.Invoke(this, EventArgs.Empty);
+
+    private void OnShowHistoryRequested(object? sender, EventArgs e) => ShowHistoryRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnSettingsRequested(object? sender, EventArgs e) => SettingsRequested?.Invoke(this, EventArgs.Empty);
 

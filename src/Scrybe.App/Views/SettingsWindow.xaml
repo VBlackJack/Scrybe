@@ -122,6 +122,17 @@
 
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>
+                        <TextBlock Text="{loc:Translate Settings.History}" Style="{StaticResource SectionHeaderStyle}" />
+                        <CheckBox Content="{loc:Translate Settings.EnableCaptureHistory}" IsChecked="{Binding EnableCaptureHistory}" Style="{StaticResource SettingCheckBoxStyle}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <TextBlock Text="{loc:Translate Settings.HistoryMaxEntries}" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding CaptureHistoryMaxEntries, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingTextBoxStyle}" Width="100" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SectionCardStyle}">
+                    <StackPanel>
                         <TextBlock Text="{loc:Translate Settings.Hotkeys}" Style="{StaticResource SectionHeaderStyle}" />
                         <TextBlock Text="{loc:Translate Settings.HotkeysNote}" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,10" />
                         <views:HotkeyRecorder DataContext="{Binding CaptureRecorder}" />

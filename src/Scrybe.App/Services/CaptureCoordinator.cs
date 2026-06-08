@@ -40,6 +40,7 @@ public sealed class CaptureCoordinator
     private readonly IOcrEngine _ocrEngine;
     private readonly IClipboardService _clipboard;
     private readonly IOcrTextStore _textStore;
+    private readonly CaptureHistoryLibrary _historyLibrary;
     private readonly INotificationService _notification;
     private readonly ILocalizationManager _localization;
     private readonly AppSettings _settings;
@@ -52,6 +53,7 @@ public sealed class CaptureCoordinator
     /// <param name="ocrEngine">OCR engine used to recognize the selected region.</param>
     /// <param name="clipboard">Clipboard service for the recognized text.</param>
     /// <param name="textStore">Store that retains the recognized text for the injection flow.</param>
+    /// <param name="historyLibrary">Protected OCR capture history library.</param>
     /// <param name="notification">Notification service for the confirmation balloon.</param>
     /// <param name="localization">Source of localized overlay and notification text.</param>
     /// <param name="settings">Application settings holding the captures directory and flags.</param>
@@ -60,6 +62,7 @@ public sealed class CaptureCoordinator
         IOcrEngine ocrEngine,
         IClipboardService clipboard,
         IOcrTextStore textStore,
+        CaptureHistoryLibrary historyLibrary,
         INotificationService notification,
         ILocalizationManager localization,
         AppSettings settings)
@@ -68,6 +71,7 @@ public sealed class CaptureCoordinator
         ArgumentNullException.ThrowIfNull(ocrEngine);
         ArgumentNullException.ThrowIfNull(clipboard);
         ArgumentNullException.ThrowIfNull(textStore);
+        ArgumentNullException.ThrowIfNull(historyLibrary);
         ArgumentNullException.ThrowIfNull(notification);
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(settings);
@@ -76,6 +80,7 @@ public sealed class CaptureCoordinator
         _ocrEngine = ocrEngine;
         _clipboard = clipboard;
         _textStore = textStore;
+        _historyLibrary = historyLibrary;
         _notification = notification;
         _localization = localization;
         _settings = settings;
@@ -147,6 +152,18 @@ public sealed class CaptureCoordinator
 
             _textStore.Set(text);
             await _clipboard.SetTextAsync(text).ConfigureAwait(false);
+
+            if (_settings.EnableCaptureHistory && !string.IsNullOrWhiteSpace(text))
+            {
+                try
+                {
+                    await _historyLibrary.AddAsync(text).ConfigureAwait(false);
+                }
+                catch (Exception exception)
+                {
+                    FileLogger.Error("Failed to record capture history.", exception);
+                }
+            }
 
             if (_settings.SaveCaptureCrop)
             {

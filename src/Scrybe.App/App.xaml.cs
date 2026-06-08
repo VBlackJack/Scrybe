@@ -25,6 +25,7 @@ using Scrybe.App.Services;
 using Scrybe.App.ViewModels;
 using Scrybe.App.Views;
 using Scrybe.Core;
+using Scrybe.Core.History;
 using Scrybe.Core.Input;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Localization;
@@ -55,6 +56,8 @@ public partial class App : System.Windows.Application
     private InjectionCoordinator? _injectionCoordinator;
     private SnippetCoordinator? _snippetCoordinator;
     private SecretCoordinator? _secretCoordinator;
+    private CaptureHistoryCoordinator? _historyCoordinator;
+    private CaptureHistoryLibrary? _historyLibrary;
     private SettingsWindow? _settingsWindow;
     private AboutWindow? _aboutWindow;
     private MainViewModel? _mainViewModel;
@@ -110,6 +113,7 @@ public partial class App : System.Windows.Application
 
         await _serviceProvider.GetRequiredService<SnippetLibrary>().LoadAsync().ConfigureAwait(true);
         await _serviceProvider.GetRequiredService<SecretLibrary>().LoadAsync().ConfigureAwait(true);
+        await _serviceProvider.GetRequiredService<CaptureHistoryLibrary>().LoadAsync().ConfigureAwait(true);
         _mainViewModel?.RefreshStatus();
 
         FileLogger.Info("Startup complete.");
@@ -126,6 +130,7 @@ public partial class App : System.Windows.Application
             _trayIconService.ShowHubRequested -= OnShowHubRequested;
             _trayIconService.ManageSnippetsRequested -= OnManageSnippetsRequested;
             _trayIconService.ManageSecretsRequested -= OnManageSecretsRequested;
+            _trayIconService.ShowHistoryRequested -= OnShowHistoryRequested;
             _trayIconService.CleanupModeChanged -= OnCleanupModeChanged;
             _trayIconService.SettingsRequested -= OnSettingsRequested;
             _trayIconService.ShowAboutRequested -= OnAboutRequested;
@@ -137,8 +142,14 @@ public partial class App : System.Windows.Application
             _mainViewModel.SettingsRequested -= OnSettingsRequested;
             _mainViewModel.ManageSnippetsRequested -= OnManageSnippetsRequested;
             _mainViewModel.ManageSecretsRequested -= OnManageSecretsRequested;
+            _mainViewModel.OpenHistoryRequested -= OnShowHistoryRequested;
             _mainViewModel.AboutRequested -= OnAboutRequested;
             _mainViewModel.CleanupModeChanged -= OnCleanupModeChanged;
+        }
+
+        if (_historyLibrary is not null)
+        {
+            _historyLibrary.EntriesChanged -= OnHistoryEntriesChanged;
         }
 
         if (_hotkeyService is not null)
@@ -198,6 +209,14 @@ public partial class App : System.Windows.Application
         services.AddSingleton<SecretLibrary>();
         services.AddSingleton<SecretCoordinator>();
 
+        string historyPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            AppConstants.AppName,
+            AppConstants.CaptureHistoryFileName);
+        services.AddSingleton<ICaptureHistoryStore>(_ => new JsonCaptureHistoryStore(historyPath));
+        services.AddSingleton<CaptureHistoryLibrary>();
+        services.AddSingleton<CaptureHistoryCoordinator>();
+
         services.AddSingleton<CaptureCoordinator>();
         services.AddSingleton<InjectionCoordinator>();
         services.AddSingleton<IHotkeyService, HotkeyService>();
@@ -213,12 +232,16 @@ public partial class App : System.Windows.Application
         _injectionCoordinator = provider.GetRequiredService<InjectionCoordinator>();
         _snippetCoordinator = provider.GetRequiredService<SnippetCoordinator>();
         _secretCoordinator = provider.GetRequiredService<SecretCoordinator>();
+        _historyCoordinator = provider.GetRequiredService<CaptureHistoryCoordinator>();
+        _historyLibrary = provider.GetRequiredService<CaptureHistoryLibrary>();
+        _historyLibrary.EntriesChanged += OnHistoryEntriesChanged;
 
         _mainViewModel = provider.GetRequiredService<MainViewModel>();
         _mainViewModel.CaptureRequested += OnCaptureRequested;
         _mainViewModel.SettingsRequested += OnSettingsRequested;
         _mainViewModel.ManageSnippetsRequested += OnManageSnippetsRequested;
         _mainViewModel.ManageSecretsRequested += OnManageSecretsRequested;
+        _mainViewModel.OpenHistoryRequested += OnShowHistoryRequested;
         _mainViewModel.AboutRequested += OnAboutRequested;
         _mainViewModel.CleanupModeChanged += OnCleanupModeChanged;
 
@@ -227,6 +250,7 @@ public partial class App : System.Windows.Application
         _trayIconService.ShowHubRequested += OnShowHubRequested;
         _trayIconService.ManageSnippetsRequested += OnManageSnippetsRequested;
         _trayIconService.ManageSecretsRequested += OnManageSecretsRequested;
+        _trayIconService.ShowHistoryRequested += OnShowHistoryRequested;
         _trayIconService.CleanupModeChanged += OnCleanupModeChanged;
         _trayIconService.SettingsRequested += OnSettingsRequested;
         _trayIconService.ShowAboutRequested += OnAboutRequested;
@@ -242,6 +266,10 @@ public partial class App : System.Windows.Application
             new HotkeyBinding(AppConstants.AbortHotkeyId, settings.AbortHotkeyModifiers, settings.AbortHotkeyKey),
             new HotkeyBinding(AppConstants.PaletteHotkeyId, settings.PaletteHotkeyModifiers, settings.PaletteHotkeyKey),
             new HotkeyBinding(AppConstants.SecretPaletteHotkeyId, settings.SecretPaletteHotkeyModifiers, settings.SecretPaletteHotkeyKey),
+            new HotkeyBinding(
+                AppConstants.CaptureHistoryHotkeyId,
+                settings.HistoryPaletteHotkeyModifiers,
+                settings.HistoryPaletteHotkeyKey),
         ];
         provider.GetRequiredService<HotkeyRegistrar>().Initialize(userHotkeys);
 
@@ -347,6 +375,11 @@ public partial class App : System.Windows.Application
 
     private void OnManageSecretsRequested(object? sender, EventArgs e) => _secretCoordinator!.ShowManager();
 
+    private void OnShowHistoryRequested(object? sender, EventArgs e) => _historyCoordinator!.ShowPalette();
+
+    private void OnHistoryEntriesChanged(object? sender, EventArgs e)
+        => Dispatcher.InvokeAsync(() => _mainViewModel?.RefreshStatus());
+
     private void OnCleanupModeChanged(object? sender, OcrCleanupMode mode)
     {
         AppSettings settings = _serviceProvider!.GetRequiredService<AppSettings>();
@@ -451,6 +484,9 @@ public partial class App : System.Windows.Application
                 break;
             case AppConstants.SecretPaletteHotkeyId:
                 _secretCoordinator!.ShowPalette();
+                break;
+            case AppConstants.CaptureHistoryHotkeyId:
+                _historyCoordinator!.ShowPalette();
                 break;
             default:
                 break;

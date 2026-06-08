@@ -69,6 +69,30 @@ public sealed class ManagerViewModelTests
         store.SaveCount.Should().Be(saveCountAfterArrange);
     }
 
+    [Fact]
+    public async Task CaptureHistory_ClearAllCancelled_KeepsHistoryAndDoesNotPersistClear()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("first capture");
+        int saveCountAfterArrange = store.SaveCount;
+        DenyingConfirmationService confirmation = new();
+        CaptureHistoryCoordinator coordinator = new(
+            library,
+            new TestClipboardService(),
+            new TestNotificationService(),
+            new TestLocalizationManager(),
+            confirmation);
+
+        bool cleared = await coordinator.ClearAllAsync();
+
+        cleared.Should().BeFalse();
+        confirmation.CallCount.Should().Be(1);
+        library.Entries.Should().ContainSingle();
+        store.SavedEntries.Should().ContainSingle();
+        store.SaveCount.Should().Be(saveCountAfterArrange);
+    }
+
     private sealed class DenyingConfirmationService : IConfirmationService
     {
         public int CallCount { get; private set; }
@@ -127,6 +151,23 @@ public sealed class ManagerViewModelTests
         }
     }
 
+    private sealed class InMemoryCaptureHistoryStore : ICaptureHistoryStore
+    {
+        public List<CaptureHistoryEntry> SavedEntries { get; private set; } = [];
+
+        public int SaveCount { get; private set; }
+
+        public Task<IReadOnlyList<CaptureHistoryEntry>> LoadAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<CaptureHistoryEntry>>(SavedEntries);
+
+        public Task SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default)
+        {
+            SaveCount++;
+            SavedEntries = [.. entries];
+            return Task.CompletedTask;
+        }
+    }
+
     private sealed class InMemorySnippetStore : ISnippetStore
     {
         public List<Snippet> SavedSnippets { get; private set; } = [];
@@ -141,6 +182,18 @@ public sealed class ManagerViewModelTests
             SaveCount++;
             SavedSnippets = [.. snippets];
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class TestClipboardService : IClipboardService
+    {
+        public Task SetTextAsync(string text, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class TestNotificationService : INotificationService
+    {
+        public void Notify(string title, string message)
+        {
         }
     }
 }

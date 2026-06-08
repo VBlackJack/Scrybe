@@ -41,6 +41,11 @@ public static class SettingsValidator
             0,
             AppConstants.InjectionEnterExtraDelayMaxMs);
 
+        settings.CaptureHistoryMaxEntries = Math.Clamp(
+            settings.CaptureHistoryMaxEntries,
+            AppConstants.CaptureHistoryMaxEntriesMin,
+            AppConstants.CaptureHistoryMaxEntriesMax);
+
         if (!Enum.IsDefined(settings.CleanupMode))
         {
             settings.CleanupMode = OcrCleanupMode.Standard;

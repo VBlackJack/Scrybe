@@ -52,6 +52,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _saveCaptureCrop;
 
     [ObservableProperty]
+    private bool _enableCaptureHistory;
+
+    [ObservableProperty]
+    private int _captureHistoryMaxEntries;
+
+    [ObservableProperty]
     private string _localeCode;
 
     [ObservableProperty]
@@ -94,6 +100,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _prewarmOnStartup = settings.PrewarmOnStartup;
         _enablePreprocessing = settings.EnablePreprocessing;
         _saveCaptureCrop = settings.SaveCaptureCrop;
+        _enableCaptureHistory = settings.EnableCaptureHistory;
+        _captureHistoryMaxEntries = settings.CaptureHistoryMaxEntries;
         _localeCode = settings.LocaleCode;
         _cleanupMode = settings.CleanupMode;
         _injectionMode = settings.InjectionMode;
@@ -179,6 +187,10 @@ public sealed partial class SettingsViewModel : ObservableObject
             new HotkeyBinding(AbortRecorder.ActionId, AbortRecorder.Modifiers, AbortRecorder.Key),
             new HotkeyBinding(PaletteRecorder.ActionId, PaletteRecorder.Modifiers, PaletteRecorder.Key),
             new HotkeyBinding(SecretPaletteRecorder.ActionId, SecretPaletteRecorder.Modifiers, SecretPaletteRecorder.Key),
+            new HotkeyBinding(
+                AppConstants.CaptureHistoryHotkeyId,
+                _settings.HistoryPaletteHotkeyModifiers,
+                _settings.HistoryPaletteHotkeyKey),
         ];
 
         HotkeyBindingValidationResult validation = HotkeyBindingValidator.Validate(bindings);
@@ -218,6 +230,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.PrewarmOnStartup = PrewarmOnStartup;
         _settings.EnablePreprocessing = EnablePreprocessing;
         _settings.SaveCaptureCrop = SaveCaptureCrop;
+        _settings.EnableCaptureHistory = EnableCaptureHistory;
+        _settings.CaptureHistoryMaxEntries = CaptureHistoryMaxEntries;
         _settings.LocaleCode = LocaleCode;
         _settings.CleanupMode = CleanupMode;
         _settings.InjectionMode = InjectionMode;
@@ -226,6 +240,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         SettingsValidator.Validate(_settings);
         InjectionKeyDelayMs = _settings.InjectionKeyDelayMs;
+        CaptureHistoryMaxEntries = _settings.CaptureHistoryMaxEntries;
 
         FileLogger.SetEnabled(_settings.EnableLogging);
         await _store.SaveAsync(_settings).ConfigureAwait(true);
@@ -241,6 +256,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         AppConstants.AbortHotkeyId => _localization["Settings.HotkeyAbort"],
         AppConstants.PaletteHotkeyId => _localization["Settings.HotkeyPalette"],
         AppConstants.SecretPaletteHotkeyId => _localization["Settings.HotkeySecretPalette"],
+        AppConstants.CaptureHistoryHotkeyId => _localization["Settings.HotkeyHistoryPalette"],
         _ => actionId ?? string.Empty,
     };
 

@@ -288,11 +288,17 @@ public static class AppConstants
     /// <summary>File name (under <c>%LOCALAPPDATA%/Scrybe</c>) where DPAPI-protected secrets are stored.</summary>
     public const string SecretsFileName = "secrets.json";
 
+    /// <summary>File name (under <c>%LOCALAPPDATA%/Scrybe</c>) where DPAPI-protected OCR history is stored.</summary>
+    public const string CaptureHistoryFileName = "history.json";
+
     /// <summary>Identifier for the snippet-palette hotkey registration.</summary>
     public const string PaletteHotkeyId = "palette";
 
     /// <summary>Identifier for the secret-palette hotkey registration.</summary>
     public const string SecretPaletteHotkeyId = "secret-palette";
+
+    /// <summary>Identifier for the capture-history palette hotkey registration.</summary>
+    public const string CaptureHistoryHotkeyId = "history-palette";
 
     /// <summary>Default modifiers for the snippet-palette hotkey.</summary>
     public const string DefaultPaletteHotkeyModifiers = "Control+Alt";
@@ -305,6 +311,30 @@ public static class AppConstants
 
     /// <summary>Default key for the secret-palette hotkey.</summary>
     public const string DefaultSecretPaletteHotkeyKey = "K";
+
+    /// <summary>Default modifiers for the capture-history palette hotkey.</summary>
+    public const string DefaultHistoryPaletteHotkeyModifiers = "Control+Alt";
+
+    /// <summary>Default key for the capture-history palette hotkey.</summary>
+    public const string DefaultHistoryPaletteHotkeyKey = "H";
+
+    /// <summary>Default maximum number of OCR captures retained in history.</summary>
+    public const int DefaultCaptureHistoryMaxEntries = 25;
+
+    /// <summary>Minimum accepted OCR history size.</summary>
+    public const int CaptureHistoryMaxEntriesMin = 1;
+
+    /// <summary>Maximum accepted OCR history size.</summary>
+    public const int CaptureHistoryMaxEntriesMax = 200;
+
+    /// <summary>Maximum number of characters shown in a capture-history palette preview.</summary>
+    public const int CaptureHistoryPreviewMaxChars = 80;
+
+    /// <summary>Suffix appended to truncated capture-history previews.</summary>
+    public const string CaptureHistoryPreviewSuffix = "...";
+
+    /// <summary>Current-culture timestamp format used by capture-history palette entries.</summary>
+    public const string CaptureHistoryTimestampFormat = "g";
 
     /// <summary>File name (under <c>%LOCALAPPDATA%/Scrybe</c>) where user settings are persisted.</summary>
     public const string SettingsFileName = "settings.json";
