@@ -1,0 +1,51 @@
+<Window x:Class="Scrybe.App.Views.ConfirmationDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding DialogTitle, RelativeSource={RelativeSource Self}}"
+        Width="{StaticResource ConfirmationDialogWidth}"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}"
+        ShowInTaskbar="False"
+        UseLayoutRounding="True">
+
+    <Border Background="{StaticResource SurfaceBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="{StaticResource ConfirmationDialogBorderThickness}"
+            CornerRadius="{StaticResource ConfirmationDialogCornerRadius}"
+            Padding="{StaticResource ConfirmationDialogPadding}"
+            Margin="{StaticResource SpacingLg}">
+        <StackPanel>
+            <TextBlock Text="{Binding DialogTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                       Foreground="{StaticResource AccentBrush}"
+                       FontSize="{StaticResource FontSizeLarge}"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       Margin="{StaticResource MarginStackItem}" />
+
+            <TextBlock Text="{Binding DialogMessage, RelativeSource={RelativeSource AncestorType=Window}}"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       FontSize="{StaticResource FontSizeBody}"
+                       TextWrapping="Wrap"
+                       Margin="{StaticResource ConfirmationDialogMessageMargin}" />
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button x:Name="CancelButton"
+                        Content="{Binding CancelText, RelativeSource={RelativeSource AncestorType=Window}}"
+                        IsCancel="True"
+                        MinWidth="{StaticResource ConfirmationDialogButtonMinWidth}"
+                        Margin="{StaticResource ConfirmationDialogButtonMargin}" />
+
+                <Button Content="{Binding OkText, RelativeSource={RelativeSource AncestorType=Window}}"
+                        Click="OnOkClicked"
+                        MinWidth="{StaticResource ConfirmationDialogButtonMinWidth}"
+                        Background="{StaticResource AccentBrush}"
+                        Foreground="{StaticResource TextPrimaryBrush}"
+                        BorderThickness="{StaticResource ConfirmationDialogPrimaryBorderThickness}"
+                        FontWeight="SemiBold" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

@@ -90,6 +90,8 @@
   "Secrets.ConfirmTarget": "Inject secret into:\n\"{0}\"\n{1} (PID {2})\nhwnd {3}?",
   "Secrets.TargetUnavailable": "The captured target window is no longer available. Nothing was typed.",
   "Secrets.UntitledTarget": "(untitled window)",
+  "Dialog.Ok": "OK",
+  "Dialog.Cancel": "Cancel",
   "History.PaletteTitle": "Capture history",
   "History.Copy": "Copy",
   "History.ClearAll": "Clear all",

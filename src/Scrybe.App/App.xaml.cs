@@ -22,6 +22,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Scrybe.App.Localization;
 using Scrybe.App.Services;
+using Scrybe.App.Theming;
 using Scrybe.App.ViewModels;
 using Scrybe.App.Views;
 using Scrybe.Core;
@@ -190,7 +191,7 @@ public partial class App : System.Windows.Application
 
         services.AddSingleton<TrayIconService>();
         services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<TrayIconService>());
-        services.AddSingleton<IConfirmationService, MessageBoxConfirmationService>();
+        services.AddSingleton<IConfirmationService, ThemedConfirmationService>();
 
         string snippetsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -512,6 +513,7 @@ public partial class App : System.Windows.Application
         };
 
         Current.Resources.MergedDictionaries.Add(theme);
+        WindowTheming.RegisterDarkTitleBarForWindows();
         FileLogger.Info($"Theme applied: '{themeId}'.");
     }
 

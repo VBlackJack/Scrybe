@@ -90,6 +90,8 @@
   "Secrets.ConfirmTarget": "Injecter le secret dans :\n« {0} »\n{1} (PID {2})\nhwnd {3} ?",
   "Secrets.TargetUnavailable": "La fenêtre cible capturée n'est plus disponible. Rien n'a été tapé.",
   "Secrets.UntitledTarget": "(fenêtre sans titre)",
+  "Dialog.Ok": "OK",
+  "Dialog.Cancel": "Annuler",
   "History.PaletteTitle": "Historique des captures",
   "History.Copy": "Copier",
   "History.ClearAll": "Tout effacer",
