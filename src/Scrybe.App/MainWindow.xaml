@@ -187,20 +187,23 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.CaptureHotkey}" Style="{StaticResource HubFieldLabelStyle}" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CaptureHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,0,0,0" />
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Translate Hub.InjectHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
                                 <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding InjectHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.AbortHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AbortHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.SnippetPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SnippetPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.SecretPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SecretPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Translate Hub.HistoryPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding HistoryPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.ClipboardInjectHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ClipboardInjectHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.AbortHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AbortHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.SnippetPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SnippetPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Translate Hub.SecretPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SecretPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Translate Hub.HistoryPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding HistoryPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
                             </Grid>
                         </StackPanel>
                     </Border>

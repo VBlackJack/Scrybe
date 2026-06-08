@@ -67,6 +67,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private InjectionMode _injectionMode;
 
     [ObservableProperty]
+    private bool _clearClipboardAfterInjection;
+
+    [ObservableProperty]
     private int _injectionKeyDelayMs;
 
     [ObservableProperty]
@@ -105,6 +108,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _localeCode = settings.LocaleCode;
         _cleanupMode = settings.CleanupMode;
         _injectionMode = settings.InjectionMode;
+        _clearClipboardAfterInjection = settings.ClearClipboardAfterInjection;
         _injectionKeyDelayMs = settings.InjectionKeyDelayMs;
         _capturesDirectory = settings.CapturesDirectory ?? string.Empty;
 
@@ -187,6 +191,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         [
             new HotkeyBinding(CaptureRecorder.ActionId, CaptureRecorder.Modifiers, CaptureRecorder.Key),
             new HotkeyBinding(InjectRecorder.ActionId, InjectRecorder.Modifiers, InjectRecorder.Key),
+            new HotkeyBinding(
+                AppConstants.ClipboardInjectHotkeyId,
+                _settings.ClipboardInjectHotkeyModifiers,
+                _settings.ClipboardInjectHotkeyKey),
             new HotkeyBinding(AbortRecorder.ActionId, AbortRecorder.Modifiers, AbortRecorder.Key),
             new HotkeyBinding(PaletteRecorder.ActionId, PaletteRecorder.Modifiers, PaletteRecorder.Key),
             new HotkeyBinding(SecretPaletteRecorder.ActionId, SecretPaletteRecorder.Modifiers, SecretPaletteRecorder.Key),
@@ -238,6 +246,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.LocaleCode = LocaleCode;
         _settings.CleanupMode = CleanupMode;
         _settings.InjectionMode = InjectionMode;
+        _settings.ClearClipboardAfterInjection = ClearClipboardAfterInjection;
         _settings.InjectionKeyDelayMs = InjectionKeyDelayMs;
         _settings.CapturesDirectory = string.IsNullOrWhiteSpace(CapturesDirectory) ? null : CapturesDirectory.Trim();
 
@@ -257,6 +266,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         AppConstants.CaptureHotkeyId => _localization["Settings.HotkeyCapture"],
         AppConstants.InjectHotkeyId => _localization["Settings.HotkeyInject"],
+        AppConstants.ClipboardInjectHotkeyId => _localization["Settings.HotkeyClipboardInject"],
         AppConstants.AbortHotkeyId => _localization["Settings.HotkeyAbort"],
         AppConstants.PaletteHotkeyId => _localization["Settings.HotkeyPalette"],
         AppConstants.SecretPaletteHotkeyId => _localization["Settings.HotkeySecretPalette"],

@@ -55,6 +55,7 @@ public partial class App : System.Windows.Application
     private IHotkeyService? _hotkeyService;
     private CaptureCoordinator? _captureCoordinator;
     private InjectionCoordinator? _injectionCoordinator;
+    private ClipboardInjectionCoordinator? _clipboardInjectionCoordinator;
     private SnippetCoordinator? _snippetCoordinator;
     private SecretCoordinator? _secretCoordinator;
     private CaptureHistoryCoordinator? _historyCoordinator;
@@ -220,6 +221,8 @@ public partial class App : System.Windows.Application
 
         services.AddSingleton<CaptureCoordinator>();
         services.AddSingleton<InjectionCoordinator>();
+        services.AddSingleton<InjectionTargetConfirmer>();
+        services.AddSingleton<ClipboardInjectionCoordinator>();
         services.AddSingleton<IHotkeyService, HotkeyService>();
         services.AddSingleton<HotkeyRegistrar>();
     }
@@ -231,6 +234,7 @@ public partial class App : System.Windows.Application
 
         _captureCoordinator = provider.GetRequiredService<CaptureCoordinator>();
         _injectionCoordinator = provider.GetRequiredService<InjectionCoordinator>();
+        _clipboardInjectionCoordinator = provider.GetRequiredService<ClipboardInjectionCoordinator>();
         _snippetCoordinator = provider.GetRequiredService<SnippetCoordinator>();
         _secretCoordinator = provider.GetRequiredService<SecretCoordinator>();
         _historyCoordinator = provider.GetRequiredService<CaptureHistoryCoordinator>();
@@ -260,6 +264,10 @@ public partial class App : System.Windows.Application
         [
             new HotkeyBinding(AppConstants.CaptureHotkeyId, settings.HotkeyModifiers, settings.HotkeyKey),
             new HotkeyBinding(AppConstants.InjectHotkeyId, settings.InjectHotkeyModifiers, settings.InjectHotkeyKey),
+            new HotkeyBinding(
+                AppConstants.ClipboardInjectHotkeyId,
+                settings.ClipboardInjectHotkeyModifiers,
+                settings.ClipboardInjectHotkeyKey),
             new HotkeyBinding(AppConstants.AbortHotkeyId, settings.AbortHotkeyModifiers, settings.AbortHotkeyKey),
             new HotkeyBinding(AppConstants.PaletteHotkeyId, settings.PaletteHotkeyModifiers, settings.PaletteHotkeyKey),
             new HotkeyBinding(AppConstants.SecretPaletteHotkeyId, settings.SecretPaletteHotkeyModifiers, settings.SecretPaletteHotkeyKey),
@@ -439,6 +447,9 @@ public partial class App : System.Windows.Application
                 break;
             case AppConstants.InjectHotkeyId:
                 _ = _injectionCoordinator!.InjectLastTextAsync();
+                break;
+            case AppConstants.ClipboardInjectHotkeyId:
+                _ = _clipboardInjectionCoordinator!.InjectClipboardAsync();
                 break;
             case AppConstants.AbortHotkeyId:
                 _injectionCoordinator!.Abort();

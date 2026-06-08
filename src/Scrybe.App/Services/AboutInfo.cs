@@ -25,21 +25,18 @@ public sealed class AboutInfo
         string buildDate,
         string commitHash,
         string license,
-        string author,
         string copyright)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(buildDate);
         ArgumentException.ThrowIfNullOrWhiteSpace(commitHash);
         ArgumentException.ThrowIfNullOrWhiteSpace(license);
-        ArgumentException.ThrowIfNullOrWhiteSpace(author);
         ArgumentException.ThrowIfNullOrWhiteSpace(copyright);
 
         Version = version;
         BuildDate = buildDate;
         CommitHash = commitHash;
         License = license;
-        Author = author;
         Copyright = copyright;
     }
 
@@ -54,9 +51,6 @@ public sealed class AboutInfo
 
     /// <summary>License display value.</summary>
     public string License { get; }
-
-    /// <summary>Author display value.</summary>
-    public string Author { get; }
 
     /// <summary>Copyright display value.</summary>
     public string Copyright { get; }

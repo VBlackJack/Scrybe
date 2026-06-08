@@ -37,6 +37,31 @@ public sealed class ClipboardService : IClipboardService
     }
 
     /// <inheritdoc />
+    public async Task<string?> GetTextAsync(CancellationToken cancellationToken = default)
+    {
+        for (int attempt = 1; attempt <= AppConstants.ClipboardRetryCount; attempt++)
+        {
+            try
+            {
+                return _writer.GetText();
+            }
+            catch (Exception exception) when (attempt < AppConstants.ClipboardRetryCount)
+            {
+                FileLogger.Warn(
+                    $"Clipboard read failed (attempt {attempt}/{AppConstants.ClipboardRetryCount}): {exception.Message}");
+                await Task.Delay(AppConstants.ClipboardRetryDelayMs, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                FileLogger.Error("Clipboard read gave up after retries.", exception);
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    /// <inheritdoc />
     public async Task SetTextAsync(string text, CancellationToken cancellationToken = default)
     {
         for (int attempt = 1; attempt <= AppConstants.ClipboardRetryCount; attempt++)

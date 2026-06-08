@@ -15,6 +15,7 @@
  */
 
 using FluentAssertions;
+using Scrybe.Core;
 using Scrybe.Core.Input;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Models;
@@ -29,6 +30,7 @@ public sealed class HotkeyBindingTests
     [
         new HotkeyBinding("capture", "Control+Alt", "S"),
         new HotkeyBinding("inject", "Control+Alt", "V"),
+        new HotkeyBinding("clipboard-inject", "Control+Alt", "B"),
         new HotkeyBinding("abort", "Control+Alt", "Q"),
         new HotkeyBinding("palette", "Control+Alt", "P"),
     ];
@@ -101,12 +103,24 @@ public sealed class HotkeyBindingTests
     }
 
     [Fact]
+    public void Conversion_DefaultClipboardInjectionHotkey_IsCorrect()
+    {
+        bool parsed = HotkeyParser.TryParse(
+            AppConstants.DefaultClipboardInjectHotkeyModifiers,
+            AppConstants.DefaultClipboardInjectHotkeyKey,
+            out HotkeyDefinition? definition);
+
+        parsed.Should().BeTrue();
+        definition!.DisplayName.Should().Be("Control+Alt+B");
+    }
+
+    [Fact]
     public void Registrar_RegistrationConflict_RollsBackToPreviousBindings()
     {
         FakeHotkeyService hotkeys = new("Control+Alt+X");
         HotkeyRegistrar registrar = new(hotkeys);
         registrar.Initialize(ValidSet);
-        hotkeys.Registered.Should().HaveCount(4);
+        hotkeys.Registered.Should().HaveCount(5);
 
         List<HotkeyBinding> newSet = ValidSet
             .Select(binding => binding.ActionId == "inject" ? binding with { Key = "X" } : binding)
@@ -129,7 +143,7 @@ public sealed class HotkeyBindingTests
         HotkeyRegistrarResult result = registrar.Apply(ValidSet);
 
         result.Status.Should().Be(HotkeyRegistrarStatus.Success);
-        hotkeys.Registered.Should().HaveCount(4);
+        hotkeys.Registered.Should().HaveCount(5);
         registrar.Current.Should().BeEquivalentTo(ValidSet);
     }
 

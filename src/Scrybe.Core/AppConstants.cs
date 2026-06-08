@@ -167,6 +167,9 @@ public static class AppConstants
     /// <summary>Identifier for the inject-last-text hotkey registration.</summary>
     public const string InjectHotkeyId = "inject";
 
+    /// <summary>Identifier for the clipboard-to-keystrokes hotkey registration.</summary>
+    public const string ClipboardInjectHotkeyId = "clipboard-inject";
+
     /// <summary>Identifier for the emergency-abort hotkey registration.</summary>
     public const string AbortHotkeyId = "abort";
 
@@ -175,6 +178,12 @@ public static class AppConstants
 
     /// <summary>Default key for the inject-last-text hotkey.</summary>
     public const string DefaultInjectHotkeyKey = "V";
+
+    /// <summary>Default modifiers for the clipboard-to-keystrokes hotkey.</summary>
+    public const string DefaultClipboardInjectHotkeyModifiers = "Control+Alt";
+
+    /// <summary>Default key for clipboard injection; Insert is not supported by the current parser.</summary>
+    public const string DefaultClipboardInjectHotkeyKey = "B";
 
     /// <summary>Default modifiers for the emergency-abort hotkey.</summary>
     public const string DefaultAbortHotkeyModifiers = "Control+Alt";

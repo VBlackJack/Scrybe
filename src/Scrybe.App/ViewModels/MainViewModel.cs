@@ -64,6 +64,9 @@ public sealed partial class MainViewModel : ObservableObject
     private string _injectHotkeyText;
 
     [ObservableProperty]
+    private string _clipboardInjectHotkeyText;
+
+    [ObservableProperty]
     private string _abortHotkeyText;
 
     [ObservableProperty]
@@ -142,6 +145,7 @@ public sealed partial class MainViewModel : ObservableObject
         _selectedCleanupMode = settings.CleanupMode;
         _captureHotkeyText = string.Empty;
         _injectHotkeyText = string.Empty;
+        _clipboardInjectHotkeyText = string.Empty;
         _abortHotkeyText = string.Empty;
         _snippetPaletteHotkeyText = string.Empty;
         _secretPaletteHotkeyText = string.Empty;
@@ -181,6 +185,9 @@ public sealed partial class MainViewModel : ObservableObject
     {
         CaptureHotkeyText = HotkeyDisplayFormatter.Format(_settings.HotkeyModifiers, _settings.HotkeyKey);
         InjectHotkeyText = HotkeyDisplayFormatter.Format(_settings.InjectHotkeyModifiers, _settings.InjectHotkeyKey);
+        ClipboardInjectHotkeyText = HotkeyDisplayFormatter.Format(
+            _settings.ClipboardInjectHotkeyModifiers,
+            _settings.ClipboardInjectHotkeyKey);
         AbortHotkeyText = HotkeyDisplayFormatter.Format(_settings.AbortHotkeyModifiers, _settings.AbortHotkeyKey);
         SnippetPaletteHotkeyText = HotkeyDisplayFormatter.Format(_settings.PaletteHotkeyModifiers, _settings.PaletteHotkeyKey);
         SecretPaletteHotkeyText = HotkeyDisplayFormatter.Format(_settings.SecretPaletteHotkeyModifiers, _settings.SecretPaletteHotkeyKey);

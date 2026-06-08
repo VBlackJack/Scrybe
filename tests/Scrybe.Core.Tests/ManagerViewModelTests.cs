@@ -367,6 +367,9 @@ public sealed class ManagerViewModelTests
     {
         public string? Text { get; private set; }
 
+        public Task<string?> GetTextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(Text);
+
         public Task SetTextAsync(string text, CancellationToken cancellationToken = default)
         {
             Text = text;

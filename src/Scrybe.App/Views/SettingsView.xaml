@@ -98,6 +98,9 @@
                             <TextBlock Text="{loc:Translate Settings.InjectionMode}" Style="{StaticResource FieldLabelStyle}" />
                             <ComboBox ItemsSource="{Binding InjectionModeChoices}" SelectedValuePath="Value" SelectedValue="{Binding InjectionMode}" Style="{StaticResource SettingComboStyle}" />
                         </StackPanel>
+                        <CheckBox Content="{loc:Translate Settings.ClearClipboardAfterInjection}"
+                                  IsChecked="{Binding ClearClipboardAfterInjection}"
+                                  Style="{StaticResource SettingCheckBoxStyle}" />
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                             <TextBlock Text="{loc:Translate Settings.Pacing}" Style="{StaticResource FieldLabelStyle}" />
                             <TextBox Text="{Binding InjectionKeyDelayMs, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingTextBoxStyle}" Width="100" />

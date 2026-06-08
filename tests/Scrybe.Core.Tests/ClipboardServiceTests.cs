@@ -49,6 +49,33 @@ public sealed class ClipboardServiceTests
         writer.Calls.Should().Be(AppConstants.ClipboardRetryCount);
     }
 
+    [Fact]
+    public async Task GetTextAsync_RetriesUntilSuccess()
+    {
+        FakeClipboardWriter writer = new(failuresBeforeSuccess: 2)
+        {
+            Text = "payload",
+        };
+        ClipboardService service = new(writer);
+
+        string? text = await service.GetTextAsync();
+
+        text.Should().Be("payload");
+        writer.Calls.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetTextAsync_WhenAllAttemptsFail_ReturnsNullAndStopsAtRetryLimit()
+    {
+        FakeClipboardWriter writer = new(failuresBeforeSuccess: int.MaxValue);
+        ClipboardService service = new(writer);
+
+        string? text = await service.GetTextAsync();
+
+        text.Should().BeNull();
+        writer.Calls.Should().Be(AppConstants.ClipboardRetryCount);
+    }
+
     private sealed class FakeClipboardWriter : IClipboardWriter
     {
         private readonly int _failuresBeforeSuccess;
@@ -57,7 +84,21 @@ public sealed class ClipboardServiceTests
 
         public int Calls { get; private set; }
 
+        public string? Text { get; set; }
+
         public string? LastText { get; private set; }
+
+        public string? GetText()
+        {
+            Calls++;
+
+            if (Calls <= _failuresBeforeSuccess)
+            {
+                throw new InvalidOperationException("Clipboard is busy.");
+            }
+
+            return Text;
+        }
 
         public void SetText(string text)
         {

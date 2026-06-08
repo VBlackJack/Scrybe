@@ -26,7 +26,6 @@ public sealed class AboutInfoProvider
     private const string UnknownValue = "-";
     private const string DevCommitValue = "dev";
     private const string LicenseValue = "Apache License 2.0";
-    private const string AuthorValue = "Julien Bombled";
     private const string CopyrightValue = "Copyright 2026 Julien Bombled";
     private const int ShortCommitLength = 7;
 
@@ -42,7 +41,7 @@ public sealed class AboutInfoProvider
         string buildDate = ResolveMetadataValue(assembly, BuildDateMetadataName, UnknownValue);
         string commitHash = ResolveCommitHash(assembly, informationalVersion);
 
-        return new AboutInfo(version, buildDate, commitHash, LicenseValue, AuthorValue, CopyrightValue);
+        return new AboutInfo(version, buildDate, commitHash, LicenseValue, CopyrightValue);
     }
 
     private static string ResolveVersion(Assembly assembly, string? informationalVersion)

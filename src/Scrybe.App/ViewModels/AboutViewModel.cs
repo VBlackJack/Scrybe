@@ -23,6 +23,8 @@ namespace Scrybe.App.ViewModels;
 /// <summary>View model for the About tab.</summary>
 public sealed class AboutViewModel : ObservableObject
 {
+    private const string UnknownValue = "-";
+
     private readonly ILocalizationManager _localization;
     private readonly AboutInfoProvider _aboutInfoProvider;
     private string _title = string.Empty;
@@ -92,14 +94,25 @@ public sealed class AboutViewModel : ObservableObject
         AppName = _localization["AppTitle"];
         Tagline = _localization["AppTagline"];
         Version = aboutInfo.Version;
-        Rows =
-        [
-            new AboutDetailRow(_localization["About.Version"], aboutInfo.Version),
-            new AboutDetailRow(_localization["About.BuildDate"], aboutInfo.BuildDate),
-            new AboutDetailRow(_localization["About.Commit"], aboutInfo.CommitHash),
-            new AboutDetailRow(_localization["About.License"], aboutInfo.License),
-            new AboutDetailRow(_localization["About.Author"], aboutInfo.Author),
-            new AboutDetailRow(_localization["About.Copyright"], aboutInfo.Copyright),
-        ];
+
+        List<AboutDetailRow> rows = [];
+        AddRow(rows, _localization["About.Version"], aboutInfo.Version, includeUnknown: true);
+        AddRow(rows, _localization["About.BuildDate"], aboutInfo.BuildDate);
+        AddRow(rows, _localization["About.Commit"], aboutInfo.CommitHash, includeUnknown: true);
+        AddRow(rows, _localization["About.License"], aboutInfo.License, includeUnknown: true);
+        AddRow(rows, _localization["About.Copyright"], aboutInfo.Copyright, includeUnknown: true);
+        Rows = rows;
     }
+
+    private static void AddRow(List<AboutDetailRow> rows, string label, string value, bool includeUnknown = false)
+    {
+        if (includeUnknown || IsKnown(value))
+        {
+            rows.Add(new AboutDetailRow(label, value));
+        }
+    }
+
+    private static bool IsKnown(string value)
+        => !string.IsNullOrWhiteSpace(value)
+        && !string.Equals(value.Trim(), UnknownValue, StringComparison.Ordinal);
 }

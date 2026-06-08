@@ -17,12 +17,16 @@
 namespace Scrybe.Core.Interfaces;
 
 /// <summary>
-/// Low-level seam that performs a single clipboard write. The platform implementation handles
+/// Low-level adapter that performs a single clipboard read or write. The platform implementation handles
 /// thread affinity; the retry policy lives in <see cref="IClipboardService"/> so it can be tested
 /// without a real clipboard.
 /// </summary>
 public interface IClipboardWriter
 {
+    /// <summary>Reads Unicode text from the system clipboard. May throw if the clipboard is busy.</summary>
+    /// <returns>The clipboard text, or <see langword="null"/> when the clipboard contains no text.</returns>
+    string? GetText();
+
     /// <summary>Writes <paramref name="text"/> to the system clipboard. May throw if the clipboard is busy.</summary>
     /// <param name="text">The Unicode text to place on the clipboard.</param>
     void SetText(string text);

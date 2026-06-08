@@ -20,9 +20,6 @@ using Scrybe.App.Views;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Logging;
 using Scrybe.Core.Security;
-using System.Globalization;
-using System.Windows;
-using WpfMessageBox = System.Windows.MessageBox;
 
 namespace Scrybe.App.Services;
 
@@ -31,6 +28,7 @@ public sealed class SecretCoordinator
 {
     private readonly SecretLibrary _library;
     private readonly InjectionCoordinator _injection;
+    private readonly InjectionTargetConfirmer _targetConfirmer;
     private readonly ILocalizationManager _localization;
 
     private SecretPaletteWindow? _palette;
@@ -38,17 +36,21 @@ public sealed class SecretCoordinator
     /// <summary>Initializes the coordinator.</summary>
     /// <param name="library">The protected secret library.</param>
     /// <param name="injection">The injection coordinator.</param>
+    /// <param name="targetConfirmer">Shared native target confirmation gate.</param>
     /// <param name="localization">Localization source for secret injection confirmations.</param>
     public SecretCoordinator(
         SecretLibrary library,
         InjectionCoordinator injection,
+        InjectionTargetConfirmer targetConfirmer,
         ILocalizationManager localization)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(injection);
+        ArgumentNullException.ThrowIfNull(targetConfirmer);
         ArgumentNullException.ThrowIfNull(localization);
         _library = library;
         _injection = injection;
+        _targetConfirmer = targetConfirmer;
         _localization = localization;
     }
 
@@ -79,21 +81,13 @@ public sealed class SecretCoordinator
 
     private async Task ConfirmAndInjectSecretAsync(string secretId, IntPtr target)
     {
-        if (!TryConfirmTarget(target))
+        if (!_targetConfirmer.TryConfirmAndRestore(
+            target,
+            _localization["Secrets.ConfirmTitle"],
+            _localization["Secrets.ConfirmTarget"],
+            _localization["Secrets.TargetUnavailable"],
+            _localization["Secrets.UntitledTarget"]))
         {
-            return;
-        }
-
-        if (!InjectionInterop.TryGetTargetInfo(target, out _))
-        {
-            ShowTargetUnavailable();
-            return;
-        }
-
-        if (!InjectionInterop.TryRestoreForeground(target))
-        {
-            FileLogger.Warn("Secret target restore failed; injection aborted.");
-            ShowTargetUnavailable();
             return;
         }
 
@@ -123,49 +117,5 @@ public sealed class SecretCoordinator
         {
             SecretMemory.Clear(secret);
         }
-    }
-
-    private bool TryConfirmTarget(IntPtr target)
-    {
-        if (!InjectionInterop.TryGetTargetInfo(target, out InjectionInterop.TargetInfo? targetInfo) || targetInfo is null)
-        {
-            ShowTargetUnavailable();
-            return false;
-        }
-
-        string title = string.IsNullOrWhiteSpace(targetInfo.Title)
-            ? _localization["Secrets.UntitledTarget"]
-            : targetInfo.Title;
-        string handle = "0x" + targetInfo.Hwnd.ToInt64().ToString("X", CultureInfo.InvariantCulture);
-        string message = string.Format(
-            CultureInfo.CurrentCulture,
-            _localization["Secrets.ConfirmTarget"],
-            title,
-            targetInfo.ProcessName,
-            targetInfo.ProcessId,
-            handle);
-
-        MessageBoxResult result = WpfMessageBox.Show(
-            message,
-            _localization["Secrets.ConfirmTitle"],
-            MessageBoxButton.OKCancel,
-            MessageBoxImage.Warning);
-
-        if (result != MessageBoxResult.OK)
-        {
-            FileLogger.Info("Secret target confirmation cancelled.");
-            return false;
-        }
-
-        return true;
-    }
-
-    private void ShowTargetUnavailable()
-    {
-        WpfMessageBox.Show(
-            _localization["Secrets.TargetUnavailable"],
-            _localization["Secrets.ConfirmTitle"],
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
     }
 }

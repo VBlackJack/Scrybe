@@ -39,6 +39,9 @@ public sealed class SettingsStoreTests
                 CleanupMode = OcrCleanupMode.LogCleaner,
                 InjectionMode = InjectionMode.Scancode,
                 InjectionKeyDelayMs = 40,
+                ClipboardInjectHotkeyModifiers = "Control+Shift",
+                ClipboardInjectHotkeyKey = "B",
+                ClearClipboardAfterInjection = false,
                 PrewarmOnStartup = false,
                 CapturesDirectory = @"D:\caps",
             };
@@ -66,6 +69,9 @@ public sealed class SettingsStoreTests
         result.Existed.Should().BeFalse();
         result.Settings.CleanupMode.Should().Be(OcrCleanupMode.Standard);
         result.Settings.EnableLogging.Should().BeTrue();
+        result.Settings.ClipboardInjectHotkeyModifiers.Should().Be(AppConstants.DefaultClipboardInjectHotkeyModifiers);
+        result.Settings.ClipboardInjectHotkeyKey.Should().Be(AppConstants.DefaultClipboardInjectHotkeyKey);
+        result.Settings.ClearClipboardAfterInjection.Should().BeTrue();
     }
 
     [Fact]
@@ -100,6 +106,7 @@ public sealed class SettingsStoreTests
             result.Settings.EnableLogging.Should().BeFalse();
             result.Settings.CleanupMode.Should().Be(OcrCleanupMode.Standard);
             result.Settings.InjectionKeyDelayMs.Should().Be(AppConstants.InjectionKeyDelayMs);
+            result.Settings.ClearClipboardAfterInjection.Should().BeTrue();
         }
         finally
         {

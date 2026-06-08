@@ -17,11 +17,16 @@
 namespace Scrybe.Core.Interfaces;
 
 /// <summary>
-/// Places text on the system clipboard, transparently retrying the transient "clipboard busy"
+/// Reads and writes system clipboard text, transparently retrying the transient "clipboard busy"
 /// failures that occur when another process holds the clipboard. Never throws.
 /// </summary>
 public interface IClipboardService
 {
+    /// <summary>Reads text from the clipboard, retrying on transient failures.</summary>
+    /// <param name="cancellationToken">Token used to cancel between retries.</param>
+    /// <returns>The clipboard text, or <see langword="null"/> when unavailable or non-text.</returns>
+    Task<string?> GetTextAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Sets <paramref name="text"/> on the clipboard, retrying on transient failures.</summary>
     /// <param name="text">The text to place on the clipboard.</param>
     /// <param name="cancellationToken">Token used to cancel between retries.</param>

@@ -26,6 +26,13 @@ namespace Scrybe.App.Services;
 public sealed class WpfClipboardWriter : IClipboardWriter
 {
     /// <inheritdoc />
+    public string? GetText()
+        => System.Windows.Application.Current.Dispatcher.Invoke(
+            () => System.Windows.Clipboard.ContainsText()
+                ? System.Windows.Clipboard.GetText(System.Windows.TextDataFormat.UnicodeText)
+                : null);
+
+    /// <inheritdoc />
     public void SetText(string text)
     {
         System.Windows.Application.Current.Dispatcher.Invoke(

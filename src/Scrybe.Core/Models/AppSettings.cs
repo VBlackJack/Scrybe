@@ -76,6 +76,15 @@ public sealed class AppSettings
     /// <summary>Key for the hotkey that injects the last OCR text.</summary>
     public string InjectHotkeyKey { get; set; } = AppConstants.DefaultInjectHotkeyKey;
 
+    /// <summary>Modifiers for the hotkey that injects clipboard text as keystrokes.</summary>
+    public string ClipboardInjectHotkeyModifiers { get; set; } = AppConstants.DefaultClipboardInjectHotkeyModifiers;
+
+    /// <summary>Key for the hotkey that injects clipboard text as keystrokes.</summary>
+    public string ClipboardInjectHotkeyKey { get; set; } = AppConstants.DefaultClipboardInjectHotkeyKey;
+
+    /// <summary>Whether clipboard text is cleared after clipboard injection. Default: <see langword="true"/>.</summary>
+    public bool ClearClipboardAfterInjection { get; set; } = true;
+
     /// <summary>Modifiers for the emergency-abort hotkey.</summary>
     public string AbortHotkeyModifiers { get; set; } = AppConstants.DefaultAbortHotkeyModifiers;
 
