@@ -89,7 +89,8 @@ function Get-ProjectAssemblyName {
 }
 
 function Get-CurrentCommitHash {
-    [string] $commit = (& git rev-parse --short HEAD).Trim()
+    [string] $commit = [string] (@(& git rev-parse --short HEAD) | Select-Object -First 1)
+    $commit = $commit.Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($commit)) {
         throw "Unable to resolve the current commit hash."
     }
@@ -124,7 +125,7 @@ function Get-GitTagSequences {
     )
 
     [int[]] $sequences = @()
-    [string[]] $tags = & git tag --list "v$DatePrefix*" 2>$null
+    [string[]] $tags = @(& git tag --list "v$DatePrefix*" 2>$null)
     if ($LASTEXITCODE -ne 0) {
         return $sequences
     }
@@ -273,17 +274,19 @@ function Restore-FileContent {
 }
 
 function Assert-PublishPreconditions {
-    [string] $branch = (& git branch --show-current).Trim()
+    [string] $branch = [string] (@(& git branch --show-current) | Select-Object -First 1)
+    $branch = $branch.Trim()
     if ($branch -ne 'main') {
         throw "Publishing requires branch 'main'. Current branch: '$branch'."
     }
 
-    [string[]] $status = & git status --porcelain
+    [string[]] $status = @(& git status --porcelain)
     if ($status.Count -gt 0) {
         throw "Publishing requires a clean working tree."
     }
 
-    [string] $remote = (& git remote get-url origin).Trim()
+    [string] $remote = [string] (@(& git remote get-url origin) | Select-Object -First 1)
+    $remote = $remote.Trim()
     if ($remote -notmatch 'github\.com[:/]VBlackJack/Scrybe(\.git)?$') {
         throw "Publishing requires origin to point to $Repository. Current origin: $remote"
     }
@@ -330,11 +333,7 @@ function Publish-GitHubRelease {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [string] $ZipPath,
-
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
-        [string] $PropsPath
+        [string] $ZipPath
     )
 
     [string] $tag = "v$BuildNumber"
@@ -342,8 +341,6 @@ function Publish-GitHubRelease {
     [string] $sizeMiB = "{0:N2}" -f ($zip.Length / 1MB)
     [string] $notes = "Scrybe v$BuildNumber`n`nAsset: $($zip.Name) ($sizeMiB MiB)"
 
-    Invoke-Tool -FilePath 'git' -Arguments @('add', $PropsPath)
-    Invoke-Tool -FilePath 'git' -Arguments @('commit', '-m', "release: $tag")
     Invoke-Tool -FilePath 'git' -Arguments @('tag', $tag)
     Invoke-Tool -FilePath 'git' -Arguments @('push', 'origin', 'main')
     Invoke-Tool -FilePath 'git' -Arguments @('push', 'origin', $tag)
@@ -378,6 +375,8 @@ function Publish-GitHubRelease {
 [string[]] $buildMetadataProperties = @()
 [bool] $versionWasStamped = $false
 [bool] $releaseWasCommitted = $false
+[bool] $releaseCommitWasCreated = $false
+[bool] $releaseCommitShouldRollback = $false
 
 if ($Publish -and $Mode -ne 'Release') {
     throw "Publishing requires -Mode Release."
@@ -389,8 +388,10 @@ if ($Publish -and -not $DryRun) {
 
 if ($Mode -eq 'Release') {
     $buildDate = (Get-Date).ToString('yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
-    $commitHash = Get-CurrentCommitHash
-    $buildMetadataProperties = @("-p:BuildDate=$buildDate", "-p:CommitHash=$commitHash")
+    if (-not ($Publish -and -not $DryRun)) {
+        $commitHash = Get-CurrentCommitHash
+        $buildMetadataProperties = @("-p:BuildDate=$buildDate", "-p:CommitHash=$commitHash")
+    }
 }
 
 Write-Output "Scrybe build"
@@ -399,7 +400,9 @@ Write-Output "Build number: $($versionInfo.BuildNumber)"
 Write-Output "Assembly version: $($versionInfo.AssemblyVersion)"
 if ($Mode -eq 'Release') {
     Write-Output "Build date: $buildDate"
-    Write-Output "Commit hash: $commitHash"
+    if (-not [string]::IsNullOrWhiteSpace($commitHash)) {
+        Write-Output "Commit hash: $commitHash"
+    }
 }
 if ($DryRun) {
     Write-Output "Dry run: true"
@@ -417,6 +420,19 @@ try {
 
     Write-Output "Running tests..."
     Invoke-Tool -FilePath 'dotnet' -Arguments @('test', $solutionPath, '--verbosity', 'normal')
+
+    if ($Publish -and -not $DryRun) {
+        [string] $tag = "v$($versionInfo.BuildNumber)"
+        Invoke-Tool -FilePath 'git' -Arguments @('add', $propsPath)
+        Invoke-Tool -FilePath 'git' -Arguments @('commit', '-m', "release: $tag")
+        $releaseCommitWasCreated = $true
+        $releaseCommitShouldRollback = $true
+
+        $commitHash = Get-CurrentCommitHash
+        $buildMetadataProperties = @("-p:BuildDate=$buildDate", "-p:CommitHash=$commitHash")
+        Write-Output "Release commit: $commitHash"
+        Write-Output "Commit hash: $commitHash"
+    }
 
     Write-Output "Building solution..."
     [string[]] $buildArgs = @('build', $solutionPath, '--configuration', $Mode) + $buildMetadataProperties
@@ -476,13 +492,19 @@ try {
             Write-Output "Would run: gh release create $tag `"$zipPath`" --repo $Repository --title `"$tag`" --notes <notes>"
         }
         elseif ($Publish) {
-            Publish-GitHubRelease -BuildNumber $versionInfo.BuildNumber -ZipPath $zipPath -PropsPath $propsPath
+            $releaseCommitShouldRollback = $false
+            Publish-GitHubRelease -BuildNumber $versionInfo.BuildNumber -ZipPath $zipPath
             $releaseWasCommitted = $true
         }
     }
 }
 finally {
-    if ($versionWasStamped -and -not $releaseWasCommitted) {
+    if ($releaseCommitShouldRollback) {
+        Invoke-Tool -FilePath 'git' -Arguments @('reset', '--mixed', 'HEAD~1')
+        Restore-FileContent -Path $propsPath -Content $originalPropsContent
+        Write-Output "Release commit rolled back."
+    }
+    elseif ($versionWasStamped -and -not $releaseWasCommitted -and -not $releaseCommitWasCreated) {
         Restore-FileContent -Path $propsPath -Content $originalPropsContent
         Write-Output "Directory.Build.props restored."
     }
