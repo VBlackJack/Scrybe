@@ -1,0 +1,146 @@
+/*
+ * Copyright 2026 Julien Bombled
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using FluentAssertions;
+using Scrybe.App.Services;
+using Scrybe.App.ViewModels;
+using Scrybe.Core.Interfaces;
+using Scrybe.Core.Models;
+using Xunit;
+
+namespace Scrybe.Core.Tests;
+
+/// <summary>Tests for App manager view-model guard rails that protect persisted user data.</summary>
+public sealed class ManagerViewModelTests
+{
+    [Fact]
+    public async Task SecretManager_DeleteCancelled_KeepsSecretAndDoesNotPersistDelete()
+    {
+        InMemorySecretStore store = new();
+        SecretLibrary library = new(store, new TestSecretProtector());
+        await library.SaveAsync(null, "Production login", "admin", "secret");
+        int saveCountAfterArrange = store.SaveCount;
+        DenyingConfirmationService confirmation = new();
+        SecretManagerViewModel viewModel = new(library, new TestLocalizationManager(), confirmation)
+        {
+            SelectedSecret = library.Secrets.Single(),
+        };
+
+        await viewModel.DeleteCommand.ExecuteAsync(null);
+
+        confirmation.CallCount.Should().Be(1);
+        library.Secrets.Should().ContainSingle(secret => secret.Name == "Production login");
+        store.SavedSecrets.Should().ContainSingle(secret => secret.Name == "Production login");
+        store.SaveCount.Should().Be(saveCountAfterArrange);
+    }
+
+    [Fact]
+    public async Task SnippetManager_DeleteCancelled_KeepsSnippetAndDoesNotPersistDelete()
+    {
+        InMemorySnippetStore store = new();
+        SnippetLibrary library = new(store);
+        Snippet snippet = new("snippet-1", "Package acceptance", null, "apt install {{package}}", []);
+        await library.SaveAsync(snippet);
+        int saveCountAfterArrange = store.SaveCount;
+        DenyingConfirmationService confirmation = new();
+        SnippetManagerViewModel viewModel = new(library, new TestLocalizationManager(), confirmation)
+        {
+            SelectedSnippet = library.Snippets.Single(),
+        };
+
+        await viewModel.DeleteCommand.ExecuteAsync(null);
+
+        confirmation.CallCount.Should().Be(1);
+        library.Snippets.Should().ContainSingle(existing => existing.Name == "Package acceptance");
+        store.SavedSnippets.Should().ContainSingle(existing => existing.Name == "Package acceptance");
+        store.SaveCount.Should().Be(saveCountAfterArrange);
+    }
+
+    private sealed class DenyingConfirmationService : IConfirmationService
+    {
+        public int CallCount { get; private set; }
+
+        public bool ConfirmDanger(string title, string message)
+        {
+            CallCount++;
+            return false;
+        }
+    }
+
+    private sealed class TestLocalizationManager : ILocalizationManager
+    {
+        public string this[string key] => key switch
+        {
+            "Manager.DeleteConfirmTitle" => "Delete snippet",
+            "Manager.DeleteConfirmMessage" => "Delete snippet \"{0}\"?",
+            "Secrets.DeleteConfirmTitle" => "Delete secret",
+            "Secrets.DeleteConfirmMessage" => "Delete secret \"{0}\"?",
+            _ => key,
+        };
+
+        public string Current => "en";
+
+        public event EventHandler? LocaleChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public Task LoadAsync(string localeCode, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class TestSecretProtector : ISecretProtector
+    {
+        public string Protect(string secret) => $"protected:{secret}";
+
+        public char[] UnprotectToChars(string protectedSecret) =>
+            protectedSecret["protected:".Length..].ToCharArray();
+    }
+
+    private sealed class InMemorySecretStore : ISecretStore
+    {
+        public List<SecretEntry> SavedSecrets { get; private set; } = [];
+
+        public int SaveCount { get; private set; }
+
+        public Task<IReadOnlyList<SecretEntry>> LoadAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SecretEntry>>(SavedSecrets);
+
+        public Task SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
+        {
+            SaveCount++;
+            SavedSecrets = [.. secrets];
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class InMemorySnippetStore : ISnippetStore
+    {
+        public List<Snippet> SavedSnippets { get; private set; } = [];
+
+        public int SaveCount { get; private set; }
+
+        public Task<IReadOnlyList<Snippet>> LoadAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Snippet>>(SavedSnippets);
+
+        public Task SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
+        {
+            SaveCount++;
+            SavedSnippets = [.. snippets];
+            return Task.CompletedTask;
+        }
+    }
+}

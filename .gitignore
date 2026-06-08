@@ -1,0 +1,28 @@
+# .NET build output
+bin/
+obj/
+Dist/
+[Dd]ebug/
+[Rr]elease/
+
+# Visual Studio / Rider user-specific files
+*.user
+*.suo
+.vs/
+.idea/
+
+# Test results
+[Tt]est[Rr]esults/
+*.trx
+
+# Runtime logs produced by Scrybe
+logs/
+*.log
+
+# Local hidden tooling (never versioned)
+.c*/
+
+# Local design, prompt, audit and research archive (kept on disk, never versioned)
+docs/prompts/
+docs/audits/
+docs/research/

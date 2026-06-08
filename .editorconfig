@@ -1,0 +1,29 @@
+root = true
+
+# Scrybe code style - enforced at build time via EnforceCodeStyleInBuild + TreatWarningsAsErrors.
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,xaml}]
+indent_size = 4
+
+[*.{json,xml,csproj,props,targets,slnx}]
+indent_size = 2
+
+[*.cs]
+# Explicit types only - "var" is forbidden across the codebase.
+csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_when_type_is_apparent = false:warning
+csharp_style_var_elsewhere = false:warning
+
+# File-scoped namespaces are mandatory.
+csharp_style_namespace_declarations = file_scoped:warning
+
+# Usings ordering.
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false

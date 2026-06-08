@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net10.0-windows10.0.19041.0 + WPF so the OCR before/after test can decode the fixture and
+         re-encode the pre-processed buffer with the same imaging stack as the app, and App view-model
+         tests can reference the WPF host project. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <!-- The WindowsDesktop implicit-usings set (enabled by UseWPF) drops System.IO; restore it. -->
+  <ItemGroup>
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!-- FluentAssertions pinned to 7.x: version 8+ moved to a commercial Xceed license,
+         which is incompatible with the project's Apache 2.0 mandate. -->
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Scrybe.App\Scrybe.App.csproj" />
+    <ProjectReference Include="..\..\src\Scrybe.Core\Scrybe.Core.csproj" />
+    <ProjectReference Include="..\..\src\Scrybe.Ocr\Scrybe.Ocr.csproj" />
+  </ItemGroup>
+
+  <!-- Bundle the offline traineddata and the OCR fixture next to the test host. -->
+  <ItemGroup>
+    <None Include="..\..\tessdata\*.traineddata" Link="tessdata\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="fixtures\*.png" Link="fixtures\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

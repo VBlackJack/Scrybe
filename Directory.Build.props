@@ -1,0 +1,29 @@
+<Project>
+
+  <!--
+    Solution-wide build properties for Scrybe.
+    Enforces the non-negotiable quality bar: nullable reference types,
+    warnings treated as errors, and code-style rules enforced at build time
+    (so the editorconfig "no var" / file-scoped namespace rules actually fail
+    the build instead of being silently ignored).
+  -->
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>Julien Bombled</Authors>
+    <Company>Julien Bombled</Company>
+    <Product>Scrybe</Product>
+    <Copyright>Copyright 2026 Julien Bombled</Copyright>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

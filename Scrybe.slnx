@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Scrybe.Core/Scrybe.Core.csproj" />
+    <Project Path="src/Scrybe.Ocr/Scrybe.Ocr.csproj" />
+    <Project Path="src/Scrybe.App/Scrybe.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Scrybe.Core.Tests/Scrybe.Core.Tests.csproj" />
+  </Folder>
+</Solution>

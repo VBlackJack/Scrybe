@@ -1,0 +1,33 @@
+<UserControl x:Class="Scrybe.App.Views.HotkeyRecorder"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Scrybe.App.Localization"
+             Focusable="True"
+             Margin="0,3,0,3">
+    <StackPanel Orientation="Horizontal">
+        <TextBlock Text="{Binding Label}"
+                   Width="170"
+                   VerticalAlignment="Center"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   FontSize="{StaticResource FontSizeBody}" />
+        <Border Width="150"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="8,4,8,4"
+                VerticalAlignment="Center">
+            <TextBlock Text="{Binding Display}"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       FontFamily="Consolas"
+                       TextAlignment="Center" />
+        </Border>
+        <Button Content="{loc:Translate Settings.Record}"
+                Click="OnRecordClick"
+                Margin="8,0,0,0"
+                Padding="10,4,10,4"
+                Background="{StaticResource CardBrush}"
+                Foreground="{StaticResource TextPrimaryBrush}"
+                BorderThickness="0" />
+    </StackPanel>
+</UserControl>

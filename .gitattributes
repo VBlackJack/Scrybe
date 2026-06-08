@@ -1,0 +1,8 @@
+# Normalize line endings. Scrybe is a Windows-only application, so text files use CRLF.
+* text=auto eol=crlf
+
+# Binary assets must never be normalized.
+*.png binary
+*.ico binary
+*.snk binary
+*.traineddata binary

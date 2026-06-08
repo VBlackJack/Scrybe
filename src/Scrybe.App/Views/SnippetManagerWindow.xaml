@@ -1,0 +1,82 @@
+<Window x:Class="Scrybe.App.Views.SnippetManagerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:Scrybe.App.Localization"
+        Title="{loc:Translate Manager.Title}"
+        Height="560"
+        Width="840"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}"
+        UseLayoutRounding="True">
+
+    <Grid Margin="{StaticResource SpacingLg}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="270" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Column="0" Margin="0,0,16,0">
+            <Button DockPanel.Dock="Bottom"
+                    Content="{loc:Translate Manager.New}"
+                    Command="{Binding NewCommand}"
+                    Margin="0,12,0,0"
+                    Padding="{StaticResource PaddingButtonPrimary}"
+                    Background="{StaticResource CardBrush}"
+                    Foreground="{StaticResource TextPrimaryBrush}"
+                    BorderThickness="0" />
+            <ListBox ItemsSource="{Binding Snippets}"
+                     SelectedItem="{Binding SelectedSnippet}"
+                     DisplayMemberPath="Name"
+                     Background="{StaticResource SurfaceBrush}"
+                     Foreground="{StaticResource TextPrimaryBrush}"
+                     BorderBrush="{StaticResource BorderBrush}"
+                     BorderThickness="1"
+                     FontSize="{StaticResource FontSizeBody}" />
+        </DockPanel>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{loc:Translate Manager.Name}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
+            <TextBox Grid.Row="0" Margin="120,0,0,8" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" />
+
+            <TextBlock Grid.Row="1" Text="{loc:Translate Manager.Category}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
+            <TextBox Grid.Row="1" Margin="120,0,0,8" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" />
+
+            <StackPanel Grid.Row="2">
+                <TextBlock Text="{loc:Translate Manager.Template}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
+                <TextBlock Text="{loc:Translate Manager.TemplateHint}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
+            </StackPanel>
+            <TextBox Grid.Row="3" Margin="0,20,0,8" Text="{Binding Template, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" FontFamily="Consolas" />
+
+            <TextBlock Grid.Row="4" Text="{loc:Translate Manager.Parameters}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
+            <TextBox Grid.Row="4" Margin="0,20,0,0" Height="90" Text="{Binding ParametersText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" FontFamily="Consolas" />
+
+            <Grid Grid.Row="5" Margin="0,12,0,0">
+                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,160,0">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                    <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="{loc:Translate Manager.Delete}" Command="{Binding DeleteCommand}" Margin="0,0,8,0" Padding="{StaticResource PaddingButtonPrimary}" Background="{StaticResource ErrorBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" />
+                    <Button Content="{loc:Translate Manager.Save}" Command="{Binding SaveCommand}" Padding="{StaticResource PaddingButtonPrimary}" Background="{StaticResource AccentBrush}" Foreground="{StaticResource TextPrimaryBrush}" BorderThickness="0" FontWeight="SemiBold" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

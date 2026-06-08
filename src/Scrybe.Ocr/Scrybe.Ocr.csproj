@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Scrybe.Ocr</RootNamespace>
+    <AssemblyName>Scrybe.Ocr</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Tesseract 5 .NET wrapper by Charles Weld. Verified Apache-2.0 (nuget.org), pinned to the
+         current stable 5.2.0 - same license discipline as the FluentAssertions 7.x pin. It bundles
+         the leptonica/tesseract native binaries copied to the output x64/ folder. -->
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Scrybe.Core\Scrybe.Core.csproj" />
+  </ItemGroup>
+
+</Project>

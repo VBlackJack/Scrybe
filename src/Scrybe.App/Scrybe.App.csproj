@@ -1,0 +1,106 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- The Windows SDK version in the TFM enables the CsWinRT projections for
+         Windows.Graphics.Capture / Windows.Graphics.DirectX.Direct3D11 (WGC). -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>Scrybe.App</RootNamespace>
+    <AssemblyName>Scrybe</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\Scrybe.ico</ApplicationIcon>
+    <Product>Scrybe</Product>
+    <Company>Julien Bombled</Company>
+    <Description>Local-first OCR clipboard extraction and keystroke injection utility for constrained consoles.</Description>
+    <InformationalVersion>$(VersionPrefix)</InformationalVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <!-- Do not enable trimming: WPF, Tesseract and Vortice/native interop are reflection/native-load sensitive. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <!-- This is a WPF host that merely references WinForms for the tray NotifyIcon.
+         Process DPI awareness is declared in app.manifest (Per-Monitor v2), which is the
+         authoritative mechanism for the WPF host and applies process-wide. The WinForms
+         analyzer (WFO0003) insists on ApplicationHighDpiMode instead; that path only runs
+         when the WinForms message loop is bootstrapped, which this app does not do. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <!-- Direct runtime reference so Tesseract.dll can be kept loose and $(PkgTesseract) can locate native DLLs. -->
+    <PackageReference Include="Tesseract" Version="5.2.0" GeneratePathProperty="true" />
+    <!-- Direct3D11 interop for WGC frame readback (MIT licensed). -->
+    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Scrybe.Core\Scrybe.Core.csproj" />
+    <ProjectReference Include="..\Scrybe.Ocr\Scrybe.Ocr.csproj" />
+  </ItemGroup>
+
+  <!-- Ship the JSON locale files next to the executable so they load at runtime. -->
+  <ItemGroup>
+    <None Include="..\..\locales\*.json" Link="locales\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
+  </ItemGroup>
+
+  <!-- Bundle the offline Tesseract traineddata next to the executable (no runtime download). -->
+  <ItemGroup>
+    <None Include="..\..\tessdata\*.traineddata" Link="tessdata\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
+  </ItemGroup>
+
+  <!--
+    The charlesw Tesseract package resolves its native DLLs from x64/ under the app base directory.
+    Its managed assembly also needs a real Assembly.Location for that probe, so keep Tesseract.dll
+    and the win-x64 native DLLs loose beside the single-file host; remove the unused x86 payload.
+  -->
+  <Target Name="KeepTesseractManagedAssemblyPublishable" BeforeTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths
+        Update="@(ReferenceCopyLocalPaths)"
+        Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'Tesseract'">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ReferenceCopyLocalPaths>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="KeepTesseractProbeAssetsLoose" BeforeTargets="_ComputeFilesToBundle">
+    <ItemGroup>
+      <ResolvedFileToPublish
+        Update="@(ResolvedFileToPublish)"
+        Condition="'%(ResolvedFileToPublish.RelativePath)' == 'Tesseract.dll' Or $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('x64\'))">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish
+        Remove="@(ResolvedFileToPublish)"
+        Condition="$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('x86\'))" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyTesseractNativeDllsBesideSingleFile" AfterTargets="Publish" Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <ItemGroup>
+      <TesseractNativeDll Include="$(PkgTesseract)\x64\*.dll" />
+    </ItemGroup>
+    <MakeDir Directories="$(PublishDir)x64" />
+    <Copy
+      SourceFiles="@(TesseractNativeDll)"
+      DestinationFolder="$(PublishDir)x64"
+      SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

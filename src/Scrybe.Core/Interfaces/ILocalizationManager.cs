@@ -1,0 +1,44 @@
+/*
+ * Copyright 2026 Julien Bombled
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+namespace Scrybe.Core.Interfaces;
+
+/// <summary>
+/// Provides access to localized, user-facing strings and supports switching the active
+/// locale at runtime. Implementations must be safe to query from the UI thread.
+/// </summary>
+public interface ILocalizationManager
+{
+    /// <summary>
+    /// Returns the translated value for <paramref name="key"/> in the active locale,
+    /// or the key itself when no translation exists (so missing keys are visible, never blank).
+    /// </summary>
+    /// <param name="key">The translation key, for example <c>AppTitle</c>.</param>
+    string this[string key] { get; }
+
+    /// <summary>Code of the currently active locale (for example <c>en</c> or <c>fr</c>).</summary>
+    string Current { get; }
+
+    /// <summary>Raised after the active locale has changed and new strings are available.</summary>
+    event EventHandler? LocaleChanged;
+
+    /// <summary>
+    /// Loads the locale identified by <paramref name="localeCode"/> and makes it the active locale.
+    /// </summary>
+    /// <param name="localeCode">The locale code whose JSON file should be loaded.</param>
+    /// <param name="cancellationToken">Token used to cancel the asynchronous load.</param>
+    Task LoadAsync(string localeCode, CancellationToken cancellationToken = default);
+}

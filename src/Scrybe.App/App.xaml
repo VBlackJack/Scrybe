@@ -1,0 +1,16 @@
+<Application x:Class="Scrybe.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <!--
+        The active theme dictionary is merged into Application.Current.Resources at
+        startup (see App.xaml.cs). The main window is created through dependency
+        injection rather than StartupUri so it can receive its view model.
+
+        ShutdownMode is OnExplicitShutdown: Scrybe is a tray utility, so closing the
+        main window must not terminate the process. Exit happens only through the
+        tray "Quit" command, which calls Application.Current.Shutdown().
+    -->
+    <Application.Resources>
+    </Application.Resources>
+</Application>

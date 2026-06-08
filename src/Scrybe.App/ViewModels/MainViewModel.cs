@@ -1,0 +1,241 @@
+/*
+ * Copyright 2026 Julien Bombled
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using System.Reflection;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Scrybe.App.Services;
+using Scrybe.Core;
+using Scrybe.Core.Input;
+using Scrybe.Core.Interfaces;
+using Scrybe.Core.Models;
+
+namespace Scrybe.App.ViewModels;
+
+/// <summary>
+/// View model for the main control hub. It raises user intents for the application shell to route,
+/// while exposing live status from settings and the local libraries.
+/// </summary>
+public sealed partial class MainViewModel : ObservableObject
+{
+    private readonly ILocalizationManager _localization;
+    private readonly AppSettings _settings;
+    private readonly SnippetLibrary _snippetLibrary;
+    private readonly SecretLibrary _secretLibrary;
+    private bool _initialized;
+    private bool _suppressCleanupModeEvent;
+
+    /// <summary>Localized application title, shown in the window chrome and header.</summary>
+    [ObservableProperty]
+    private string _title;
+
+    /// <summary>Localized tagline, shown below the title.</summary>
+    [ObservableProperty]
+    private string _tagline;
+
+    /// <summary>Human-readable assembly version, for example <c>0.1.0</c>.</summary>
+    [ObservableProperty]
+    private string _versionText;
+
+    [ObservableProperty]
+    private IReadOnlyList<SettingsChoice<OcrCleanupMode>> _cleanupModeChoices;
+
+    [ObservableProperty]
+    private OcrCleanupMode _selectedCleanupMode;
+
+    [ObservableProperty]
+    private string _captureHotkeyText;
+
+    [ObservableProperty]
+    private string _injectHotkeyText;
+
+    [ObservableProperty]
+    private string _abortHotkeyText;
+
+    [ObservableProperty]
+    private string _snippetPaletteHotkeyText;
+
+    [ObservableProperty]
+    private string _secretPaletteHotkeyText;
+
+    [ObservableProperty]
+    private string _injectionModeText;
+
+    [ObservableProperty]
+    private string _cleanupModeText;
+
+    [ObservableProperty]
+    private int _snippetCount;
+
+    [ObservableProperty]
+    private int _secretCount;
+
+    /// <summary>Initializes a new instance using the supplied application state.</summary>
+    /// <param name="localization">Source of localized, user-facing strings.</param>
+    /// <param name="settings">Live application settings.</param>
+    /// <param name="snippetLibrary">Loaded snippet library.</param>
+    /// <param name="secretLibrary">Loaded secret library.</param>
+    public MainViewModel(
+        ILocalizationManager localization,
+        AppSettings settings,
+        SnippetLibrary snippetLibrary,
+        SecretLibrary secretLibrary)
+    {
+        ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(snippetLibrary);
+        ArgumentNullException.ThrowIfNull(secretLibrary);
+
+        _localization = localization;
+        _settings = settings;
+        _snippetLibrary = snippetLibrary;
+        _secretLibrary = secretLibrary;
+        _title = localization["AppTitle"];
+        _tagline = localization["AppTagline"];
+        _versionText = ResolveVersion();
+        _cleanupModeChoices = BuildCleanupModeChoices();
+        _selectedCleanupMode = settings.CleanupMode;
+        _captureHotkeyText = string.Empty;
+        _injectHotkeyText = string.Empty;
+        _abortHotkeyText = string.Empty;
+        _snippetPaletteHotkeyText = string.Empty;
+        _secretPaletteHotkeyText = string.Empty;
+        _injectionModeText = string.Empty;
+        _cleanupModeText = string.Empty;
+
+        localization.LocaleChanged += OnLocaleChanged;
+        RefreshStatus();
+        _initialized = true;
+    }
+
+    /// <summary>Raised when the user requests immediate capture from the hub.</summary>
+    public event EventHandler? CaptureRequested;
+
+    /// <summary>Raised when the user opens settings from the hub.</summary>
+    public event EventHandler? SettingsRequested;
+
+    /// <summary>Raised when the user opens snippet management from the hub.</summary>
+    public event EventHandler? ManageSnippetsRequested;
+
+    /// <summary>Raised when the user opens secret management from the hub.</summary>
+    public event EventHandler? ManageSecretsRequested;
+
+    /// <summary>Raised when the user selects a different cleanup mode from the hub.</summary>
+    public event EventHandler<OcrCleanupMode>? CleanupModeChanged;
+
+    /// <summary>Refreshes all live status values from settings and the loaded libraries.</summary>
+    public void RefreshStatus()
+    {
+        CaptureHotkeyText = HotkeyDisplayFormatter.Format(_settings.HotkeyModifiers, _settings.HotkeyKey);
+        InjectHotkeyText = HotkeyDisplayFormatter.Format(_settings.InjectHotkeyModifiers, _settings.InjectHotkeyKey);
+        AbortHotkeyText = HotkeyDisplayFormatter.Format(_settings.AbortHotkeyModifiers, _settings.AbortHotkeyKey);
+        SnippetPaletteHotkeyText = HotkeyDisplayFormatter.Format(_settings.PaletteHotkeyModifiers, _settings.PaletteHotkeyKey);
+        SecretPaletteHotkeyText = HotkeyDisplayFormatter.Format(_settings.SecretPaletteHotkeyModifiers, _settings.SecretPaletteHotkeyKey);
+        InjectionModeText = InjectionModeLabel(_settings.InjectionMode);
+        CleanupModeText = CleanupModeLabel(_settings.CleanupMode);
+        SnippetCount = _snippetLibrary.Snippets.Count;
+        SecretCount = _secretLibrary.Secrets.Count;
+        SynchronizeSelectedCleanupMode();
+    }
+
+    [RelayCommand]
+    private void Capture() => CaptureRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void OpenSettings() => SettingsRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void ManageSnippets() => ManageSnippetsRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void ManageSecrets() => ManageSecretsRequested?.Invoke(this, EventArgs.Empty);
+
+    partial void OnSelectedCleanupModeChanged(OcrCleanupMode value)
+    {
+        if (!_initialized || _suppressCleanupModeEvent)
+        {
+            return;
+        }
+
+        CleanupModeChanged?.Invoke(this, value);
+        RefreshStatus();
+    }
+
+    private IReadOnlyList<SettingsChoice<OcrCleanupMode>> BuildCleanupModeChoices()
+    {
+        return
+        [
+            new SettingsChoice<OcrCleanupMode>(OcrCleanupMode.Raw, _localization["Tray.ModeRaw"]),
+            new SettingsChoice<OcrCleanupMode>(OcrCleanupMode.Standard, _localization["Tray.ModeStandard"]),
+            new SettingsChoice<OcrCleanupMode>(OcrCleanupMode.LogCleaner, _localization["Tray.ModeLogCleaner"]),
+            new SettingsChoice<OcrCleanupMode>(OcrCleanupMode.CodeFormatter, _localization["Tray.ModeCodeFormatter"]),
+        ];
+    }
+
+    private void OnLocaleChanged(object? sender, EventArgs e)
+    {
+        Title = _localization["AppTitle"];
+        Tagline = _localization["AppTagline"];
+        CleanupModeChoices = BuildCleanupModeChoices();
+        RefreshStatus();
+    }
+
+    private void SynchronizeSelectedCleanupMode()
+    {
+        _suppressCleanupModeEvent = true;
+        try
+        {
+            SelectedCleanupMode = _settings.CleanupMode;
+        }
+        finally
+        {
+            _suppressCleanupModeEvent = false;
+        }
+    }
+
+    private string InjectionModeLabel(InjectionMode mode) => mode switch
+    {
+        InjectionMode.Unicode => _localization["Settings.InjectUnicode"],
+        InjectionMode.Scancode => _localization["Settings.InjectScancode"],
+        _ => mode.ToString(),
+    };
+
+    private string CleanupModeLabel(OcrCleanupMode mode) => mode switch
+    {
+        OcrCleanupMode.Raw => _localization["Tray.ModeRaw"],
+        OcrCleanupMode.Standard => _localization["Tray.ModeStandard"],
+        OcrCleanupMode.LogCleaner => _localization["Tray.ModeLogCleaner"],
+        OcrCleanupMode.CodeFormatter => _localization["Tray.ModeCodeFormatter"],
+        _ => mode.ToString(),
+    };
+
+    /// <summary>Reads the informational version from the executing assembly, stripping any build metadata.</summary>
+    private static string ResolveVersion()
+    {
+        string? informational = Assembly
+            .GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+
+        if (string.IsNullOrWhiteSpace(informational))
+        {
+            return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
+        }
+
+        int metadataSeparator = informational.IndexOf('+', StringComparison.Ordinal);
+        return metadataSeparator >= 0 ? informational[..metadataSeparator] : informational;
+    }
+}
