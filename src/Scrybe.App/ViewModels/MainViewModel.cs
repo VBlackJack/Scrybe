@@ -90,6 +90,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _historyCount;
 
+    [ObservableProperty]
+    private int _selectedTabIndex;
+
     /// <summary>Initializes a new instance using the supplied application state.</summary>
     /// <param name="localization">Source of localized, user-facing strings.</param>
     /// <param name="settings">Live application settings.</param>
@@ -102,7 +105,9 @@ public sealed partial class MainViewModel : ObservableObject
         SnippetLibrary snippetLibrary,
         SecretLibrary secretLibrary,
         CaptureHistoryLibrary historyLibrary,
-        AboutInfoProvider aboutInfoProvider)
+        AboutInfoProvider aboutInfoProvider,
+        SettingsViewModel settingsViewModel,
+        AboutViewModel aboutViewModel)
     {
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(settings);
@@ -110,6 +115,8 @@ public sealed partial class MainViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(secretLibrary);
         ArgumentNullException.ThrowIfNull(historyLibrary);
         ArgumentNullException.ThrowIfNull(aboutInfoProvider);
+        ArgumentNullException.ThrowIfNull(settingsViewModel);
+        ArgumentNullException.ThrowIfNull(aboutViewModel);
 
         _localization = localization;
         _settings = settings;
@@ -117,6 +124,8 @@ public sealed partial class MainViewModel : ObservableObject
         _secretLibrary = secretLibrary;
         _historyLibrary = historyLibrary;
         _aboutInfoProvider = aboutInfoProvider;
+        Settings = settingsViewModel;
+        About = aboutViewModel;
         _title = localization["AppTitle"];
         _tagline = localization["AppTagline"];
         _versionText = aboutInfoProvider.GetAboutInfo().Version;
@@ -130,17 +139,21 @@ public sealed partial class MainViewModel : ObservableObject
         _historyPaletteHotkeyText = string.Empty;
         _injectionModeText = string.Empty;
         _cleanupModeText = string.Empty;
+        _selectedTabIndex = ShellTabs.Home;
 
         localization.LocaleChanged += OnLocaleChanged;
         RefreshStatus();
         _initialized = true;
     }
 
+    /// <summary>Settings tab view model.</summary>
+    public SettingsViewModel Settings { get; }
+
+    /// <summary>About tab view model.</summary>
+    public AboutViewModel About { get; }
+
     /// <summary>Raised when the user requests immediate capture from the hub.</summary>
     public event EventHandler? CaptureRequested;
-
-    /// <summary>Raised when the user opens settings from the hub.</summary>
-    public event EventHandler? SettingsRequested;
 
     /// <summary>Raised when the user opens snippet management from the hub.</summary>
     public event EventHandler? ManageSnippetsRequested;
@@ -150,9 +163,6 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Raised when the user opens capture history from the hub.</summary>
     public event EventHandler? OpenHistoryRequested;
-
-    /// <summary>Raised when the user opens About from the hub.</summary>
-    public event EventHandler? AboutRequested;
 
     /// <summary>Raised when the user selects a different cleanup mode from the hub.</summary>
     public event EventHandler<OcrCleanupMode>? CleanupModeChanged;
@@ -176,11 +186,29 @@ public sealed partial class MainViewModel : ObservableObject
         SynchronizeSelectedCleanupMode();
     }
 
+    /// <summary>Navigate to the home tab.</summary>
+    public void ShowHomeTab()
+    {
+        SelectedTabIndex = ShellTabs.Home;
+    }
+
+    /// <summary>Navigate to the settings tab.</summary>
+    public void ShowSettingsTab()
+    {
+        SelectedTabIndex = ShellTabs.Settings;
+    }
+
+    /// <summary>Navigate to the about tab.</summary>
+    public void ShowAboutTab()
+    {
+        SelectedTabIndex = ShellTabs.About;
+    }
+
     [RelayCommand]
     private void Capture() => CaptureRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
-    private void OpenSettings() => SettingsRequested?.Invoke(this, EventArgs.Empty);
+    private void OpenSettings() => ShowSettingsTab();
 
     [RelayCommand]
     private void ManageSnippets() => ManageSnippetsRequested?.Invoke(this, EventArgs.Empty);
@@ -192,7 +220,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void OpenHistory() => OpenHistoryRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
-    private void OpenAbout() => AboutRequested?.Invoke(this, EventArgs.Empty);
+    private void OpenAbout() => ShowAboutTab();
 
     partial void OnSelectedCleanupModeChanged(OcrCleanupMode value)
     {

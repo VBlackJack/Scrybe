@@ -14,49 +14,92 @@
  * limitations under the License.
  */
 
+using CommunityToolkit.Mvvm.ComponentModel;
 using Scrybe.App.Services;
 using Scrybe.Core.Interfaces;
 
 namespace Scrybe.App.ViewModels;
 
-/// <summary>View model for the About window.</summary>
-public sealed class AboutViewModel
+/// <summary>View model for the About tab.</summary>
+public sealed class AboutViewModel : ObservableObject
 {
+    private readonly ILocalizationManager _localization;
+    private readonly AboutInfoProvider _aboutInfoProvider;
+    private string _title = string.Empty;
+    private string _appName = string.Empty;
+    private string _tagline = string.Empty;
+    private string _version = string.Empty;
+    private IReadOnlyList<AboutDetailRow> _rows = [];
+
     /// <summary>Initializes the About view model from localization and assembly metadata.</summary>
     public AboutViewModel(ILocalizationManager localization, AboutInfoProvider aboutInfoProvider)
     {
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(aboutInfoProvider);
 
-        AboutInfo aboutInfo = aboutInfoProvider.GetAboutInfo();
+        _localization = localization;
+        _aboutInfoProvider = aboutInfoProvider;
 
-        Title = localization["About.Title"];
-        AppName = localization["AppTitle"];
-        Tagline = localization["AppTagline"];
-        Version = aboutInfo.Version;
-        Rows =
-        [
-            new AboutDetailRow(localization["About.Version"], aboutInfo.Version),
-            new AboutDetailRow(localization["About.BuildDate"], aboutInfo.BuildDate),
-            new AboutDetailRow(localization["About.Commit"], aboutInfo.CommitHash),
-            new AboutDetailRow(localization["About.License"], aboutInfo.License),
-            new AboutDetailRow(localization["About.Author"], aboutInfo.Author),
-            new AboutDetailRow(localization["About.Copyright"], aboutInfo.Copyright),
-        ];
+        Refresh();
+        localization.LocaleChanged += OnLocaleChanged;
     }
 
     /// <summary>Localized window title.</summary>
-    public string Title { get; }
+    public string Title
+    {
+        get => _title;
+        private set => SetProperty(ref _title, value);
+    }
 
     /// <summary>Localized application name.</summary>
-    public string AppName { get; }
+    public string AppName
+    {
+        get => _appName;
+        private set => SetProperty(ref _appName, value);
+    }
 
     /// <summary>Localized tagline.</summary>
-    public string Tagline { get; }
+    public string Tagline
+    {
+        get => _tagline;
+        private set => SetProperty(ref _tagline, value);
+    }
 
     /// <summary>Display version shown in the header.</summary>
-    public string Version { get; }
+    public string Version
+    {
+        get => _version;
+        private set => SetProperty(ref _version, value);
+    }
 
     /// <summary>Localized detail rows.</summary>
-    public IReadOnlyList<AboutDetailRow> Rows { get; }
+    public IReadOnlyList<AboutDetailRow> Rows
+    {
+        get => _rows;
+        private set => SetProperty(ref _rows, value);
+    }
+
+    private void OnLocaleChanged(object? sender, EventArgs e)
+    {
+        Refresh();
+    }
+
+    private void Refresh()
+    {
+        AboutInfo aboutInfo = _aboutInfoProvider.GetAboutInfo();
+
+        Title = _localization["About.Title"];
+        AppName = _localization["AppTitle"];
+        Tagline = _localization["AppTagline"];
+        Version = aboutInfo.Version;
+        Rows =
+        [
+            new AboutDetailRow(_localization["About.Version"], aboutInfo.Version),
+            new AboutDetailRow(_localization["About.BuildDate"], aboutInfo.BuildDate),
+            new AboutDetailRow(_localization["About.Commit"], aboutInfo.CommitHash),
+            new AboutDetailRow(_localization["About.License"], aboutInfo.License),
+            new AboutDetailRow(_localization["About.Author"], aboutInfo.Author),
+            new AboutDetailRow(_localization["About.Copyright"], aboutInfo.Copyright),
+        ];
+    }
 }

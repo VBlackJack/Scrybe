@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-using System.Windows;
-using Scrybe.App.ViewModels;
-
 namespace Scrybe.App.Views;
 
-/// <summary>The settings window. Code-behind is limited to data-context wiring.</summary>
-public partial class SettingsWindow : Window
+/// <summary>About tab content.</summary>
+public sealed partial class AboutView : System.Windows.Controls.UserControl
 {
-    /// <summary>Initializes the settings window bound to its view model.</summary>
-    /// <param name="viewModel">The settings view model.</param>
-    public SettingsWindow(SettingsViewModel viewModel)
+    /// <summary>Initializes the about view.</summary>
+    public AboutView()
     {
-        ArgumentNullException.ThrowIfNull(viewModel);
-
         InitializeComponent();
-        DataContext = viewModel;
     }
 }

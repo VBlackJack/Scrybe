@@ -167,6 +167,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>Recorder for the secret-palette hotkey.</summary>
     public HotkeyRecorderViewModel SecretPaletteRecorder { get; }
 
+    /// <summary>Raised after settings are successfully saved.</summary>
+    public event EventHandler? Saved;
+
     partial void OnLocaleCodeChanged(string value)
     {
         if (!_initialized || string.IsNullOrEmpty(value))
@@ -247,6 +250,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         FileLogger.Info("Settings saved.");
 
         StatusMessage = _localization["Settings.Saved"];
+        Saved?.Invoke(this, EventArgs.Empty);
     }
 
     private string LabelForAction(string? actionId) => actionId switch

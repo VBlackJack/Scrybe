@@ -2,11 +2,12 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:Scrybe.App.Localization"
+        xmlns:views="clr-namespace:Scrybe.App.Views"
         Title="{Binding Title}"
-        Height="680"
-        Width="680"
-        MinHeight="620"
-        MinWidth="560"
+        Height="720"
+        Width="760"
+        MinHeight="640"
+        MinWidth="620"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundBrush}"
         TextOptions.TextFormattingMode="Ideal"
@@ -68,140 +69,152 @@
         </Style>
     </Window.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="{StaticResource SpacingLg}">
-            <StackPanel HorizontalAlignment="Center" Margin="0,4,0,20">
+    <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+        <TabItem Header="{loc:Translate Shell.TabHome}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="{StaticResource SpacingLg}">
+                    <StackPanel HorizontalAlignment="Center" Margin="0,4,0,20">
 
-                <TextBlock Style="{StaticResource AppTitleTextStyle}"
-                           Text="{Binding Title}"
-                           AutomationProperties.Name="{Binding Title}" />
+                        <TextBlock Style="{StaticResource AppTitleTextStyle}"
+                                   Text="{Binding Title}"
+                                   AutomationProperties.Name="{Binding Title}" />
 
-                <TextBlock Style="{StaticResource AppTaglineTextStyle}"
-                           Text="{Binding Tagline}"
-                           AutomationProperties.Name="{Binding Tagline}"
-                           MaxWidth="440" />
+                        <TextBlock Style="{StaticResource AppTaglineTextStyle}"
+                                   Text="{Binding Tagline}"
+                                   AutomationProperties.Name="{Binding Tagline}"
+                                   MaxWidth="440" />
 
-                <Button Command="{Binding OpenAboutCommand}"
-                        Style="{StaticResource HubVersionButtonStyle}"
-                        AutomationProperties.Name="{loc:Translate About.Title}">
-                    <TextBlock Style="{StaticResource AppVersionTextStyle}"
-                               Text="{Binding VersionText}" />
-                </Button>
+                        <Button Command="{Binding OpenAboutCommand}"
+                                Style="{StaticResource HubVersionButtonStyle}"
+                                AutomationProperties.Name="{loc:Translate About.Title}">
+                            <TextBlock Style="{StaticResource AppVersionTextStyle}"
+                                       Text="{Binding VersionText}" />
+                        </Button>
 
-            </StackPanel>
+                    </StackPanel>
 
-            <Border Style="{StaticResource HubCardStyle}">
-                <StackPanel>
-                    <TextBlock Text="{loc:Translate Hub.ActionsTitle}"
-                               Style="{StaticResource HubSectionHeaderStyle}" />
+                    <Border Style="{StaticResource HubCardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{loc:Translate Hub.ActionsTitle}"
+                                       Style="{StaticResource HubSectionHeaderStyle}" />
 
-                    <UniformGrid Columns="3" Margin="0,0,0,12">
-                        <Button Content="{loc:Translate Hub.Capture}"
-                                Command="{Binding CaptureCommand}"
-                                Style="{StaticResource HubActionButtonStyle}"
-                                AutomationProperties.Name="{loc:Translate Hub.Capture}" />
-                        <Button Content="{loc:Translate Hub.CaptureHistory}"
-                                Command="{Binding OpenHistoryCommand}"
-                                Style="{StaticResource HubSecondaryButtonStyle}"
-                                AutomationProperties.Name="{loc:Translate Hub.CaptureHistory}" />
-                        <Button Content="{loc:Translate Hub.Settings}"
-                                Command="{Binding OpenSettingsCommand}"
-                                Style="{StaticResource HubSecondaryButtonStyle}"
-                                AutomationProperties.Name="{loc:Translate Hub.Settings}" />
-                        <Button Content="{loc:Translate Hub.ManageSnippets}"
-                                Command="{Binding ManageSnippetsCommand}"
-                                Style="{StaticResource HubSecondaryButtonStyle}"
-                                AutomationProperties.Name="{loc:Translate Hub.ManageSnippets}" />
-                        <Button Content="{loc:Translate Hub.ManageSecrets}"
-                                Command="{Binding ManageSecretsCommand}"
-                                Style="{StaticResource HubSecondaryButtonStyle}"
-                                AutomationProperties.Name="{loc:Translate Hub.ManageSecrets}" />
-                    </UniformGrid>
+                            <UniformGrid Columns="3" Margin="0,0,0,12">
+                                <Button Content="{loc:Translate Hub.Capture}"
+                                        Command="{Binding CaptureCommand}"
+                                        Style="{StaticResource HubActionButtonStyle}"
+                                        AutomationProperties.Name="{loc:Translate Hub.Capture}" />
+                                <Button Content="{loc:Translate Hub.CaptureHistory}"
+                                        Command="{Binding OpenHistoryCommand}"
+                                        Style="{StaticResource HubSecondaryButtonStyle}"
+                                        AutomationProperties.Name="{loc:Translate Hub.CaptureHistory}" />
+                                <Button Content="{loc:Translate Hub.Settings}"
+                                        Command="{Binding OpenSettingsCommand}"
+                                        Style="{StaticResource HubSecondaryButtonStyle}"
+                                        AutomationProperties.Name="{loc:Translate Hub.Settings}" />
+                                <Button Content="{loc:Translate Hub.ManageSnippets}"
+                                        Command="{Binding ManageSnippetsCommand}"
+                                        Style="{StaticResource HubSecondaryButtonStyle}"
+                                        AutomationProperties.Name="{loc:Translate Hub.ManageSnippets}" />
+                                <Button Content="{loc:Translate Hub.ManageSecrets}"
+                                        Command="{Binding ManageSecretsCommand}"
+                                        Style="{StaticResource HubSecondaryButtonStyle}"
+                                        AutomationProperties.Name="{loc:Translate Hub.ManageSecrets}" />
+                            </UniformGrid>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="0"
-                                   Text="{loc:Translate Hub.CleanupModeLabel}"
-                                   Style="{StaticResource HubFieldLabelStyle}" />
-                        <ComboBox Grid.Column="2"
-                                  ItemsSource="{Binding CleanupModeChoices}"
-                                  SelectedValuePath="Value"
-                                  SelectedValue="{Binding SelectedCleanupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  Style="{StaticResource HubComboStyle}"
-                                  AutomationProperties.Name="{loc:Translate Hub.CleanupModeLabel}" />
-                    </Grid>
+                                <TextBlock Grid.Column="0"
+                                           Text="{loc:Translate Hub.CleanupModeLabel}"
+                                           Style="{StaticResource HubFieldLabelStyle}" />
+                                <ComboBox Grid.Column="2"
+                                          ItemsSource="{Binding CleanupModeChoices}"
+                                          SelectedValuePath="Value"
+                                          SelectedValue="{Binding SelectedCleanupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource HubComboStyle}"
+                                          AutomationProperties.Name="{loc:Translate Hub.CleanupModeLabel}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource HubCardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="{loc:Translate Hub.StatusTitle}"
+                                       Style="{StaticResource HubSectionHeaderStyle}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.InjectionMode}" Style="{StaticResource HubFieldLabelStyle}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding InjectionModeText}" Style="{StaticResource HubValueStyle}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Translate Hub.CleanupMode}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CleanupModeText}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.SnippetCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SnippetCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.SecretCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SecretCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.HistoryCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HistoryCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                            </Grid>
+
+                            <TextBlock Text="{loc:Translate Hub.HotkeysTitle}"
+                                       Style="{StaticResource HubSectionHeaderStyle}"
+                                       Margin="0,16,0,8" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.CaptureHotkey}" Style="{StaticResource HubFieldLabelStyle}" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CaptureHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,0,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Translate Hub.InjectHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding InjectHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.AbortHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AbortHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.SnippetPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SnippetPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.SecretPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SecretPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Translate Hub.HistoryPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding HistoryPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
+            </ScrollViewer>
+        </TabItem>
 
-            <Border Style="{StaticResource HubCardStyle}">
-                <StackPanel>
-                    <TextBlock Text="{loc:Translate Hub.StatusTitle}"
-                               Style="{StaticResource HubSectionHeaderStyle}" />
+        <TabItem Header="{loc:Translate Shell.TabSettings}">
+            <views:SettingsView DataContext="{Binding Settings}" />
+        </TabItem>
 
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.InjectionMode}" Style="{StaticResource HubFieldLabelStyle}" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding InjectionModeText}" Style="{StaticResource HubValueStyle}" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Translate Hub.CleanupMode}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CleanupModeText}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.SnippetCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SnippetCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.SecretCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SecretCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.HistoryCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HistoryCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
-                    </Grid>
-
-                    <TextBlock Text="{loc:Translate Hub.HotkeysTitle}"
-                               Style="{StaticResource HubSectionHeaderStyle}"
-                               Margin="0,16,0,8" />
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.CaptureHotkey}" Style="{StaticResource HubFieldLabelStyle}" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CaptureHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,0,0,0" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Translate Hub.InjectHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding InjectHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.AbortHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AbortHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.SnippetPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SnippetPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.SecretPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SecretPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Translate Hub.HistoryPaletteHotkey}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding HistoryPaletteHotkeyText}" Style="{StaticResource HubHotkeyValueStyle}" Margin="16,6,0,0" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+        <TabItem Header="{loc:Translate Shell.TabAbout}">
+            <views:AboutView DataContext="{Binding About}" />
+        </TabItem>
+    </TabControl>
 
 </Window>

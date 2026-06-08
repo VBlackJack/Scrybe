@@ -59,8 +59,6 @@ public partial class App : System.Windows.Application
     private SecretCoordinator? _secretCoordinator;
     private CaptureHistoryCoordinator? _historyCoordinator;
     private CaptureHistoryLibrary? _historyLibrary;
-    private SettingsWindow? _settingsWindow;
-    private AboutWindow? _aboutWindow;
     private MainViewModel? _mainViewModel;
     private bool _isShutdownRequested;
 
@@ -140,12 +138,11 @@ public partial class App : System.Windows.Application
         if (_mainViewModel is not null)
         {
             _mainViewModel.CaptureRequested -= OnCaptureRequested;
-            _mainViewModel.SettingsRequested -= OnSettingsRequested;
             _mainViewModel.ManageSnippetsRequested -= OnManageSnippetsRequested;
             _mainViewModel.ManageSecretsRequested -= OnManageSecretsRequested;
             _mainViewModel.OpenHistoryRequested -= OnShowHistoryRequested;
-            _mainViewModel.AboutRequested -= OnAboutRequested;
             _mainViewModel.CleanupModeChanged -= OnCleanupModeChanged;
+            _mainViewModel.Settings.Saved -= OnSettingsSaved;
         }
 
         if (_historyLibrary is not null)
@@ -178,8 +175,8 @@ public partial class App : System.Windows.Application
         services.AddSingleton<AboutInfoProvider>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
-        services.AddTransient<AboutViewModel>();
-        services.AddTransient<SettingsViewModel>();
+        services.AddSingleton<AboutViewModel>();
+        services.AddSingleton<SettingsViewModel>();
 
         services.AddSingleton<IScreenCaptureService, WgcScreenCaptureService>();
         services.AddSingleton<IOcrEngine>(_ => new TesseractOcrEngine(tessdataDirectory, settings.OcrLanguage));
@@ -239,12 +236,11 @@ public partial class App : System.Windows.Application
 
         _mainViewModel = provider.GetRequiredService<MainViewModel>();
         _mainViewModel.CaptureRequested += OnCaptureRequested;
-        _mainViewModel.SettingsRequested += OnSettingsRequested;
         _mainViewModel.ManageSnippetsRequested += OnManageSnippetsRequested;
         _mainViewModel.ManageSecretsRequested += OnManageSecretsRequested;
         _mainViewModel.OpenHistoryRequested += OnShowHistoryRequested;
-        _mainViewModel.AboutRequested += OnAboutRequested;
         _mainViewModel.CleanupModeChanged += OnCleanupModeChanged;
+        _mainViewModel.Settings.Saved += OnSettingsSaved;
 
         _trayIconService = provider.GetRequiredService<TrayIconService>();
         _trayIconService.CaptureRequested += OnCaptureRequested;
@@ -358,6 +354,11 @@ public partial class App : System.Windows.Application
 
     private void OnShowHubRequested(object? sender, EventArgs e)
     {
+        ShowShellWindow();
+    }
+
+    private void ShowShellWindow()
+    {
         if (MainWindow is not Window window)
         {
             return;
@@ -393,28 +394,12 @@ public partial class App : System.Windows.Application
 
     private void OnSettingsRequested(object? sender, EventArgs e)
     {
-        if (_settingsWindow is not null)
-        {
-            _settingsWindow.Activate();
-            return;
-        }
-
-        SettingsViewModel viewModel = _serviceProvider!.GetRequiredService<SettingsViewModel>();
-        SettingsWindow window = new(viewModel);
-        window.Closed += OnSettingsWindowClosed;
-        _settingsWindow = window;
-        window.Show();
-        window.Activate();
+        ShowShellWindow();
+        _mainViewModel?.ShowSettingsTab();
     }
 
-    private void OnSettingsWindowClosed(object? sender, EventArgs e)
+    private void OnSettingsSaved(object? sender, EventArgs e)
     {
-        if (sender is SettingsWindow window)
-        {
-            window.Closed -= OnSettingsWindowClosed;
-        }
-
-        _settingsWindow = null;
         AppSettings settings = _serviceProvider!.GetRequiredService<AppSettings>();
         _trayIconService?.UpdateCleanupMode(settings.CleanupMode);
         _mainViewModel?.RefreshStatus();
@@ -422,33 +407,8 @@ public partial class App : System.Windows.Application
 
     private void OnAboutRequested(object? sender, EventArgs e)
     {
-        if (_aboutWindow is not null)
-        {
-            _aboutWindow.Activate();
-            return;
-        }
-
-        AboutViewModel viewModel = _serviceProvider!.GetRequiredService<AboutViewModel>();
-        AboutWindow window = new(viewModel);
-        if (MainWindow is Window owner && owner.IsVisible)
-        {
-            window.Owner = owner;
-        }
-
-        window.Closed += OnAboutWindowClosed;
-        _aboutWindow = window;
-        window.Show();
-        window.Activate();
-    }
-
-    private void OnAboutWindowClosed(object? sender, EventArgs e)
-    {
-        if (sender is AboutWindow window)
-        {
-            window.Closed -= OnAboutWindowClosed;
-        }
-
-        _aboutWindow = null;
+        ShowShellWindow();
+        _mainViewModel?.ShowAboutTab();
     }
 
     private void OnHotkeyPressed(object? sender, string id)

@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-using System.Windows;
-using Scrybe.App.ViewModels;
+namespace Scrybe.App;
 
-namespace Scrybe.App.Views;
-
-/// <summary>The About window. Code-behind is limited to data-context wiring.</summary>
-public partial class AboutWindow : Window
+/// <summary>Central tab ordering for the shell window.</summary>
+internal static class ShellTabs
 {
-    /// <summary>Initializes the About window bound to its view model.</summary>
-    /// <param name="viewModel">The About view model.</param>
-    public AboutWindow(AboutViewModel viewModel)
-    {
-        ArgumentNullException.ThrowIfNull(viewModel);
+    /// <summary>Home and status tab.</summary>
+    public const int Home = 0;
 
-        InitializeComponent();
-        DataContext = viewModel;
-    }
+    /// <summary>Settings tab.</summary>
+    public const int Settings = 1;
+
+    /// <summary>About tab.</summary>
+    public const int About = 2;
 }
