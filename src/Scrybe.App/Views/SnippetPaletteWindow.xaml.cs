@@ -16,8 +16,8 @@
 
 using System.Windows;
 using Scrybe.App.ViewModels;
-using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using Key = System.Windows.Input.Key;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace Scrybe.App.Views;
 

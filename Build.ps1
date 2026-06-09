@@ -418,8 +418,12 @@ try {
         Write-Output "Version stamped in Directory.Build.props."
     }
 
+    Write-Output "Verifying formatting..."
+    Invoke-Tool -FilePath 'dotnet' -Arguments @('format', $solutionPath, '--verify-no-changes')
+
     Write-Output "Running tests..."
-    Invoke-Tool -FilePath 'dotnet' -Arguments @('test', $solutionPath, '--verbosity', 'normal')
+    Invoke-Tool -FilePath 'dotnet' -Arguments @('test', $solutionPath, '--configuration', $Mode, '--verbosity', 'normal')
+
 
     if ($Publish -and -not $DryRun) {
         [string] $tag = "v$($versionInfo.BuildNumber)"

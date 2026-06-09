@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-using FluentAssertions;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using FluentAssertions;
 using Scrybe.App.Services;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Models;

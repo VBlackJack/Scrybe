@@ -52,17 +52,32 @@ public static class TextPostProcessor
 
     private static readonly IReadOnlyDictionary<char, char> IpConfusions = new Dictionary<char, char>
     {
-        ['@'] = '0', ['O'] = '0', ['o'] = '0', ['I'] = '1', ['l'] = '1',
+        ['@'] = '0',
+        ['O'] = '0',
+        ['o'] = '0',
+        ['I'] = '1',
+        ['l'] = '1',
     };
 
     private static readonly IReadOnlyDictionary<char, char> HexConfusions = new Dictionary<char, char>
     {
-        ['O'] = '0', ['o'] = '0', ['I'] = '1', ['l'] = '1', ['S'] = '5', ['Z'] = '2',
+        ['O'] = '0',
+        ['o'] = '0',
+        ['I'] = '1',
+        ['l'] = '1',
+        ['S'] = '5',
+        ['Z'] = '2',
     };
 
     private static readonly IReadOnlyDictionary<char, char> NumericConfusions = new Dictionary<char, char>
     {
-        ['O'] = '0', ['o'] = '0', ['I'] = '1', ['l'] = '1', ['S'] = '5', ['Z'] = '2', ['B'] = '8',
+        ['O'] = '0',
+        ['o'] = '0',
+        ['I'] = '1',
+        ['l'] = '1',
+        ['S'] = '5',
+        ['Z'] = '2',
+        ['B'] = '8',
     };
 
     /// <summary>Runs the enabled post-processing stages over <paramref name="input"/>.</summary>
