@@ -84,6 +84,11 @@ Scrybe/
 |-- tests/     # xUnit suite
 |-- locales/   # localized EN/FR strings
 |-- tessdata/  # bundled OCR model
-|-- docs/adr/  # architecture decisions
+|-- docs/      # architecture overview and ADRs
+|-- CHANGELOG.md
 `-- README.md
 ```
+
+For a module map and runtime-flow overview, see
+[`docs/architecture.md`](docs/architecture.md). Release history is summarized in
+[`CHANGELOG.md`](CHANGELOG.md).
