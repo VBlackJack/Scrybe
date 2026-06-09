@@ -69,7 +69,8 @@
         </Style>
     </Window.Resources>
 
-    <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+    <TabControl Margin="{StaticResource ShellTabControlMargin}"
+                SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
         <TabItem AutomationProperties.Name="{loc:Translate Shell.TabHome}">
             <TabItem.Header>
                 <StackPanel Style="{StaticResource AppIconTextContentStyle}">

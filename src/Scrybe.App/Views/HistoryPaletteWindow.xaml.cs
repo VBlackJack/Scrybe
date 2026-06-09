@@ -22,7 +22,7 @@ using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 namespace Scrybe.App.Views;
 
 /// <summary>The capture-history palette window. Code-behind is limited to data-context wiring and key handling.</summary>
-public partial class HistoryPaletteWindow : Window
+public sealed partial class HistoryPaletteWindow : Window
 {
     /// <summary>Initializes the palette bound to its view model.</summary>
     /// <param name="viewModel">The palette view model.</param>

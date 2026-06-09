@@ -83,8 +83,10 @@
 
     <!-- Shell tabs -->
     <sys:Double x:Key="ShellTabHeaderMinWidth">96</sys:Double>
+    <Thickness x:Key="ShellTabControlMargin">12,10,12,12</Thickness>
     <Thickness x:Key="ShellTabHeaderPadding">14,8</Thickness>
     <Thickness x:Key="ShellTabItemMargin">0,0,4,0</Thickness>
+    <Thickness x:Key="ShellTabPanelMargin">1,0,1,-1</Thickness>
     <Thickness x:Key="ShellTabContentPadding">0</Thickness>
     <Thickness x:Key="ShellTabBorderThickness">1</Thickness>
     <CornerRadius x:Key="ShellTabItemCornerRadius">5,5,0,0</CornerRadius>
@@ -280,6 +282,7 @@
                                   DockPanel.Dock="Top"
                                   IsItemsHost="True"
                                   KeyboardNavigation.TabIndex="1"
+                                  Margin="{StaticResource ShellTabPanelMargin}"
                                   Panel.ZIndex="1" />
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"

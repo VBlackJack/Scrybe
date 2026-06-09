@@ -1,41 +1,89 @@
 # Scrybe
 
-> **scry** (lire l'écran à distance) + **scribe** (écrire / taper au clavier)
+> **scry** (read a remote screen) + **scribe** (write by typing)
 
-Utilitaire Windows **standalone**, léger et **local-first** pour développeurs, SysAdmins et DevOps travaillant sur consoles distantes où le presse-papier ne fonctionne pas (RDP, vSphere/ESXi, IPMI/iDRAC/iLO, VNC/noVNC web, SSH verrouillé).
+Scrybe is a standalone, local-first Windows utility for developers, SysAdmins
+and DevOps working in constrained remote consoles where the clipboard is broken
+or unavailable: RDP, vSphere/ESXi, IPMI/iDRAC/iLO, VNC/noVNC, and locked-down
+SSH or terminal sessions.
 
-## Le problème
+## Problem
 
-Sur ces consoles, le copier-coller est cassé dans les **deux sens**. Scrybe rétablit le pont :
+In these consoles, copy/paste often fails in both directions. Scrybe restores
+that bridge without cloud services:
 
-- **Extraction** (écran → local) : capture d'une zone d'écran → OCR → texte propre, *code-aware*, directement dans le presse-papier local.
-- **Injection** (local → distant) : saisie d'une chaîne dans la console « comme tapée au clavier » - commande PowerShell longue, ou auto-saisie d'un mot de passe stocké - puisque le paste est bloqué.
+- **Extraction** (screen to local): capture a primary-screen region, run OCR, and
+  copy cleaned, code-aware text to the local clipboard.
+- **Injection** (local to remote): type text as synthetic keystrokes into the
+  target console, including long commands and DPAPI-protected stored secrets,
+  when paste is blocked.
 
-## Différenciation
+## Differentiation
 
-Ni Capture2Text ni Textify ne font l'injection. Aucun concurrent ne couvre les deux directions.
+Capture2Text and Textify extract text, but they do not type text back into a
+remote console. Scrybe covers both directions.
 
-## Contraintes projet
+## Current Scope
 
-- **Licence** : Apache 2.0
-- **Code / specs techniques** : anglais
-- **Documentation user-facing** : français
-- **Local-first** : hors-ligne, zéro télémétrie, zéro OCR cloud
-- **Windows-native** : HiDPI / multi-écrans / per-monitor DPI aware
-- **Thème** : Dracula
+- **License:** Apache 2.0.
+- **Local-first:** offline, no telemetry, no cloud OCR.
+- **Windows-native:** WPF, tray app, Per-Monitor DPI Aware v2.
+- **Capture scope today:** primary monitor only. Multi-monitor capture is on the
+  backlog; DPI awareness is already enabled, but the capture surface is not yet
+  multi-screen.
+- **Theme:** Dracula.
 
-## État
+## Prerequisites
 
-🟢 **v1.0 - Dogfooding.** Les deux piliers sont en place : extraction OCR vers presse-papier local, injection clavier locale/distante, vault secrets DPAPI, réglages, hotkeys, packaging et Control Hub. Le backlog restant est volontairement limité aux besoins révélés par l'usage réel.
+- Windows 10 19041 or newer.
+- .NET 10 SDK. The repository pins SDK `10.0.103` in `global.json` with
+  `rollForward: latestFeature`.
+- The bundled `tessdata/eng.traineddata` file is required for OCR.
+- Published builds ship the Tesseract native DLLs in a loose `x64/` directory
+  beside `Scrybe.exe`; keep that folder next to the executable.
+
+## Build / Run
+
+From a fresh clone:
+
+```powershell
+dotnet restore Scrybe.slnx
+dotnet build Scrybe.slnx --configuration Debug
+dotnet test Scrybe.slnx --configuration Release
+dotnet run --project src\Scrybe.App\Scrybe.App.csproj
+```
+
+Convenience scripts are provided for double-click or terminal use:
+
+- `Run.bat` launches the app from source in Debug.
+- `Build.bat` builds Debug.
+- `Test.bat` runs the test suite.
+- `Release.bat` runs the local release pipeline.
+- `Build.ps1 -Mode Release -DryRun` verifies formatting, runs tests in Release,
+  builds, publishes locally, and prints the GitHub release commands it would run.
+- `Build.ps1 -Mode Release -Publish` creates the release commit/tag and GitHub
+  release; it requires a clean `main` branch and authenticated `gh`.
+
+The formatting gate is:
+
+```powershell
+dotnet format Scrybe.slnx --verify-no-changes
+```
+
+## Status
+
+**v1.0 - Dogfooding.** OCR extraction, keystroke injection, a DPAPI secret vault,
+settings, hotkeys, packaging and the Control Hub are in place. Remaining work is
+limited to issues found through real use.
 
 ## Structure
 
-```
+```text
 Scrybe/
-├── src/            # application WPF, Core et moteur OCR
-├── tests/          # suite xUnit
-├── locales/        # chaînes localisées EN/FR
-├── tessdata/       # modèle OCR embarqué
-├── docs/adr/       # décisions d'architecture
-└── README.md
+|-- src/       # WPF app, Core library, OCR engine
+|-- tests/     # xUnit suite
+|-- locales/   # localized EN/FR strings
+|-- tessdata/  # bundled OCR model
+|-- docs/adr/  # architecture decisions
+`-- README.md
 ```

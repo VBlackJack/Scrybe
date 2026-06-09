@@ -183,9 +183,11 @@
                         <TextBlock Text="{loc:Translate Settings.HotkeysNote}" Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,10" />
                         <views:HotkeyRecorder DataContext="{Binding CaptureRecorder}" />
                         <views:HotkeyRecorder DataContext="{Binding InjectRecorder}" />
+                        <views:HotkeyRecorder DataContext="{Binding ClipboardInjectRecorder}" />
                         <views:HotkeyRecorder DataContext="{Binding AbortRecorder}" />
                         <views:HotkeyRecorder DataContext="{Binding PaletteRecorder}" />
                         <views:HotkeyRecorder DataContext="{Binding SecretPaletteRecorder}" />
+                        <views:HotkeyRecorder DataContext="{Binding HistoryPaletteRecorder}" />
                     </StackPanel>
                 </Border>
 

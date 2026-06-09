@@ -134,6 +134,11 @@ public sealed partial class SettingsViewModel : ObservableObject
             AppConstants.CaptureHotkeyId, localization["Settings.HotkeyCapture"], settings.HotkeyModifiers, settings.HotkeyKey);
         InjectRecorder = new HotkeyRecorderViewModel(
             AppConstants.InjectHotkeyId, localization["Settings.HotkeyInject"], settings.InjectHotkeyModifiers, settings.InjectHotkeyKey);
+        ClipboardInjectRecorder = new HotkeyRecorderViewModel(
+            AppConstants.ClipboardInjectHotkeyId,
+            localization["Settings.HotkeyClipboardInject"],
+            settings.ClipboardInjectHotkeyModifiers,
+            settings.ClipboardInjectHotkeyKey);
         AbortRecorder = new HotkeyRecorderViewModel(
             AppConstants.AbortHotkeyId, localization["Settings.HotkeyAbort"], settings.AbortHotkeyModifiers, settings.AbortHotkeyKey);
         PaletteRecorder = new HotkeyRecorderViewModel(
@@ -143,6 +148,11 @@ public sealed partial class SettingsViewModel : ObservableObject
             localization["Settings.HotkeySecretPalette"],
             settings.SecretPaletteHotkeyModifiers,
             settings.SecretPaletteHotkeyKey);
+        HistoryPaletteRecorder = new HotkeyRecorderViewModel(
+            AppConstants.CaptureHistoryHotkeyId,
+            localization["Settings.HotkeyHistoryPalette"],
+            settings.HistoryPaletteHotkeyModifiers,
+            settings.HistoryPaletteHotkeyKey);
 
         _initialized = true;
     }
@@ -162,6 +172,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>Recorder for the inject hotkey.</summary>
     public HotkeyRecorderViewModel InjectRecorder { get; }
 
+    /// <summary>Recorder for the clipboard-injection hotkey.</summary>
+    public HotkeyRecorderViewModel ClipboardInjectRecorder { get; }
+
     /// <summary>Recorder for the abort hotkey.</summary>
     public HotkeyRecorderViewModel AbortRecorder { get; }
 
@@ -170,6 +183,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>Recorder for the secret-palette hotkey.</summary>
     public HotkeyRecorderViewModel SecretPaletteRecorder { get; }
+
+    /// <summary>Recorder for the capture-history palette hotkey.</summary>
+    public HotkeyRecorderViewModel HistoryPaletteRecorder { get; }
 
     /// <summary>Raised after settings are successfully saved.</summary>
     public event EventHandler? Saved;
@@ -191,17 +207,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         [
             new HotkeyBinding(CaptureRecorder.ActionId, CaptureRecorder.Modifiers, CaptureRecorder.Key),
             new HotkeyBinding(InjectRecorder.ActionId, InjectRecorder.Modifiers, InjectRecorder.Key),
-            new HotkeyBinding(
-                AppConstants.ClipboardInjectHotkeyId,
-                _settings.ClipboardInjectHotkeyModifiers,
-                _settings.ClipboardInjectHotkeyKey),
+            new HotkeyBinding(ClipboardInjectRecorder.ActionId, ClipboardInjectRecorder.Modifiers, ClipboardInjectRecorder.Key),
             new HotkeyBinding(AbortRecorder.ActionId, AbortRecorder.Modifiers, AbortRecorder.Key),
             new HotkeyBinding(PaletteRecorder.ActionId, PaletteRecorder.Modifiers, PaletteRecorder.Key),
             new HotkeyBinding(SecretPaletteRecorder.ActionId, SecretPaletteRecorder.Modifiers, SecretPaletteRecorder.Key),
-            new HotkeyBinding(
-                AppConstants.CaptureHistoryHotkeyId,
-                _settings.HistoryPaletteHotkeyModifiers,
-                _settings.HistoryPaletteHotkeyKey),
+            new HotkeyBinding(HistoryPaletteRecorder.ActionId, HistoryPaletteRecorder.Modifiers, HistoryPaletteRecorder.Key),
         ];
 
         HotkeyBindingValidationResult validation = HotkeyBindingValidator.Validate(bindings);
@@ -230,12 +240,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.HotkeyKey = CaptureRecorder.Key;
         _settings.InjectHotkeyModifiers = InjectRecorder.Modifiers;
         _settings.InjectHotkeyKey = InjectRecorder.Key;
+        _settings.ClipboardInjectHotkeyModifiers = ClipboardInjectRecorder.Modifiers;
+        _settings.ClipboardInjectHotkeyKey = ClipboardInjectRecorder.Key;
         _settings.AbortHotkeyModifiers = AbortRecorder.Modifiers;
         _settings.AbortHotkeyKey = AbortRecorder.Key;
         _settings.PaletteHotkeyModifiers = PaletteRecorder.Modifiers;
         _settings.PaletteHotkeyKey = PaletteRecorder.Key;
         _settings.SecretPaletteHotkeyModifiers = SecretPaletteRecorder.Modifiers;
         _settings.SecretPaletteHotkeyKey = SecretPaletteRecorder.Key;
+        _settings.HistoryPaletteHotkeyModifiers = HistoryPaletteRecorder.Modifiers;
+        _settings.HistoryPaletteHotkeyKey = HistoryPaletteRecorder.Key;
 
         _settings.EnableLogging = EnableLogging;
         _settings.PrewarmOnStartup = PrewarmOnStartup;

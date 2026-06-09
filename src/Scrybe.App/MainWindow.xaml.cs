@@ -24,7 +24,7 @@ namespace Scrybe.App;
 /// The application's main window. Code-behind is limited to lifecycle wiring: the
 /// injected view model is assigned as the data context.
 /// </summary>
-public partial class MainWindow : Window
+public sealed partial class MainWindow : Window
 {
     /// <summary>Initializes the window and binds it to its view model.</summary>
     /// <param name="viewModel">The main view model supplied by dependency injection.</param>

@@ -29,7 +29,7 @@ namespace Scrybe.App.Views;
 /// <see cref="UIElement.PreviewKeyDown"/>; Escape cancels. Key translation is delegated to Core-facing
 /// helpers, so this code-behind is limited to keyboard interop.
 /// </summary>
-public partial class HotkeyRecorder : UserControl
+public sealed partial class HotkeyRecorder : UserControl
 {
     /// <summary>Initializes the recorder control.</summary>
     public HotkeyRecorder()

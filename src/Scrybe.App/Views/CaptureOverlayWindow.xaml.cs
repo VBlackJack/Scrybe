@@ -35,7 +35,7 @@ namespace Scrybe.App.Views;
 /// rectangle with a magnifier loupe and a live physical-pixel readout. The crop math is delegated
 /// to the pure <see cref="SelectionGeometry"/>; this code-behind only handles view interaction.
 /// </summary>
-public partial class CaptureOverlayWindow : Window
+public sealed partial class CaptureOverlayWindow : Window
 {
     private const double LoupeSizeDip = 150.0;
     private const double LoupeMagnification = 8.0;

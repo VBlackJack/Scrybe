@@ -28,11 +28,13 @@ public sealed class HotkeyBindingTests
 {
     private static IReadOnlyList<HotkeyBinding> ValidSet { get; } =
     [
-        new HotkeyBinding("capture", "Control+Alt", "S"),
-        new HotkeyBinding("inject", "Control+Alt", "V"),
-        new HotkeyBinding("clipboard-inject", "Control+Alt", "B"),
-        new HotkeyBinding("abort", "Control+Alt", "Q"),
-        new HotkeyBinding("palette", "Control+Alt", "P"),
+        new HotkeyBinding(AppConstants.CaptureHotkeyId, "Control+Alt", "S"),
+        new HotkeyBinding(AppConstants.InjectHotkeyId, "Control+Alt", "V"),
+        new HotkeyBinding(AppConstants.ClipboardInjectHotkeyId, "Control+Alt", "B"),
+        new HotkeyBinding(AppConstants.AbortHotkeyId, "Control+Alt", "Q"),
+        new HotkeyBinding(AppConstants.PaletteHotkeyId, "Control+Alt", "P"),
+        new HotkeyBinding(AppConstants.SecretPaletteHotkeyId, "Control+Alt", "K"),
+        new HotkeyBinding(AppConstants.CaptureHistoryHotkeyId, "Control+Alt", "H"),
     ];
 
     [Fact]
@@ -57,6 +59,23 @@ public sealed class HotkeyBindingTests
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().ContainSingle(e => e.ActionId == "inject" && e.Error == HotkeyBindingError.Duplicate);
+    }
+
+    [Fact]
+    public void Validate_DuplicateClipboardAndHistoryCombos_IsRejected()
+    {
+        List<HotkeyBinding> bindings = ValidSet
+            .Select(binding => binding.ActionId == AppConstants.CaptureHistoryHotkeyId
+                ? binding with { Modifiers = "Alt+Control", Key = "B" }
+                : binding)
+            .ToList();
+
+        HotkeyBindingValidationResult result = HotkeyBindingValidator.Validate(bindings);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle(e =>
+            e.ActionId == AppConstants.CaptureHistoryHotkeyId
+            && e.Error == HotkeyBindingError.Duplicate);
     }
 
     [Fact]
@@ -120,7 +139,7 @@ public sealed class HotkeyBindingTests
         FakeHotkeyService hotkeys = new("Control+Alt+X");
         HotkeyRegistrar registrar = new(hotkeys);
         registrar.Initialize(ValidSet);
-        hotkeys.Registered.Should().HaveCount(5);
+        hotkeys.Registered.Should().HaveCount(7);
 
         List<HotkeyBinding> newSet = ValidSet
             .Select(binding => binding.ActionId == "inject" ? binding with { Key = "X" } : binding)
@@ -143,7 +162,7 @@ public sealed class HotkeyBindingTests
         HotkeyRegistrarResult result = registrar.Apply(ValidSet);
 
         result.Status.Should().Be(HotkeyRegistrarStatus.Success);
-        hotkeys.Registered.Should().HaveCount(5);
+        hotkeys.Registered.Should().HaveCount(7);
         registrar.Current.Should().BeEquivalentTo(ValidSet);
     }
 

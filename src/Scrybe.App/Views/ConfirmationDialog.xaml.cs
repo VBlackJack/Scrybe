@@ -19,7 +19,7 @@ using System.Windows;
 namespace Scrybe.App.Views;
 
 /// <summary>Dracula-themed modal confirmation dialog for destructive actions.</summary>
-public partial class ConfirmationDialog : Window
+public sealed partial class ConfirmationDialog : Window
 {
     /// <summary>Initializes the dialog with localized content and button labels.</summary>
     /// <param name="title">Dialog title.</param>

@@ -22,7 +22,7 @@ using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 namespace Scrybe.App.Views;
 
 /// <summary>The secret palette window. Code-behind is limited to data-context wiring and Esc-to-close.</summary>
-public partial class SecretPaletteWindow : Window
+public sealed partial class SecretPaletteWindow : Window
 {
     /// <summary>Initializes the palette bound to its view model.</summary>
     /// <param name="viewModel">The palette view model.</param>
