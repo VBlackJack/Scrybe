@@ -134,6 +134,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Text="{loc:Translate History.Edit}" Style="{StaticResource HistoryHeaderStyle}" />
@@ -152,71 +153,64 @@
                              FontFamily="Consolas"
                              AutomationProperties.Name="{loc:Translate History.Edit}" />
 
-                    <Grid Grid.Row="2" Margin="0,12,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Row="2"
+                               Text="{Binding StatusMessage}"
+                               VerticalAlignment="Bottom"
+                               TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding StatusMessage}"
-                                   VerticalAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   Margin="0,0,12,0">
-                            <TextBlock.Style>
-                                <Style TargetType="{x:Type TextBlock}">
-                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Command="{Binding DeleteCommand}"
-                                    IsEnabled="{Binding CanCopy}"
-                                    Margin="0,0,8,0"
-                                    Padding="{StaticResource PaddingButtonPrimary}"
-                                    Background="{StaticResource ErrorBrush}"
-                                    Foreground="{StaticResource TextPrimaryBrush}"
-                                    BorderThickness="0"
-                                    AutomationProperties.Name="{loc:Translate History.Delete}">
-                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
-                                    <TextBlock Text="{StaticResource IconActionDelete}" Style="{StaticResource AppIconGlyphStyle}" />
-                                    <TextBlock Text="{loc:Translate History.Delete}" Style="{StaticResource AppIconTextStyle}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding SaveEditCommand}"
-                                    IsEnabled="{Binding CanSaveEdit}"
-                                    Margin="0,0,8,0"
-                                    Padding="{StaticResource PaddingButtonPrimary}"
-                                    Background="{StaticResource CardBrush}"
-                                    Foreground="{StaticResource TextPrimaryBrush}"
-                                    BorderThickness="0"
-                                    FontWeight="SemiBold"
-                                    AutomationProperties.Name="{loc:Translate History.SaveChanges}">
-                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
-                                    <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
-                                    <TextBlock Text="{loc:Translate History.SaveChanges}" Style="{StaticResource AppIconTextStyle}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Command="{Binding CopyCommand}"
-                                    IsEnabled="{Binding CanCopy}"
-                                    Padding="{StaticResource PaddingButtonPrimary}"
-                                    Background="{StaticResource AccentBrush}"
-                                    Foreground="{StaticResource TextPrimaryBrush}"
-                                    BorderThickness="0"
-                                    FontWeight="SemiBold"
-                                    AutomationProperties.Name="{loc:Translate History.Copy}">
-                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
-                                    <TextBlock Text="{StaticResource IconActionCopy}" Style="{StaticResource AppIconGlyphStyle}" />
-                                    <TextBlock Text="{loc:Translate History.Copy}" Style="{StaticResource AppIconTextStyle}" />
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                        <Button Command="{Binding DeleteCommand}"
+                                IsEnabled="{Binding CanCopy}"
+                                Margin="0,0,8,0"
+                                Padding="{StaticResource PaddingButtonPrimary}"
+                                Background="{StaticResource ErrorBrush}"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                BorderThickness="0"
+                                AutomationProperties.Name="{loc:Translate History.Delete}">
+                            <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                <TextBlock Text="{StaticResource IconActionDelete}" Style="{StaticResource AppIconGlyphStyle}" />
+                                <TextBlock Text="{loc:Translate History.Delete}" Style="{StaticResource AppIconTextStyle}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding SaveEditCommand}"
+                                IsEnabled="{Binding CanSaveEdit}"
+                                Margin="0,0,8,0"
+                                Padding="{StaticResource PaddingButtonPrimary}"
+                                Background="{StaticResource CardBrush}"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                BorderThickness="0"
+                                FontWeight="SemiBold"
+                                AutomationProperties.Name="{loc:Translate History.SaveChanges}">
+                            <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
+                                <TextBlock Text="{loc:Translate History.SaveChanges}" Style="{StaticResource AppIconTextStyle}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding CopyCommand}"
+                                IsEnabled="{Binding CanCopy}"
+                                Padding="{StaticResource PaddingButtonPrimary}"
+                                Background="{StaticResource AccentBrush}"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                BorderThickness="0"
+                                FontWeight="SemiBold"
+                                AutomationProperties.Name="{loc:Translate History.Copy}">
+                            <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                <TextBlock Text="{StaticResource IconActionCopy}" Style="{StaticResource AppIconGlyphStyle}" />
+                                <TextBlock Text="{loc:Translate History.Copy}" Style="{StaticResource AppIconTextStyle}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </Grid>
             </Border>
     </Grid>
