@@ -67,7 +67,7 @@ public sealed class JsonSettingsStore : ISettingsStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
+    public async Task<bool> SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -79,10 +79,12 @@ public sealed class JsonSettingsStore : ISettingsStore
                     (stream, token) => JsonSerializer.SerializeAsync(stream, settings, SerializerOptions, token),
                     cancellationToken)
                 .ConfigureAwait(false);
+            return true;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             FileLogger.Error($"Failed to save settings to {_filePath}.", exception);
+            return false;
         }
     }
 }

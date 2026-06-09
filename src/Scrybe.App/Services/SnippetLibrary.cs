@@ -46,7 +46,8 @@ public sealed class SnippetLibrary
 
     /// <summary>Adds or replaces a snippet (matched by id) and persists.</summary>
     /// <param name="snippet">The snippet to save.</param>
-    public async Task SaveAsync(Snippet snippet)
+    /// <returns><see langword="true"/> when the snippet library was persisted; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> SaveAsync(Snippet snippet)
     {
         ArgumentNullException.ThrowIfNull(snippet);
 
@@ -60,14 +61,15 @@ public sealed class SnippetLibrary
             _snippets.Add(snippet);
         }
 
-        await _store.SaveAsync(_snippets).ConfigureAwait(false);
+        return await _store.SaveAsync(_snippets).ConfigureAwait(false);
     }
 
     /// <summary>Deletes the snippet with the given id and persists.</summary>
     /// <param name="id">The id of the snippet to delete.</param>
-    public async Task DeleteAsync(string id)
+    /// <returns><see langword="true"/> when the deletion was persisted; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> DeleteAsync(string id)
     {
         _snippets.RemoveAll(snippet => string.Equals(snippet.Id, id, StringComparison.Ordinal));
-        await _store.SaveAsync(_snippets).ConfigureAwait(false);
+        return await _store.SaveAsync(_snippets).ConfigureAwait(false);
     }
 }

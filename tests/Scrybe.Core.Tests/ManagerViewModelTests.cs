@@ -233,6 +233,29 @@ public sealed class ManagerViewModelTests
     }
 
     [Fact]
+    public async Task HistoryManager_SaveEdit_WhenStoreFails_SurfacesPersistenceFailure()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("managed history original");
+        store.SaveSucceeds = false;
+        TestNotificationService notification = new();
+        HistoryManagerViewModel viewModel = new(
+            library,
+            new TestClipboardService(),
+            notification,
+            new TestLocalizationManager(),
+            new DenyingConfirmationService());
+
+        viewModel.EditText = "managed history edited";
+        await viewModel.SaveEditCommand.ExecuteAsync(null);
+
+        viewModel.StatusMessage.Should().Be("Couldn't save changes");
+        viewModel.IsStatusError.Should().BeTrue();
+        notification.Messages.Should().ContainSingle("Couldn't save changes");
+    }
+
+    [Fact]
     public async Task HistoryManager_EmptyEdit_DisablesSaveAndDoesNotPersist()
     {
         InMemoryCaptureHistoryStore store = new();
@@ -289,6 +312,7 @@ public sealed class ManagerViewModelTests
             "History.Cleared" => "Cleared",
             "History.ClearFailed" => "Clear failed",
             "Notify.CopiedFromHistory" => "{0} characters copied from history",
+            "Persist.SaveFailed" => "Couldn't save changes",
             "AppTitle" => "Scrybe",
             _ => key,
         };
@@ -318,14 +342,21 @@ public sealed class ManagerViewModelTests
 
         public int SaveCount { get; private set; }
 
+        public bool SaveSucceeds { get; set; } = true;
+
         public Task<IReadOnlyList<SecretEntry>> LoadAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<SecretEntry>>(SavedSecrets);
 
-        public Task SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
+        public Task<bool> SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
         {
             SaveCount++;
+            if (!SaveSucceeds)
+            {
+                return Task.FromResult(false);
+            }
+
             SavedSecrets = [.. secrets];
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
     }
 
@@ -335,14 +366,21 @@ public sealed class ManagerViewModelTests
 
         public int SaveCount { get; private set; }
 
+        public bool SaveSucceeds { get; set; } = true;
+
         public Task<IReadOnlyList<CaptureHistoryEntry>> LoadAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<CaptureHistoryEntry>>(SavedEntries);
 
-        public Task SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default)
+        public Task<bool> SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default)
         {
             SaveCount++;
+            if (!SaveSucceeds)
+            {
+                return Task.FromResult(false);
+            }
+
             SavedEntries = [.. entries];
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
     }
 
@@ -352,14 +390,21 @@ public sealed class ManagerViewModelTests
 
         public int SaveCount { get; private set; }
 
+        public bool SaveSucceeds { get; set; } = true;
+
         public Task<IReadOnlyList<Snippet>> LoadAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Snippet>>(SavedSnippets);
 
-        public Task SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
+        public Task<bool> SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
         {
             SaveCount++;
+            if (!SaveSucceeds)
+            {
+                return Task.FromResult(false);
+            }
+
             SavedSnippets = [.. snippets];
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
     }
 
@@ -379,11 +424,13 @@ public sealed class ManagerViewModelTests
 
     private sealed class TestNotificationService : INotificationService
     {
-        public int CallCount { get; private set; }
+        public List<string> Messages { get; } = [];
+
+        public int CallCount => Messages.Count;
 
         public void Notify(string title, string message)
         {
-            CallCount++;
+            Messages.Add(message);
         }
     }
 }

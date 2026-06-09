@@ -29,5 +29,6 @@ public interface ISecretStore
     /// <summary>Persists the full protected secret list.</summary>
     /// <param name="secrets">The protected secret entries to persist.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> when the vault was written; otherwise <see langword="false"/>.</returns>
+    Task<bool> SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default);
 }

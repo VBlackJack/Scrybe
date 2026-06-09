@@ -67,7 +67,7 @@ public sealed class JsonSecretStore : ISecretStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
+    public async Task<bool> SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(secrets);
 
@@ -79,10 +79,12 @@ public sealed class JsonSecretStore : ISecretStore
                     (stream, token) => JsonSerializer.SerializeAsync(stream, secrets, SerializerOptions, token),
                     cancellationToken)
                 .ConfigureAwait(false);
+            return true;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             FileLogger.Error($"Failed to save secrets to {_filePath}.", exception);
+            return false;
         }
     }
 

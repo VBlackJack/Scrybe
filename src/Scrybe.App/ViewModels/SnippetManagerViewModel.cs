@@ -134,9 +134,15 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             Template,
             ParseParameters(ParametersText));
 
-        await _library.SaveAsync(snippet).ConfigureAwait(true);
+        bool persisted = await _library.SaveAsync(snippet).ConfigureAwait(true);
         Reload();
         SelectedSnippet = Snippets.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.Ordinal));
+        if (!persisted)
+        {
+            ShowSaveFailure();
+            return;
+        }
+
         StatusMessage = _localization["Manager.Saved"];
         IsStatusError = false;
     }
@@ -161,11 +167,23 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             return;
         }
 
-        await _library.DeleteAsync(SelectedSnippet.Id).ConfigureAwait(true);
+        bool persisted = await _library.DeleteAsync(SelectedSnippet.Id).ConfigureAwait(true);
         Reload();
         New();
+        if (!persisted)
+        {
+            ShowSaveFailure();
+            return;
+        }
+
         StatusMessage = _localization["Manager.Deleted"];
         IsStatusError = false;
+    }
+
+    private void ShowSaveFailure()
+    {
+        StatusMessage = _localization["Persist.SaveFailed"];
+        IsStatusError = true;
     }
 
     private static string FormatParameters(IReadOnlyList<SnippetParameter> parameters)

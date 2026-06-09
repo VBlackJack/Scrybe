@@ -28,5 +28,6 @@ public interface ICaptureHistoryStore
     /// <summary>Saves protected capture history entries, newest first.</summary>
     /// <param name="entries">The entries to persist.</param>
     /// <param name="cancellationToken">Cancellation token for file I/O.</param>
-    Task SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> when the history was written; otherwise <see langword="false"/>.</returns>
+    Task<bool> SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default);
 }

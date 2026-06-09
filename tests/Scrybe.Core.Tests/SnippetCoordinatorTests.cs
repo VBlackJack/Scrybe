@@ -138,8 +138,8 @@ public sealed class SnippetCoordinatorTests
         public Task<IReadOnlyList<Snippet>> LoadAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<Snippet>>([]);
 
-        public Task SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
+        public Task<bool> SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
+            => Task.FromResult(true);
     }
 
     private sealed class TestNotificationService : INotificationService

@@ -322,11 +322,11 @@ public sealed class SecretVaultTests
         public Task<IReadOnlyList<SecretEntry>> LoadAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<SecretEntry>>(SavedSecrets);
 
-        public Task SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
+        public Task<bool> SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
         {
             SaveCount++;
             SavedSecrets = [.. secrets];
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
     }
 

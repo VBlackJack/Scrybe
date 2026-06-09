@@ -36,6 +36,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly AppSettings _settings;
     private readonly ISettingsStore _store;
     private readonly ILocalizationManager _localization;
+    private readonly INotificationService _notification;
     private readonly HotkeyRegistrar _registrar;
     private readonly bool _initialized;
 
@@ -78,25 +79,32 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _statusMessage = string.Empty;
 
+    [ObservableProperty]
+    private bool _isStatusError;
+
     /// <summary>Initializes the view model from the current settings.</summary>
     /// <param name="settings">The live settings instance.</param>
     /// <param name="store">The persistence store.</param>
     /// <param name="localization">Source of localized strings (and the live locale switch).</param>
+    /// <param name="notification">Notification service used when settings cannot be persisted.</param>
     /// <param name="registrar">The hotkey registrar used to re-register edited hotkeys.</param>
     public SettingsViewModel(
         AppSettings settings,
         ISettingsStore store,
         ILocalizationManager localization,
+        INotificationService notification,
         HotkeyRegistrar registrar)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(notification);
         ArgumentNullException.ThrowIfNull(registrar);
 
         _settings = settings;
         _store = store;
         _localization = localization;
+        _notification = notification;
         _registrar = registrar;
 
         _enableLogging = settings.EnableLogging;
@@ -223,6 +231,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 _localization["Settings.HotkeyInvalid"],
                 LabelForAction(firstError.ActionId),
                 ReasonText(firstError.Error));
+            IsStatusError = true;
             return;
         }
 
@@ -233,6 +242,7 @@ public sealed partial class SettingsViewModel : ObservableObject
                 CultureInfo.CurrentCulture,
                 _localization["Settings.HotkeyConflict"],
                 LabelForAction(registration.FailedActionId));
+            IsStatusError = true;
             return;
         }
 
@@ -269,11 +279,27 @@ public sealed partial class SettingsViewModel : ObservableObject
         CaptureHistoryMaxEntries = _settings.CaptureHistoryMaxEntries;
 
         FileLogger.SetEnabled(_settings.EnableLogging);
-        await _store.SaveAsync(_settings).ConfigureAwait(true);
+        bool persisted = await _store.SaveAsync(_settings).ConfigureAwait(true);
+        if (!persisted)
+        {
+            ShowSaveFailure();
+            FileLogger.Warn("Settings updated in memory but could not be persisted.");
+            return;
+        }
+
         FileLogger.Info("Settings saved.");
 
         StatusMessage = _localization["Settings.Saved"];
+        IsStatusError = false;
         Saved?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ShowSaveFailure()
+    {
+        string message = _localization["Persist.SaveFailed"];
+        StatusMessage = message;
+        IsStatusError = true;
+        _notification.Notify(_localization["AppTitle"], message);
     }
 
     private string LabelForAction(string? actionId) => actionId switch

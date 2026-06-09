@@ -49,6 +49,7 @@
   "Notify.ClipboardEmpty": "Clipboard has no text to inject",
   "Notify.ClipboardInjected": "Clipboard text injected",
   "Notify.CaptureFailed": "Capture failed. See the log for details.",
+  "Persist.SaveFailed": "Couldn't save changes - they may not persist. Check the log.",
   "Inject.Done": "Typed {0} key events ({1} characters skipped)",
   "Inject.Nothing": "Nothing to type: capture some text first",
   "Inject.Failed": "Typing failed. See the log for details.",

@@ -67,7 +67,7 @@ public sealed class JsonSnippetStore : ISnippetStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
+    public async Task<bool> SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(snippets);
 
@@ -79,10 +79,12 @@ public sealed class JsonSnippetStore : ISnippetStore
                     (stream, token) => JsonSerializer.SerializeAsync(stream, snippets, SerializerOptions, token),
                     cancellationToken)
                 .ConfigureAwait(false);
+            return true;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             FileLogger.Error($"Failed to save snippets to {_filePath}.", exception);
+            return false;
         }
     }
 }

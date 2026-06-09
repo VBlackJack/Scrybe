@@ -131,13 +131,19 @@ public sealed partial class SecretManagerViewModel : ObservableObject
             return;
         }
 
-        SecretEntry saved = await _library
+        SecretSaveResult result = await _library
             .SaveAsync(SelectedSecret?.Id, Name, UserName, SecretValue)
             .ConfigureAwait(true);
         SecretValue = string.Empty;
         SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
         Reload();
-        SelectedSecret = Secrets.FirstOrDefault(secret => string.Equals(secret.Id, saved.Id, StringComparison.Ordinal));
+        SelectedSecret = Secrets.FirstOrDefault(secret => string.Equals(secret.Id, result.Entry.Id, StringComparison.Ordinal));
+        if (!result.Persisted)
+        {
+            ShowSaveFailure();
+            return;
+        }
+
         StatusMessage = _localization["Secrets.Saved"];
         IsStatusError = false;
     }
@@ -162,10 +168,22 @@ public sealed partial class SecretManagerViewModel : ObservableObject
             return;
         }
 
-        await _library.DeleteAsync(SelectedSecret.Id).ConfigureAwait(true);
+        bool persisted = await _library.DeleteAsync(SelectedSecret.Id).ConfigureAwait(true);
         Reload();
         New();
+        if (!persisted)
+        {
+            ShowSaveFailure();
+            return;
+        }
+
         StatusMessage = _localization["Secrets.Deleted"];
         IsStatusError = false;
+    }
+
+    private void ShowSaveFailure()
+    {
+        StatusMessage = _localization["Persist.SaveFailed"];
+        IsStatusError = true;
     }
 }

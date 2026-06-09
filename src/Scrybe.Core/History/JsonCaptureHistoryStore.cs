@@ -67,7 +67,7 @@ public sealed class JsonCaptureHistoryStore : ICaptureHistoryStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default)
+    public async Task<bool> SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entries);
 
@@ -79,10 +79,12 @@ public sealed class JsonCaptureHistoryStore : ICaptureHistoryStore
                     (stream, token) => JsonSerializer.SerializeAsync(stream, entries, SerializerOptions, token),
                     cancellationToken)
                 .ConfigureAwait(false);
+            return true;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             FileLogger.Error($"Failed to save capture history to {_filePath}.", exception);
+            return false;
         }
     }
 

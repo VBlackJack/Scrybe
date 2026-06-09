@@ -100,7 +100,14 @@ public sealed class CaptureHistoryCoordinator
             return false;
         }
 
-        await _library.ClearAsync().ConfigureAwait(false);
+        bool persisted = await _library.ClearAsync().ConfigureAwait(false);
+        if (!persisted)
+        {
+            NotifySaveFailure();
+            FileLogger.Warn("Capture history clear-all completed in memory but was not persisted.");
+            return false;
+        }
+
         FileLogger.Info("Capture history cleared.");
         return true;
     }
@@ -149,8 +156,13 @@ public sealed class CaptureHistoryCoordinator
     {
         try
         {
-            await _library.DeleteAsync(entryId).ConfigureAwait(true);
+            bool persisted = await _library.DeleteAsync(entryId).ConfigureAwait(true);
             viewModel.ReplaceEntries(BuildItems());
+            if (!persisted)
+            {
+                NotifySaveFailure();
+                FileLogger.Warn("Capture history palette delete completed in memory but was not persisted.");
+            }
         }
         catch (Exception exception)
         {
@@ -179,4 +191,7 @@ public sealed class CaptureHistoryCoordinator
 
         return items;
     }
+
+    private void NotifySaveFailure()
+        => _notification.Notify(_localization["AppTitle"], _localization["Persist.SaveFailed"]);
 }

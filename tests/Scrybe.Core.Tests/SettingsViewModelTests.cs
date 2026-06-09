@@ -34,7 +34,8 @@ public sealed class SettingsViewModelTests
         InMemorySettingsStore store = new();
         FakeHotkeyService hotkeys = new();
         HotkeyRegistrar registrar = new(hotkeys);
-        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), registrar);
+        TestNotificationService notification = new();
+        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), notification, registrar);
 
         viewModel.ClipboardInjectRecorder.Capture("Control+Alt", "Y");
         viewModel.HistoryPaletteRecorder.Capture("Control+Alt", "U");
@@ -52,6 +53,8 @@ public sealed class SettingsViewModelTests
         hotkeys.Registered[AppConstants.CaptureHistoryHotkeyId].DisplayName.Should().Be("Control+Alt+U");
         registrar.Current.Should().HaveCount(7);
         viewModel.StatusMessage.Should().Be("Saved");
+        viewModel.IsStatusError.Should().BeFalse();
+        notification.Messages.Should().BeEmpty();
     }
 
     [Fact]
@@ -61,7 +64,7 @@ public sealed class SettingsViewModelTests
         InMemorySettingsStore store = new();
         FakeHotkeyService hotkeys = new();
         HotkeyRegistrar registrar = new(hotkeys);
-        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), registrar);
+        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), new TestNotificationService(), registrar);
 
         viewModel.HistoryPaletteRecorder.Capture("Alt+Control", "B");
 
@@ -72,6 +75,31 @@ public sealed class SettingsViewModelTests
         registrar.Current.Should().BeEmpty();
         settings.HistoryPaletteHotkeyKey.Should().Be(AppConstants.DefaultHistoryPaletteHotkeyKey);
         viewModel.StatusMessage.Should().Contain("duplicate");
+        viewModel.IsStatusError.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Save_WhenStoreFails_NotifiesAndDoesNotRaiseSaved()
+    {
+        AppSettings settings = new();
+        InMemorySettingsStore store = new()
+        {
+            SaveSucceeds = false,
+        };
+        FakeHotkeyService hotkeys = new();
+        HotkeyRegistrar registrar = new(hotkeys);
+        TestNotificationService notification = new();
+        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), notification, registrar);
+        int savedEvents = 0;
+        viewModel.Saved += (_, _) => savedEvents++;
+
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        store.SaveCount.Should().Be(1);
+        viewModel.StatusMessage.Should().Be("Couldn't save changes");
+        viewModel.IsStatusError.Should().BeTrue();
+        notification.Messages.Should().ContainSingle("Couldn't save changes");
+        savedEvents.Should().Be(0);
     }
 
     private sealed class InMemorySettingsStore : ISettingsStore
@@ -80,14 +108,21 @@ public sealed class SettingsViewModelTests
 
         public AppSettings? SavedSettings { get; private set; }
 
+        public bool SaveSucceeds { get; init; } = true;
+
         public Task<SettingsLoadResult> LoadAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new SettingsLoadResult(new AppSettings(), false));
 
-        public Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
+        public Task<bool> SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
         {
             SaveCount++;
+            if (!SaveSucceeds)
+            {
+                return Task.FromResult(false);
+            }
+
             SavedSettings = settings;
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
     }
 
@@ -116,6 +151,8 @@ public sealed class SettingsViewModelTests
             "Settings.HotkeyReasonNoModifier" => "missing modifier",
             "Settings.HotkeyReasonUnparseable" => "unparseable",
             "Settings.Saved" => "Saved",
+            "Persist.SaveFailed" => "Couldn't save changes",
+            "AppTitle" => "Scrybe",
             _ => key,
         };
 
@@ -149,5 +186,13 @@ public sealed class SettingsViewModelTests
         public void Dispose()
         {
         }
+    }
+
+    private sealed class TestNotificationService : INotificationService
+    {
+        public List<string> Messages { get; } = [];
+
+        public void Notify(string title, string message)
+            => Messages.Add(message);
     }
 }

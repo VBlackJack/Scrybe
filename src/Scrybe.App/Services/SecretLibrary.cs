@@ -55,8 +55,8 @@ public sealed class SecretLibrary
     /// <param name="name">User-facing secret label.</param>
     /// <param name="userName">Optional user/account label.</param>
     /// <param name="secretValue">New plaintext value; blank preserves the existing protected value.</param>
-    /// <returns>The saved entry.</returns>
-    public async Task<SecretEntry> SaveAsync(string? id, string name, string? userName, string secretValue)
+    /// <returns>The saved entry and whether it was persisted.</returns>
+    public async Task<SecretSaveResult> SaveAsync(string? id, string name, string? userName, string secretValue)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(secretValue);
@@ -92,16 +92,17 @@ public sealed class SecretLibrary
             _secrets.Add(saved);
         }
 
-        await _store.SaveAsync(_secrets).ConfigureAwait(false);
-        return saved;
+        bool persisted = await _store.SaveAsync(_secrets).ConfigureAwait(false);
+        return new SecretSaveResult(saved, persisted);
     }
 
     /// <summary>Deletes a secret by id and persists the vault.</summary>
     /// <param name="id">The secret id.</param>
-    public async Task DeleteAsync(string id)
+    /// <returns><see langword="true"/> when the deletion was persisted; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> DeleteAsync(string id)
     {
         _secrets.RemoveAll(secret => string.Equals(secret.Id, id, StringComparison.Ordinal));
-        await _store.SaveAsync(_secrets).ConfigureAwait(false);
+        return await _store.SaveAsync(_secrets).ConfigureAwait(false);
     }
 
     /// <summary>Returns plaintext secret characters for immediate injection, or <see langword="null"/> when absent.</summary>
@@ -145,9 +146,18 @@ public sealed class SecretLibrary
 
         if (changed)
         {
-            await _store.SaveAsync(migrated).ConfigureAwait(false);
+            bool persisted = await _store.SaveAsync(migrated).ConfigureAwait(false);
+            if (!persisted)
+            {
+                FileLogger.Warn("Protected secret migration completed in memory but could not be persisted.");
+            }
         }
 
         return migrated;
     }
 }
+
+/// <summary>The result of a secret save operation.</summary>
+/// <param name="Entry">The saved secret entry kept in the in-memory library.</param>
+/// <param name="Persisted">Whether the entry was written to the protected store.</param>
+public sealed record SecretSaveResult(SecretEntry Entry, bool Persisted);

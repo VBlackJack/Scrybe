@@ -62,11 +62,12 @@ public sealed class CaptureHistoryLibrary
 
     /// <summary>Adds a plaintext OCR result to the protected history and persists the capped ring buffer.</summary>
     /// <param name="text">OCR text to protect and persist.</param>
-    public async Task AddAsync(string text)
+    /// <returns><see langword="true"/> when there was nothing to save or the history was persisted; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> AddAsync(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            return;
+            return true;
         }
 
         CaptureHistoryEntry entry = new(
@@ -82,8 +83,9 @@ public sealed class CaptureHistoryLibrary
 
         _entries.Clear();
         _entries.AddRange(updated);
-        await _store.SaveAsync(_entries).ConfigureAwait(false);
+        bool persisted = await _store.SaveAsync(_entries).ConfigureAwait(false);
         EntriesChanged?.Invoke(this, EventArgs.Empty);
+        return persisted;
     }
 
     /// <summary>Reveals plaintext for one entry, or <see langword="null"/> when the entry is absent.</summary>
@@ -114,20 +116,21 @@ public sealed class CaptureHistoryLibrary
     /// <summary>Replaces one entry's protected plaintext while preserving its identity and capture timestamp.</summary>
     /// <param name="id">The history entry id.</param>
     /// <param name="newText">The new plaintext to protect and persist.</param>
-    public async Task UpdateAsync(string id, string newText)
+    /// <returns><see langword="true"/> when there was nothing to save or the history was persisted; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> UpdateAsync(string id, string newText)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
         if (string.IsNullOrWhiteSpace(newText))
         {
-            return;
+            return true;
         }
 
         int index = _entries.FindIndex(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
         if (index < 0)
         {
             FileLogger.Warn($"Capture history update requested for missing entry '{id}'.");
-            return;
+            return true;
         }
 
         CaptureHistoryEntry current = _entries[index];
@@ -138,26 +141,31 @@ public sealed class CaptureHistoryLibrary
             current.CapturedAtUtc);
 
         _entries[index] = updated;
-        await _store.SaveAsync(_entries).ConfigureAwait(false);
+        bool persisted = await _store.SaveAsync(_entries).ConfigureAwait(false);
         EntriesChanged?.Invoke(this, EventArgs.Empty);
+        return persisted;
     }
 
     /// <summary>Clears every history entry and persists an empty history.</summary>
-    public async Task ClearAsync()
+    /// <returns><see langword="true"/> when the clear was persisted; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> ClearAsync()
     {
         _entries.Clear();
-        await _store.SaveAsync(_entries).ConfigureAwait(false);
+        bool persisted = await _store.SaveAsync(_entries).ConfigureAwait(false);
         EntriesChanged?.Invoke(this, EventArgs.Empty);
+        return persisted;
     }
 
     /// <summary>Deletes one history entry by id and persists the remaining entries.</summary>
     /// <param name="id">The history entry id.</param>
-    public async Task DeleteAsync(string id)
+    /// <returns><see langword="true"/> when the deletion was persisted; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> DeleteAsync(string id)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
         _entries.RemoveAll(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
-        await _store.SaveAsync(_entries).ConfigureAwait(false);
+        bool persisted = await _store.SaveAsync(_entries).ConfigureAwait(false);
         EntriesChanged?.Invoke(this, EventArgs.Empty);
+        return persisted;
     }
 }

@@ -90,7 +90,11 @@ public partial class App : System.Windows.Application
         if (!loaded.Existed)
         {
             FileLogger.Info("No settings file found; writing defaults.");
-            await settingsStore.SaveAsync(settings).ConfigureAwait(true);
+            bool persistedDefaults = await settingsStore.SaveAsync(settings).ConfigureAwait(true);
+            if (!persistedDefaults)
+            {
+                FileLogger.Warn("Default settings were created in memory but could not be persisted.");
+            }
         }
 
         FileLogger.SetEnabled(settings.EnableLogging);
@@ -425,7 +429,21 @@ public partial class App : System.Windows.Application
         FileLogger.Info($"Cleanup mode set to {mode}.");
         _trayIconService?.UpdateCleanupMode(mode);
         _mainViewModel?.RefreshStatus();
-        _ = _serviceProvider!.GetRequiredService<ISettingsStore>().SaveAsync(settings);
+        _ = SaveCleanupModeAsync(settings);
+    }
+
+    private async Task SaveCleanupModeAsync(AppSettings settings)
+    {
+        bool persisted = await _serviceProvider!
+            .GetRequiredService<ISettingsStore>()
+            .SaveAsync(settings)
+            .ConfigureAwait(true);
+        if (!persisted)
+        {
+            ILocalizationManager localization = _serviceProvider!.GetRequiredService<ILocalizationManager>();
+            _trayIconService?.Notify(localization["AppTitle"], localization["Persist.SaveFailed"]);
+            FileLogger.Warn("Cleanup mode changed in memory but could not be persisted.");
+        }
     }
 
     private void OnSettingsRequested(object? sender, EventArgs e)

@@ -31,7 +31,8 @@ public interface ISettingsStore
     /// <summary>Persists the settings, replacing the previous contents.</summary>
     /// <param name="settings">The settings to save.</param>
     /// <param name="cancellationToken">Token used to cancel the save.</param>
-    Task SaveAsync(AppSettings settings, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> when the settings were written; otherwise <see langword="false"/>.</returns>
+    Task<bool> SaveAsync(AppSettings settings, CancellationToken cancellationToken = default);
 }
 
 /// <summary>The outcome of loading settings.</summary>

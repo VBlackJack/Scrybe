@@ -189,8 +189,15 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
 
         try
         {
-            await _library.DeleteAsync(SelectedEntry.Id).ConfigureAwait(true);
+            bool persisted = await _library.DeleteAsync(SelectedEntry.Id).ConfigureAwait(true);
             Reload();
+            if (!persisted)
+            {
+                ShowSaveFailure();
+                FileLogger.Warn("Capture history entry delete updated memory but was not persisted.");
+                return;
+            }
+
             StatusMessage = _localization["History.Deleted"];
             IsStatusError = false;
             FileLogger.Info("Capture history entry deleted from manager.");
@@ -222,10 +229,17 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
         string selectedId = SelectedEntry.Id;
         try
         {
-            await _library.UpdateAsync(selectedId, EditText).ConfigureAwait(true);
+            bool persisted = await _library.UpdateAsync(selectedId, EditText).ConfigureAwait(true);
             Reload();
             SelectedEntry = Entries.FirstOrDefault(entry => string.Equals(entry.Id, selectedId, StringComparison.Ordinal))
                 ?? SelectedEntry;
+            if (!persisted)
+            {
+                ShowSaveFailure();
+                FileLogger.Warn("Capture history entry update completed in memory but was not persisted.");
+                return;
+            }
+
             StatusMessage = _localization["History.Saved"];
             IsStatusError = false;
             FileLogger.Info("Capture history entry updated from manager.");
@@ -258,8 +272,15 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
 
         try
         {
-            await _library.ClearAsync().ConfigureAwait(true);
+            bool persisted = await _library.ClearAsync().ConfigureAwait(true);
             Reload();
+            if (!persisted)
+            {
+                ShowSaveFailure();
+                FileLogger.Warn("Capture history clear-all completed in memory but was not persisted.");
+                return;
+            }
+
             StatusMessage = _localization["History.Cleared"];
             IsStatusError = false;
             FileLogger.Info("Capture history cleared from manager.");
@@ -308,5 +329,13 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
     {
         CanSaveEdit = SelectedEntry is not null && !string.IsNullOrWhiteSpace(EditText);
         SaveEditCommand.NotifyCanExecuteChanged();
+    }
+
+    private void ShowSaveFailure()
+    {
+        string message = _localization["Persist.SaveFailed"];
+        StatusMessage = message;
+        IsStatusError = true;
+        _notification.Notify(_localization["AppTitle"], message);
     }
 }

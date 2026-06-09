@@ -49,6 +49,7 @@
   "Notify.ClipboardEmpty": "Le presse-papier ne contient aucun texte à injecter",
   "Notify.ClipboardInjected": "Texte du presse-papier injecté",
   "Notify.CaptureFailed": "La capture a échoué. Consultez le journal pour les détails.",
+  "Persist.SaveFailed": "Impossible d'enregistrer les modifications ; elles pourraient ne pas persister. Consultez le journal.",
   "Inject.Done": "{0} évènements clavier envoyés ({1} caractères ignorés)",
   "Inject.Nothing": "Rien à taper : capturez d'abord du texte",
   "Inject.Failed": "La saisie a échoué. Consultez le journal pour les détails.",

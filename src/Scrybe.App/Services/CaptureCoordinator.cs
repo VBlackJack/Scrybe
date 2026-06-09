@@ -157,7 +157,11 @@ public sealed class CaptureCoordinator
             {
                 try
                 {
-                    await _historyLibrary.AddAsync(text).ConfigureAwait(false);
+                    bool persistedHistory = await _historyLibrary.AddAsync(text).ConfigureAwait(false);
+                    if (!persistedHistory)
+                    {
+                        _notification.Notify(_localization["AppTitle"], _localization["Persist.SaveFailed"]);
+                    }
                 }
                 catch (Exception exception)
                 {

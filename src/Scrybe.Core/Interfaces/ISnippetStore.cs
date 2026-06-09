@@ -28,5 +28,6 @@ public interface ISnippetStore
     /// <summary>Persists the full snippet list, replacing the previous contents.</summary>
     /// <param name="snippets">The snippets to save.</param>
     /// <param name="cancellationToken">Token used to cancel the save.</param>
-    Task SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> when the library was written; otherwise <see langword="false"/>.</returns>
+    Task<bool> SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default);
 }
