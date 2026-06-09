@@ -70,7 +70,13 @@
     </Window.Resources>
 
     <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
-        <TabItem Header="{loc:Translate Shell.TabHome}">
+        <TabItem AutomationProperties.Name="{loc:Translate Shell.TabHome}">
+            <TabItem.Header>
+                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                    <TextBlock Text="{StaticResource IconTabHome}" Style="{StaticResource AppIconGlyphStyle}" />
+                    <TextBlock Text="{loc:Translate Shell.TabHome}" Style="{StaticResource AppIconTextStyle}" />
+                </StackPanel>
+            </TabItem.Header>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="{StaticResource SpacingLg}">
                     <StackPanel HorizontalAlignment="Center" Margin="0,4,0,20">
@@ -98,12 +104,16 @@
                             <TextBlock Text="{loc:Translate Hub.ActionsTitle}"
                                        Style="{StaticResource HubSectionHeaderStyle}" />
 
-                            <Button Content="{loc:Translate Hub.Capture}"
-                                    Command="{Binding CaptureCommand}"
+                            <Button Command="{Binding CaptureCommand}"
                                     Style="{StaticResource HubActionButtonStyle}"
                                     Margin="0,0,0,12"
                                     HorizontalAlignment="Left"
-                                    AutomationProperties.Name="{loc:Translate Hub.Capture}" />
+                                    AutomationProperties.Name="{loc:Translate Hub.Capture}">
+                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                    <TextBlock Text="{StaticResource IconActionCapture}" Style="{StaticResource AppIconGlyphStyle}" />
+                                    <TextBlock Text="{loc:Translate Hub.Capture}" Style="{StaticResource AppIconTextStyle}" />
+                                </StackPanel>
+                            </Button>
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -194,23 +204,53 @@
             </ScrollViewer>
         </TabItem>
 
-        <TabItem Header="{loc:Translate Shell.TabSnippets}">
+        <TabItem AutomationProperties.Name="{loc:Translate Shell.TabSnippets}">
+            <TabItem.Header>
+                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                    <TextBlock Text="{StaticResource IconTabSnippets}" Style="{StaticResource AppIconGlyphStyle}" />
+                    <TextBlock Text="{loc:Translate Shell.TabSnippets}" Style="{StaticResource AppIconTextStyle}" />
+                </StackPanel>
+            </TabItem.Header>
             <views:SnippetManagerView DataContext="{Binding SnippetManager}" />
         </TabItem>
 
-        <TabItem Header="{loc:Translate Shell.TabSecrets}">
+        <TabItem AutomationProperties.Name="{loc:Translate Shell.TabSecrets}">
+            <TabItem.Header>
+                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                    <TextBlock Text="{StaticResource IconTabSecrets}" Style="{StaticResource AppIconGlyphStyle}" />
+                    <TextBlock Text="{loc:Translate Shell.TabSecrets}" Style="{StaticResource AppIconTextStyle}" />
+                </StackPanel>
+            </TabItem.Header>
             <views:SecretManagerView DataContext="{Binding SecretManager}" />
         </TabItem>
 
-        <TabItem Header="{loc:Translate Shell.TabHistory}">
+        <TabItem AutomationProperties.Name="{loc:Translate Shell.TabHistory}">
+            <TabItem.Header>
+                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                    <TextBlock Text="{StaticResource IconTabHistory}" Style="{StaticResource AppIconGlyphStyle}" />
+                    <TextBlock Text="{loc:Translate Shell.TabHistory}" Style="{StaticResource AppIconTextStyle}" />
+                </StackPanel>
+            </TabItem.Header>
             <views:HistoryView DataContext="{Binding HistoryManager}" />
         </TabItem>
 
-        <TabItem Header="{loc:Translate Shell.TabSettings}">
+        <TabItem AutomationProperties.Name="{loc:Translate Shell.TabSettings}">
+            <TabItem.Header>
+                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                    <TextBlock Text="{StaticResource IconTabSettings}" Style="{StaticResource AppIconGlyphStyle}" />
+                    <TextBlock Text="{loc:Translate Shell.TabSettings}" Style="{StaticResource AppIconTextStyle}" />
+                </StackPanel>
+            </TabItem.Header>
             <views:SettingsView DataContext="{Binding Settings}" />
         </TabItem>
 
-        <TabItem Header="{loc:Translate Shell.TabAbout}">
+        <TabItem AutomationProperties.Name="{loc:Translate Shell.TabAbout}">
+            <TabItem.Header>
+                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                    <TextBlock Text="{StaticResource IconTabAbout}" Style="{StaticResource AppIconGlyphStyle}" />
+                    <TextBlock Text="{loc:Translate Shell.TabAbout}" Style="{StaticResource AppIconTextStyle}" />
+                </StackPanel>
+            </TabItem.Header>
             <views:AboutView DataContext="{Binding About}" />
         </TabItem>
     </TabControl>

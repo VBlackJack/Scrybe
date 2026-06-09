@@ -55,14 +55,18 @@
 
         <Grid DockPanel.Dock="Bottom" Margin="0,12,0,0">
             <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource SuccessBrush}" VerticalAlignment="Center" HorizontalAlignment="Left" />
-            <Button Content="{loc:Translate Settings.Save}"
-                    Command="{Binding SaveCommand}"
+            <Button Command="{Binding SaveCommand}"
                     HorizontalAlignment="Right"
                     Padding="{StaticResource PaddingButtonPrimary}"
                     Background="{StaticResource AccentBrush}"
                     Foreground="{StaticResource TextPrimaryBrush}"
                     BorderThickness="0"
-                    FontWeight="SemiBold" />
+                    FontWeight="SemiBold">
+                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                    <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
+                    <TextBlock Text="{loc:Translate Settings.Save}" Style="{StaticResource AppIconTextStyle}" />
+                </StackPanel>
+            </Button>
         </Grid>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

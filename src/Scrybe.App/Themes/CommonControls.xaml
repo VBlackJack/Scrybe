@@ -23,6 +23,21 @@
     <sys:Double x:Key="FontSizeHeadline">24</sys:Double>
     <sys:Double x:Key="FontSizeHero">64</sys:Double>
 
+    <!-- Icons (Segoe MDL2 Assets) -->
+    <FontFamily x:Key="AppIconFontFamily">Segoe MDL2 Assets</FontFamily>
+    <sys:String x:Key="IconTabHome">&#xE80F;</sys:String>
+    <sys:String x:Key="IconTabSnippets">&#xE8A5;</sys:String>
+    <sys:String x:Key="IconTabSecrets">&#xE72E;</sys:String>
+    <sys:String x:Key="IconTabHistory">&#xE81C;</sys:String>
+    <sys:String x:Key="IconTabSettings">&#xE713;</sys:String>
+    <sys:String x:Key="IconTabAbout">&#xE946;</sys:String>
+    <sys:String x:Key="IconActionCapture">&#xE722;</sys:String>
+    <sys:String x:Key="IconActionNew">&#xE710;</sys:String>
+    <sys:String x:Key="IconActionSave">&#xE74E;</sys:String>
+    <sys:String x:Key="IconActionDelete">&#xE74D;</sys:String>
+    <sys:String x:Key="IconActionCopy">&#xE8C8;</sys:String>
+    <sys:String x:Key="IconActionClear">&#xE894;</sys:String>
+
     <!-- Spacing (Thickness) -->
     <Thickness x:Key="SpacingXs">4</Thickness>
     <Thickness x:Key="SpacingSm">8</Thickness>
@@ -142,6 +157,23 @@
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="Margin" Value="{StaticResource MarginSectionTop}" />
+    </Style>
+
+    <Style x:Key="AppIconTextContentStyle" TargetType="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AppIconGlyphStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppIconFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBodyLarge}" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AppIconTextStyle" TargetType="TextBlock">
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="ManagerFormLabelStyle" TargetType="TextBlock">

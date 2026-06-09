@@ -108,14 +108,18 @@
                     </ListBox>
 
                     <Button Grid.Row="2"
-                            Content="{loc:Translate History.ClearAll}"
                             Command="{Binding ClearAllCommand}"
                             IsEnabled="{Binding HasEntries}"
                             Margin="0,12,0,0"
                             Padding="{StaticResource PaddingButtonPrimary}"
                             Background="{StaticResource ErrorBrush}"
                             Foreground="{StaticResource TextPrimaryBrush}"
-                            BorderThickness="0" />
+                            BorderThickness="0">
+                        <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                            <TextBlock Text="{StaticResource IconActionClear}" Style="{StaticResource AppIconGlyphStyle}" />
+                            <TextBlock Text="{loc:Translate History.ClearAll}" Style="{StaticResource AppIconTextStyle}" />
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Border>
 
@@ -165,31 +169,43 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="{loc:Translate History.Delete}"
-                                    Command="{Binding DeleteCommand}"
+                            <Button Command="{Binding DeleteCommand}"
                                     IsEnabled="{Binding CanCopy}"
                                     Margin="0,0,8,0"
                                     Padding="{StaticResource PaddingButtonPrimary}"
                                     Background="{StaticResource ErrorBrush}"
                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                    BorderThickness="0" />
-                            <Button Content="{loc:Translate History.SaveChanges}"
-                                    Command="{Binding SaveEditCommand}"
+                                    BorderThickness="0">
+                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                    <TextBlock Text="{StaticResource IconActionDelete}" Style="{StaticResource AppIconGlyphStyle}" />
+                                    <TextBlock Text="{loc:Translate History.Delete}" Style="{StaticResource AppIconTextStyle}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding SaveEditCommand}"
                                     IsEnabled="{Binding CanSaveEdit}"
                                     Margin="0,0,8,0"
                                     Padding="{StaticResource PaddingButtonPrimary}"
                                     Background="{StaticResource CardBrush}"
                                     Foreground="{StaticResource TextPrimaryBrush}"
                                     BorderThickness="0"
-                                    FontWeight="SemiBold" />
-                            <Button Content="{loc:Translate History.Copy}"
-                                    Command="{Binding CopyCommand}"
+                                    FontWeight="SemiBold">
+                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                    <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
+                                    <TextBlock Text="{loc:Translate History.SaveChanges}" Style="{StaticResource AppIconTextStyle}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding CopyCommand}"
                                     IsEnabled="{Binding CanCopy}"
                                     Padding="{StaticResource PaddingButtonPrimary}"
                                     Background="{StaticResource AccentBrush}"
                                     Foreground="{StaticResource TextPrimaryBrush}"
                                     BorderThickness="0"
-                                    FontWeight="SemiBold" />
+                                    FontWeight="SemiBold">
+                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                    <TextBlock Text="{StaticResource IconActionCopy}" Style="{StaticResource AppIconGlyphStyle}" />
+                                    <TextBlock Text="{loc:Translate History.Copy}" Style="{StaticResource AppIconTextStyle}" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Grid>
                 </Grid>
