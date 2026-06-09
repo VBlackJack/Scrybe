@@ -209,6 +209,8 @@ public sealed class CaptureCoordinator
                 CaptureOverlayWindow overlay = new(frozen, frame, _localization);
                 overlay.SelectionCompleted += (_, selection) =>
                     completion.TrySetResult(new OverlayOutcome(selection, frozen));
+                overlay.Closed += (_, _) =>
+                    completion.TrySetResult(new OverlayOutcome(null, null));
 
                 overlay.Show();
                 overlay.Activate();

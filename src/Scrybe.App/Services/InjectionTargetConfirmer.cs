@@ -23,7 +23,7 @@ using WpfMessageBox = System.Windows.MessageBox;
 namespace Scrybe.App.Services;
 
 /// <summary>Shared native target-confirmation gate for password-grade injection flows.</summary>
-public sealed class InjectionTargetConfirmer
+public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
 {
     /// <summary>
     /// Confirms the captured target with a native OS dialog and restores focus before injection.

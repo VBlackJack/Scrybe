@@ -27,7 +27,7 @@ public sealed class ClipboardInjectionCoordinator
 {
     private readonly IClipboardService _clipboard;
     private readonly InjectionCoordinator _injection;
-    private readonly InjectionTargetConfirmer _targetConfirmer;
+    private readonly IInjectionTargetConfirmer _targetConfirmer;
     private readonly INotificationService _notification;
     private readonly ILocalizationManager _localization;
     private readonly AppSettings _settings;
@@ -42,7 +42,7 @@ public sealed class ClipboardInjectionCoordinator
     public ClipboardInjectionCoordinator(
         IClipboardService clipboard,
         InjectionCoordinator injection,
-        InjectionTargetConfirmer targetConfirmer,
+        IInjectionTargetConfirmer targetConfirmer,
         INotificationService notification,
         ILocalizationManager localization,
         AppSettings settings)
@@ -88,14 +88,21 @@ public sealed class ClipboardInjectionCoordinator
             }
 
             char[] chars = text.ToCharArray();
+            InjectionResult result;
             try
             {
                 FileLogger.Info("Clipboard injection requested after target confirmation.");
-                await _injection.InjectSecretAsync(chars).ConfigureAwait(false);
+                result = await _injection.InjectSecretAsync(chars, notifySuccess: false).ConfigureAwait(false);
             }
             finally
             {
                 SecretMemory.Clear(chars);
+            }
+
+            if (!result.Success)
+            {
+                FileLogger.Info("Clipboard injection did not complete; clipboard retained.");
+                return;
             }
 
             if (_settings.ClearClipboardAfterInjection)

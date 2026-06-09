@@ -39,6 +39,7 @@ public sealed class SettingsStoreTests
                 CleanupMode = OcrCleanupMode.LogCleaner,
                 InjectionMode = InjectionMode.Scancode,
                 InjectionKeyDelayMs = 40,
+                DebugInjectionEnabled = true,
                 ClipboardInjectHotkeyModifiers = "Control+Shift",
                 ClipboardInjectHotkeyKey = "B",
                 ClearClipboardAfterInjection = false,
@@ -72,6 +73,34 @@ public sealed class SettingsStoreTests
         result.Settings.ClipboardInjectHotkeyModifiers.Should().Be(AppConstants.DefaultClipboardInjectHotkeyModifiers);
         result.Settings.ClipboardInjectHotkeyKey.Should().Be(AppConstants.DefaultClipboardInjectHotkeyKey);
         result.Settings.ClearClipboardAfterInjection.Should().BeTrue();
+        result.Settings.DebugInjectionEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Defaults_DisableDebugInjectionHotkeys()
+    {
+        AppSettings settings = new();
+
+        settings.DebugInjectionEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DefaultRoundTrip_DisablesDebugInjectionHotkeys()
+    {
+        string path = CreateTempPath();
+        try
+        {
+            ISettingsStore store = new JsonSettingsStore(path);
+
+            await store.SaveAsync(new AppSettings());
+            SettingsLoadResult result = await store.LoadAsync();
+
+            result.Settings.DebugInjectionEnabled.Should().BeFalse();
+        }
+        finally
+        {
+            TryDelete(path);
+        }
     }
 
     [Fact]
@@ -107,6 +136,7 @@ public sealed class SettingsStoreTests
             result.Settings.CleanupMode.Should().Be(OcrCleanupMode.Standard);
             result.Settings.InjectionKeyDelayMs.Should().Be(AppConstants.InjectionKeyDelayMs);
             result.Settings.ClearClipboardAfterInjection.Should().BeTrue();
+            result.Settings.DebugInjectionEnabled.Should().BeFalse();
         }
         finally
         {

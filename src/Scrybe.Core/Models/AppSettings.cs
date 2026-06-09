@@ -107,7 +107,7 @@ public sealed class AppSettings
     /// Whether to register the debug reference-injection and mode-toggle hotkeys used to measure
     /// integrity against a known string. Intended off in release builds.
     /// </summary>
-    public bool DebugInjectionEnabled { get; set; } = true;
+    public bool DebugInjectionEnabled { get; set; }
 
     /// <summary>Modifiers for the snippet-palette hotkey.</summary>
     public string PaletteHotkeyModifiers { get; set; } = AppConstants.DefaultPaletteHotkeyModifiers;

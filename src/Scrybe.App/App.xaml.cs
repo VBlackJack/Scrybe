@@ -220,8 +220,15 @@ public partial class App : System.Windows.Application
         services.AddSingleton<CaptureHistoryCoordinator>();
 
         services.AddSingleton<CaptureCoordinator>();
-        services.AddSingleton<InjectionCoordinator>();
+        services.AddSingleton<InjectionCoordinator>(sp => new InjectionCoordinator(
+            sp.GetRequiredService<UnicodeInjector>(),
+            sp.GetRequiredService<ScancodeInjector>(),
+            sp.GetRequiredService<IOcrTextStore>(),
+            sp.GetRequiredService<INotificationService>(),
+            sp.GetRequiredService<ILocalizationManager>(),
+            sp.GetRequiredService<AppSettings>()));
         services.AddSingleton<InjectionTargetConfirmer>();
+        services.AddSingleton<IInjectionTargetConfirmer>(sp => sp.GetRequiredService<InjectionTargetConfirmer>());
         services.AddSingleton<ClipboardInjectionCoordinator>();
         services.AddSingleton<IHotkeyService, HotkeyService>();
         services.AddSingleton<HotkeyRegistrar>();
