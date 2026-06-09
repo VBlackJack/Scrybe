@@ -21,19 +21,33 @@
                         Background="{StaticResource CardBrush}"
                         Foreground="{StaticResource TextPrimaryBrush}"
                         BorderThickness="0" />
-                <ListBox ItemsSource="{Binding Snippets}"
-                         SelectedItem="{Binding SelectedSnippet}"
-                         DisplayMemberPath="Name"
-                         Background="{StaticResource SurfaceBrush}"
-                         Foreground="{StaticResource TextPrimaryBrush}"
-                         BorderBrush="{StaticResource BorderBrush}"
-                         BorderThickness="1"
-                         FontSize="{StaticResource FontSizeBody}" />
+
+                <Grid>
+                    <ListBox x:Name="SnippetList"
+                             ItemsSource="{Binding Snippets}"
+                             SelectedItem="{Binding SelectedSnippet}"
+                             DisplayMemberPath="Name"
+                             Background="{StaticResource SurfaceBrush}"
+                             Foreground="{StaticResource TextPrimaryBrush}"
+                             BorderBrush="{StaticResource BorderBrush}"
+                             BorderThickness="1"
+                             FontSize="{StaticResource FontSizeBody}" />
+                    <TextBlock Text="{loc:Translate Manager.Empty}">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource ManagerEmptyStateTextStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasItems, ElementName=SnippetList}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </DockPanel>
 
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -41,59 +55,80 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="{loc:Translate Manager.Name}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
-                <TextBox Grid.Row="0" Margin="120,0,0,8" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" />
+                <Grid Grid.Row="0" Margin="{StaticResource ManagerFormRowMargin}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ManagerFormLabelWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="1" Text="{loc:Translate Manager.Category}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
-                <TextBox Grid.Row="1" Margin="120,0,0,8" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" />
+                    <TextBlock Grid.Column="0"
+                               Text="{loc:Translate Manager.Name}"
+                               Style="{StaticResource ManagerFormLabelStyle}" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource ManagerTextBoxStyle}" />
+                </Grid>
 
-                <StackPanel Grid.Row="2">
-                    <TextBlock Text="{loc:Translate Manager.Template}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               FontSize="{StaticResource FontSizeCaption}"
-                               Margin="{StaticResource MarginLabelBottom}"
-                               ToolTip="{loc:Translate ToolTip.Manager.Template}" />
-                    <TextBlock Text="{loc:Translate Manager.TemplateHint}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               FontSize="{StaticResource FontSizeCaption}"
-                               Margin="{StaticResource MarginLabelBottom}"
-                               ToolTip="{loc:Translate ToolTip.Manager.Template}" />
-                </StackPanel>
-                <TextBox Grid.Row="3"
-                         Margin="0,20,0,8"
-                         Text="{Binding Template, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"
-                         Background="{StaticResource SurfaceBrush}"
-                         Foreground="{StaticResource TextPrimaryBrush}"
-                         CaretBrush="{StaticResource TextPrimaryBrush}"
-                         BorderBrush="{StaticResource BorderBrush}"
-                         Padding="{StaticResource PaddingInput}"
-                         FontFamily="Consolas"
-                         ToolTip="{loc:Translate ToolTip.Manager.Template}" />
+                <Grid Grid.Row="1" Margin="{StaticResource ManagerFormRowMargin}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ManagerFormLabelWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="4"
-                           Text="{loc:Translate Manager.Parameters}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontSize="{StaticResource FontSizeCaption}"
-                           Margin="{StaticResource MarginLabelBottom}"
-                           ToolTip="{loc:Translate ToolTip.Manager.Parameters}" />
-                <TextBox Grid.Row="4"
-                         Margin="0,20,0,0"
-                         Height="90"
-                         Text="{Binding ParametersText, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"
-                         Background="{StaticResource SurfaceBrush}"
-                         Foreground="{StaticResource TextPrimaryBrush}"
-                         CaretBrush="{StaticResource TextPrimaryBrush}"
-                         BorderBrush="{StaticResource BorderBrush}"
-                         Padding="{StaticResource PaddingInput}"
-                         FontFamily="Consolas"
-                         ToolTip="{loc:Translate ToolTip.Manager.Parameters}" />
+                    <TextBlock Grid.Column="0"
+                               Text="{loc:Translate Manager.Category}"
+                               Style="{StaticResource ManagerFormLabelStyle}" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource ManagerTextBoxStyle}" />
+                </Grid>
 
-                <Grid Grid.Row="5" Margin="0,12,0,0">
+                <Grid Grid.Row="2" Margin="{StaticResource ManagerFormRowMargin}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ManagerFormLabelWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{loc:Translate Manager.Template}"
+                                   Style="{StaticResource ManagerFormLabelStyle}"
+                                   ToolTip="{loc:Translate ToolTip.Manager.Template}" />
+                        <TextBlock Text="{loc:Translate Manager.TemplateHint}"
+                                   Style="{StaticResource ManagerFormHintStyle}"
+                                   ToolTip="{loc:Translate ToolTip.Manager.Template}" />
+                    </StackPanel>
+                    <TextBox Grid.Column="1"
+                             MinHeight="190"
+                             Text="{Binding Template, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto"
+                             Style="{StaticResource ManagerTextBoxStyle}"
+                             FontFamily="Consolas"
+                             ToolTip="{loc:Translate ToolTip.Manager.Template}" />
+                </Grid>
+
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{StaticResource ManagerFormLabelWidth}" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="{loc:Translate Manager.Parameters}"
+                               Style="{StaticResource ManagerFormLabelStyle}"
+                               ToolTip="{loc:Translate ToolTip.Manager.Parameters}" />
+                    <TextBox Grid.Column="1"
+                             Height="90"
+                             Text="{Binding ParametersText, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             Style="{StaticResource ManagerTextBoxStyle}"
+                             FontFamily="Consolas"
+                             ToolTip="{loc:Translate ToolTip.Manager.Parameters}" />
+                </Grid>
+
+                <Grid Grid.Row="4" Margin="0,12,0,0">
                     <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,160,0">
                         <TextBlock.Style>
                             <Style TargetType="{x:Type TextBlock}">

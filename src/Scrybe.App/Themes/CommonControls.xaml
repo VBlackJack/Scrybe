@@ -41,6 +41,11 @@
     <Thickness x:Key="PaddingInput">8,6</Thickness>
     <Thickness x:Key="PaddingSectionCard">16,12</Thickness>
 
+    <!-- Manager forms -->
+    <GridLength x:Key="ManagerFormLabelWidth">132</GridLength>
+    <Thickness x:Key="ManagerFormRowMargin">0,0,0,10</Thickness>
+    <Thickness x:Key="ManagerFormLabelMargin">0,6,12,0</Thickness>
+
     <!-- Window chrome -->
     <Style TargetType="Window">
         <Setter Property="theming:WindowTheming.UseDarkTitleBar" Value="True" />
@@ -137,6 +142,48 @@
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="Margin" Value="{StaticResource MarginSectionTop}" />
+    </Style>
+
+    <Style x:Key="ManagerFormLabelStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}" />
+        <Setter Property="Margin" Value="{StaticResource ManagerFormLabelMargin}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
+    <Style x:Key="ManagerFormHintStyle" TargetType="TextBlock" BasedOn="{StaticResource ManagerFormLabelStyle}">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSmallCaption}" />
+        <Setter Property="Margin" Value="0,2,12,0" />
+    </Style>
+
+    <Style x:Key="ManagerTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="Padding" Value="{StaticResource PaddingInput}" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style x:Key="ManagerPasswordBoxStyle" TargetType="PasswordBox">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="Padding" Value="{StaticResource PaddingInput}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="ManagerEmptyStateTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="{StaticResource SpacingMd}" />
     </Style>
 
     <Style x:Key="AppButtonStyle" TargetType="Button">
