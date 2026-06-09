@@ -26,12 +26,11 @@
         </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="{StaticResource SpacingLg}" MinHeight="520">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+    <Grid Margin="{StaticResource SpacingLg}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Style="{StaticResource HistoryCardStyle}" Margin="0,0,16,0">
                 <Grid>
@@ -62,12 +61,17 @@
                     <ListBox Grid.Row="1"
                              ItemsSource="{Binding Entries}"
                              SelectedItem="{Binding SelectedEntry}"
+                             AutomationProperties.Name="{loc:Translate History.PaletteTitle}"
                              Background="{StaticResource BackgroundBrush}"
                              Foreground="{StaticResource TextPrimaryBrush}"
                              BorderBrush="{StaticResource BorderBrush}"
                              BorderThickness="1"
                              HorizontalContentAlignment="Stretch"
+                             ScrollViewer.CanContentScroll="True"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             VirtualizingStackPanel.IsVirtualizing="True"
+                             VirtualizingStackPanel.VirtualizationMode="Recycling"
                              FontSize="{StaticResource FontSizeBody}">
                         <ListBox.Style>
                             <Style TargetType="{x:Type ListBox}">
@@ -114,7 +118,8 @@
                             Padding="{StaticResource PaddingButtonPrimary}"
                             Background="{StaticResource ErrorBrush}"
                             Foreground="{StaticResource TextPrimaryBrush}"
-                            BorderThickness="0">
+                            BorderThickness="0"
+                            AutomationProperties.Name="{loc:Translate History.ClearAll}">
                         <StackPanel Style="{StaticResource AppIconTextContentStyle}">
                             <TextBlock Text="{StaticResource IconActionClear}" Style="{StaticResource AppIconGlyphStyle}" />
                             <TextBlock Text="{loc:Translate History.ClearAll}" Style="{StaticResource AppIconTextStyle}" />
@@ -144,7 +149,8 @@
                              CaretBrush="{StaticResource TextPrimaryBrush}"
                              BorderBrush="{StaticResource BorderBrush}"
                              Padding="{StaticResource PaddingInput}"
-                             FontFamily="Consolas" />
+                             FontFamily="Consolas"
+                             AutomationProperties.Name="{loc:Translate History.Edit}" />
 
                     <Grid Grid.Row="2" Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
@@ -175,7 +181,8 @@
                                     Padding="{StaticResource PaddingButtonPrimary}"
                                     Background="{StaticResource ErrorBrush}"
                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                    BorderThickness="0">
+                                    BorderThickness="0"
+                                    AutomationProperties.Name="{loc:Translate History.Delete}">
                                 <StackPanel Style="{StaticResource AppIconTextContentStyle}">
                                     <TextBlock Text="{StaticResource IconActionDelete}" Style="{StaticResource AppIconGlyphStyle}" />
                                     <TextBlock Text="{loc:Translate History.Delete}" Style="{StaticResource AppIconTextStyle}" />
@@ -188,7 +195,8 @@
                                     Background="{StaticResource CardBrush}"
                                     Foreground="{StaticResource TextPrimaryBrush}"
                                     BorderThickness="0"
-                                    FontWeight="SemiBold">
+                                    FontWeight="SemiBold"
+                                    AutomationProperties.Name="{loc:Translate History.SaveChanges}">
                                 <StackPanel Style="{StaticResource AppIconTextContentStyle}">
                                     <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
                                     <TextBlock Text="{loc:Translate History.SaveChanges}" Style="{StaticResource AppIconTextStyle}" />
@@ -200,7 +208,8 @@
                                     Background="{StaticResource AccentBrush}"
                                     Foreground="{StaticResource TextPrimaryBrush}"
                                     BorderThickness="0"
-                                    FontWeight="SemiBold">
+                                    FontWeight="SemiBold"
+                                    AutomationProperties.Name="{loc:Translate History.Copy}">
                                 <StackPanel Style="{StaticResource AppIconTextContentStyle}">
                                     <TextBlock Text="{StaticResource IconActionCopy}" Style="{StaticResource AppIconGlyphStyle}" />
                                     <TextBlock Text="{loc:Translate History.Copy}" Style="{StaticResource AppIconTextStyle}" />
@@ -210,6 +219,5 @@
                     </Grid>
                 </Grid>
             </Border>
-        </Grid>
-    </ScrollViewer>
+    </Grid>
 </UserControl>

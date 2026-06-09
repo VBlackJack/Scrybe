@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:Scrybe.App.Localization"
              Focusable="True"
-             Margin="0,3,0,3">
+             Margin="0,3,0,3"
+             AutomationProperties.Name="{Binding Label}">
     <StackPanel Orientation="Horizontal">
         <TextBlock Text="{Binding Label}"
                    Width="170"
@@ -16,7 +17,8 @@
                 BorderThickness="1"
                 CornerRadius="4"
                 Padding="8,4,8,4"
-                VerticalAlignment="Center">
+                VerticalAlignment="Center"
+                AutomationProperties.Name="{Binding Label}">
             <TextBlock Text="{Binding Display}"
                        Foreground="{StaticResource TextPrimaryBrush}"
                        FontFamily="Consolas"
@@ -28,6 +30,8 @@
                 Padding="10,4,10,4"
                 Background="{StaticResource CardBrush}"
                 Foreground="{StaticResource TextPrimaryBrush}"
-                BorderThickness="0" />
+                BorderThickness="0"
+                AutomationProperties.Name="{loc:Translate Settings.Record}"
+                AutomationProperties.HelpText="{Binding Label}" />
     </StackPanel>
 </UserControl>
