@@ -26,4 +26,5 @@ logs/
 docs/prompts/
 docs/audits/
 docs/research/
+docs/adr/0001-stack.md
 artifacts/
