@@ -323,7 +323,8 @@
                             <Border x:Name="Accent"
                                     Background="Transparent"
                                     Height="3"
-                                    VerticalAlignment="Bottom" />
+                                    CornerRadius="5,5,0,0"
+                                    VerticalAlignment="Top" />
                             <ContentPresenter ContentSource="Header"
                                               HorizontalAlignment="Center"
                                               Margin="{TemplateBinding Padding}"
@@ -336,7 +337,6 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Panel.ZIndex" Value="1" />
                             <Setter TargetName="Root" Property="Background" Value="{DynamicResource CardBrush}" />
-                            <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
                             <Setter TargetName="Accent" Property="Background" Value="{DynamicResource AccentBrush}" />
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
