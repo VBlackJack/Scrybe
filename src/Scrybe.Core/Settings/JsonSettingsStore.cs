@@ -15,6 +15,7 @@
  */
 
 using System.Text.Json;
+using Scrybe.Core.IO;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
@@ -72,14 +73,12 @@ public sealed class JsonSettingsStore : ISettingsStore
 
         try
         {
-            string? directory = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            await using FileStream stream = File.Create(_filePath);
-            await JsonSerializer.SerializeAsync(stream, settings, SerializerOptions, cancellationToken).ConfigureAwait(false);
+            await AtomicFileWriter
+                .WriteAsync(
+                    _filePath,
+                    (stream, token) => JsonSerializer.SerializeAsync(stream, settings, SerializerOptions, token),
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {

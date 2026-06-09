@@ -156,6 +156,7 @@ public sealed class SecretVaultTests
             string rawJson = await File.ReadAllTextAsync(path);
             IReadOnlyList<SecretEntry> loaded = await store.LoadAsync();
 
+            EnumerateAtomicTempFiles(path).Should().BeEmpty();
             rawJson.Should().NotContain(PlainSecret);
             loaded.Should().ContainSingle();
             char[] restored = protector.UnprotectToChars(loaded[0].ProtectedSecret);
@@ -198,6 +199,13 @@ public sealed class SecretVaultTests
         string directory = Path.Combine(Path.GetTempPath(), "ScrybeSecretTests");
         Directory.CreateDirectory(directory);
         return Path.Combine(directory, Guid.NewGuid().ToString("N") + ".json");
+    }
+
+    private static IReadOnlyList<string> EnumerateAtomicTempFiles(string path)
+    {
+        string directory = Path.GetDirectoryName(path)!;
+        string pattern = "." + Path.GetFileName(path) + ".*.tmp";
+        return Directory.EnumerateFiles(directory, pattern).ToList();
     }
 
     private static string ProtectLegacyWithoutEntropy(string secret)

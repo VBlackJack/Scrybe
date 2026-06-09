@@ -51,6 +51,7 @@ public sealed class SettingsStoreTests
             await store.SaveAsync(saved);
             SettingsLoadResult result = await store.LoadAsync();
 
+            EnumerateAtomicTempFiles(path).Should().BeEmpty();
             result.Existed.Should().BeTrue();
             result.Settings.Should().BeEquivalentTo(saved);
         }
@@ -193,6 +194,13 @@ public sealed class SettingsStoreTests
         string directory = Path.Combine(Path.GetTempPath(), "ScrybeSettingsTests");
         Directory.CreateDirectory(directory);
         return Path.Combine(directory, Guid.NewGuid().ToString("N") + ".json");
+    }
+
+    private static IReadOnlyList<string> EnumerateAtomicTempFiles(string path)
+    {
+        string directory = Path.GetDirectoryName(path)!;
+        string pattern = "." + Path.GetFileName(path) + ".*.tmp";
+        return Directory.EnumerateFiles(directory, pattern).ToList();
     }
 
     private static void TryDelete(string path)

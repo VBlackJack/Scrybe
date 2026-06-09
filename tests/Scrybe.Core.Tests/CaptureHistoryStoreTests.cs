@@ -46,6 +46,7 @@ public sealed class CaptureHistoryStoreTests
             string rawJson = await File.ReadAllTextAsync(path);
             IReadOnlyList<CaptureHistoryEntry> loaded = await store.LoadAsync();
 
+            EnumerateAtomicTempFiles(path).Should().BeEmpty();
             rawJson.Should().NotContain(PlainText);
             loaded.Should().ContainSingle();
             char[] restored = protector.UnprotectToChars(loaded[0].ProtectedText);
@@ -88,6 +89,13 @@ public sealed class CaptureHistoryStoreTests
         string directory = Path.Combine(Path.GetTempPath(), "ScrybeCaptureHistoryTests");
         Directory.CreateDirectory(directory);
         return Path.Combine(directory, Guid.NewGuid().ToString("N") + ".json");
+    }
+
+    private static IReadOnlyList<string> EnumerateAtomicTempFiles(string path)
+    {
+        string directory = Path.GetDirectoryName(path)!;
+        string pattern = "." + Path.GetFileName(path) + ".*.tmp";
+        return Directory.EnumerateFiles(directory, pattern).ToList();
     }
 
     private static void TryDelete(string path)

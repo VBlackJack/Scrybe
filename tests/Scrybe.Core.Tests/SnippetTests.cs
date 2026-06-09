@@ -100,6 +100,7 @@ public sealed class SnippetTests
             await store.SaveAsync(saved);
             IReadOnlyList<Snippet> loaded = await store.LoadAsync();
 
+            EnumerateAtomicTempFiles(path).Should().BeEmpty();
             loaded.Should().BeEquivalentTo(saved);
         }
         finally
@@ -142,6 +143,13 @@ public sealed class SnippetTests
         string directory = Path.Combine(Path.GetTempPath(), "ScrybeSnippetTests");
         Directory.CreateDirectory(directory);
         return Path.Combine(directory, Guid.NewGuid().ToString("N") + ".json");
+    }
+
+    private static IReadOnlyList<string> EnumerateAtomicTempFiles(string path)
+    {
+        string directory = Path.GetDirectoryName(path)!;
+        string pattern = "." + Path.GetFileName(path) + ".*.tmp";
+        return Directory.EnumerateFiles(directory, pattern).ToList();
     }
 
     private static void TryDelete(string path)
