@@ -21,6 +21,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_NOLOGO: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   SOLUTION_FILE: Scrybe.slnx
 
 jobs:
@@ -40,6 +41,14 @@ jobs:
           cache: true
           cache-dependency-path: |
             **/packages.lock.json
+
+      - name: Verify .NET SDK version
+        run: |
+          $expected = (Get-Content global.json -Raw | ConvertFrom-Json).sdk.version
+          $actual = dotnet --version
+          if ($actual -ne $expected) {
+            throw "Expected .NET SDK $expected, but dotnet selected $actual."
+          }
 
       - name: Restore packages
         run: dotnet restore $env:SOLUTION_FILE --locked-mode

@@ -36,8 +36,7 @@ remote console. Scrybe covers both directions.
 ## Prerequisites
 
 - Windows 10 19041 or newer.
-- .NET 10 SDK. The repository pins SDK `10.0.103` in `global.json` with
-  `rollForward: latestFeature`.
+- .NET 10 SDK. The repository pins exact SDK `10.0.103` in `global.json`.
 - The bundled `tessdata/eng.traineddata` file is required for OCR.
 - Published builds ship the Tesseract native DLLs in a loose `x64/` directory
   beside `Scrybe.exe`; keep that folder next to the executable.
