@@ -1,7 +1,6 @@
 {
   "AppTitle": "Scrybe",
   "AppTagline": "OCR et injection clavier pour consoles distantes contraintes",
-  "Hub.ActionsTitle": "Actions",
   "Hub.Capture": "Capturer maintenant",
   "Hub.CleanupModeLabel": "Mode de nettoyage",
   "Hub.StatusTitle": "Statut",
@@ -25,7 +24,7 @@
   "Shell.TabAbout": "À propos",
   "Tray.Open": "Ouvrir Scrybe",
   "Tray.Capture": "Capturer l'écran principal",
-  "Tray.History": "Historique des captures...",
+  "Tray.History": "Historique des captures…",
   "Tray.Settings": "Réglages…",
   "Tray.CleanupMode": "Mode de nettoyage",
   "Tray.ModeRaw": "Brut",

@@ -1,7 +1,6 @@
 {
   "AppTitle": "Scrybe",
   "AppTagline": "OCR and keystroke injection for constrained remote consoles",
-  "Hub.ActionsTitle": "Actions",
   "Hub.Capture": "Capture now",
   "Hub.CleanupModeLabel": "Cleanup mode",
   "Hub.StatusTitle": "Status",
@@ -25,7 +24,7 @@
   "Shell.TabAbout": "About",
   "Tray.Open": "Open Scrybe",
   "Tray.Capture": "Capture primary screen",
-  "Tray.History": "Capture history...",
+  "Tray.History": "Capture history…",
   "Tray.Settings": "Settings…",
   "Tray.CleanupMode": "Cleanup mode",
   "Tray.ModeRaw": "Raw",

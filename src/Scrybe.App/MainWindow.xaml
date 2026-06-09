@@ -99,43 +99,45 @@
 
                     </StackPanel>
 
-                    <Border Style="{StaticResource HubCardStyle}">
-                        <StackPanel>
-                            <TextBlock Text="{loc:Translate Hub.ActionsTitle}"
-                                       Style="{StaticResource HubSectionHeaderStyle}" />
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                            <Button Command="{Binding CaptureCommand}"
-                                    Style="{StaticResource HubActionButtonStyle}"
-                                    Margin="0,0,0,12"
-                                    HorizontalAlignment="Left"
-                                    AutomationProperties.Name="{loc:Translate Hub.Capture}">
-                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
-                                    <TextBlock Text="{StaticResource IconActionCapture}" Style="{StaticResource AppIconGlyphStyle}" />
-                                    <TextBlock Text="{loc:Translate Hub.Capture}" Style="{StaticResource AppIconTextStyle}" />
-                                </StackPanel>
-                            </Button>
+                        <Button Grid.Column="0"
+                                Command="{Binding CaptureCommand}"
+                                Style="{StaticResource HubActionButtonStyle}"
+                                Margin="0"
+                                HorizontalAlignment="Left"
+                                AutomationProperties.Name="{loc:Translate Hub.Capture}">
+                            <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                <TextBlock Text="{StaticResource IconActionCapture}" Style="{StaticResource AppIconGlyphStyle}" />
+                                <TextBlock Text="{loc:Translate Hub.Capture}" Style="{StaticResource AppIconTextStyle}" />
+                            </StackPanel>
+                        </Button>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="16" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Column="0"
-                                           Text="{loc:Translate Hub.CleanupModeLabel}"
-                                           Style="{StaticResource HubFieldLabelStyle}"
-                                           ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}" />
-                                <ComboBox Grid.Column="2"
-                                          ItemsSource="{Binding CleanupModeChoices}"
-                                          SelectedValuePath="Value"
-                                          SelectedValue="{Binding SelectedCleanupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource HubComboStyle}"
-                                          ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}"
-                                          AutomationProperties.Name="{loc:Translate Hub.CleanupModeLabel}" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                            <TextBlock Grid.Column="0"
+                                       Text="{loc:Translate Hub.CleanupModeLabel}"
+                                       Style="{StaticResource HubFieldLabelStyle}"
+                                       ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}" />
+                            <ComboBox Grid.Column="2"
+                                      ItemsSource="{Binding CleanupModeChoices}"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding SelectedCleanupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource HubComboStyle}"
+                                      ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}"
+                                      AutomationProperties.Name="{loc:Translate Hub.CleanupModeLabel}" />
+                        </Grid>
+                    </Grid>
 
                     <Border Style="{StaticResource HubCardStyle}">
                         <StackPanel>
