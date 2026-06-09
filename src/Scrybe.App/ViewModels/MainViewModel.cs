@@ -82,9 +82,6 @@ public sealed partial class MainViewModel : ObservableObject
     private string _injectionModeText;
 
     [ObservableProperty]
-    private string _cleanupModeText;
-
-    [ObservableProperty]
     private int _snippetCount;
 
     [ObservableProperty]
@@ -151,7 +148,6 @@ public sealed partial class MainViewModel : ObservableObject
         _secretPaletteHotkeyText = string.Empty;
         _historyPaletteHotkeyText = string.Empty;
         _injectionModeText = string.Empty;
-        _cleanupModeText = string.Empty;
         _selectedTabIndex = ShellTabs.Home;
 
         localization.LocaleChanged += OnLocaleChanged;
@@ -195,7 +191,6 @@ public sealed partial class MainViewModel : ObservableObject
             _settings.HistoryPaletteHotkeyModifiers,
             _settings.HistoryPaletteHotkeyKey);
         InjectionModeText = InjectionModeLabel(_settings.InjectionMode);
-        CleanupModeText = CleanupModeLabel(_settings.CleanupMode);
         SnippetCount = _snippetLibrary.Snippets.Count;
         SecretCount = _secretLibrary.Secrets.Count;
         HistoryCount = _historyLibrary.Entries.Count;
@@ -240,18 +235,6 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void Capture() => CaptureRequested?.Invoke(this, EventArgs.Empty);
-
-    [RelayCommand]
-    private void OpenSettings() => ShowSettingsTab();
-
-    [RelayCommand]
-    private void ManageSnippets() => ShowSnippetsTab();
-
-    [RelayCommand]
-    private void ManageSecrets() => ShowSecretsTab();
-
-    [RelayCommand]
-    private void OpenHistory() => ShowHistoryTab();
 
     [RelayCommand]
     private void OpenAbout() => ShowAboutTab();
@@ -317,15 +300,6 @@ public sealed partial class MainViewModel : ObservableObject
     {
         InjectionMode.Unicode => _localization["Settings.InjectUnicode"],
         InjectionMode.Scancode => _localization["Settings.InjectScancode"],
-        _ => mode.ToString(),
-    };
-
-    private string CleanupModeLabel(OcrCleanupMode mode) => mode switch
-    {
-        OcrCleanupMode.Raw => _localization["Tray.ModeRaw"],
-        OcrCleanupMode.Standard => _localization["Tray.ModeStandard"],
-        OcrCleanupMode.LogCleaner => _localization["Tray.ModeLogCleaner"],
-        OcrCleanupMode.CodeFormatter => _localization["Tray.ModeCodeFormatter"],
         _ => mode.ToString(),
     };
 

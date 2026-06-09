@@ -98,28 +98,12 @@
                             <TextBlock Text="{loc:Translate Hub.ActionsTitle}"
                                        Style="{StaticResource HubSectionHeaderStyle}" />
 
-                            <UniformGrid Columns="3" Margin="0,0,0,12">
-                                <Button Content="{loc:Translate Hub.Capture}"
-                                        Command="{Binding CaptureCommand}"
-                                        Style="{StaticResource HubActionButtonStyle}"
-                                        AutomationProperties.Name="{loc:Translate Hub.Capture}" />
-                                <Button Content="{loc:Translate Hub.CaptureHistory}"
-                                        Command="{Binding OpenHistoryCommand}"
-                                        Style="{StaticResource HubSecondaryButtonStyle}"
-                                        AutomationProperties.Name="{loc:Translate Hub.CaptureHistory}" />
-                                <Button Content="{loc:Translate Hub.Settings}"
-                                        Command="{Binding OpenSettingsCommand}"
-                                        Style="{StaticResource HubSecondaryButtonStyle}"
-                                        AutomationProperties.Name="{loc:Translate Hub.Settings}" />
-                                <Button Content="{loc:Translate Hub.ManageSnippets}"
-                                        Command="{Binding ManageSnippetsCommand}"
-                                        Style="{StaticResource HubSecondaryButtonStyle}"
-                                        AutomationProperties.Name="{loc:Translate Hub.ManageSnippets}" />
-                                <Button Content="{loc:Translate Hub.ManageSecrets}"
-                                        Command="{Binding ManageSecretsCommand}"
-                                        Style="{StaticResource HubSecondaryButtonStyle}"
-                                        AutomationProperties.Name="{loc:Translate Hub.ManageSecrets}" />
-                            </UniformGrid>
+                            <Button Content="{loc:Translate Hub.Capture}"
+                                    Command="{Binding CaptureCommand}"
+                                    Style="{StaticResource HubActionButtonStyle}"
+                                    Margin="0,0,0,12"
+                                    HorizontalAlignment="Left"
+                                    AutomationProperties.Name="{loc:Translate Hub.Capture}" />
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -130,12 +114,14 @@
 
                                 <TextBlock Grid.Column="0"
                                            Text="{loc:Translate Hub.CleanupModeLabel}"
-                                           Style="{StaticResource HubFieldLabelStyle}" />
+                                           Style="{StaticResource HubFieldLabelStyle}"
+                                           ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}" />
                                 <ComboBox Grid.Column="2"
                                           ItemsSource="{Binding CleanupModeChoices}"
                                           SelectedValuePath="Value"
                                           SelectedValue="{Binding SelectedCleanupMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource HubComboStyle}"
+                                          ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}"
                                           AutomationProperties.Name="{loc:Translate Hub.CleanupModeLabel}" />
                             </Grid>
                         </StackPanel>
@@ -156,19 +142,16 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Translate Hub.InjectionMode}" Style="{StaticResource HubFieldLabelStyle}" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding InjectionModeText}" Style="{StaticResource HubValueStyle}" />
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Translate Hub.CleanupMode}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CleanupModeText}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.SnippetCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SnippetCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.SecretCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SecretCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Translate Hub.HistoryCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HistoryCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Translate Hub.SnippetCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SnippetCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Translate Hub.SecretCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SecretCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Translate Hub.HistoryCount}" Style="{StaticResource HubFieldLabelStyle}" Margin="0,6,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding HistoryCount}" Style="{StaticResource HubValueStyle}" Margin="16,6,0,0" />
                             </Grid>
 
                             <TextBlock Text="{loc:Translate Hub.HotkeysTitle}"

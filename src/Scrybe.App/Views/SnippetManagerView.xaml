@@ -48,13 +48,50 @@
                 <TextBox Grid.Row="1" Margin="120,0,0,8" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" />
 
                 <StackPanel Grid.Row="2">
-                    <TextBlock Text="{loc:Translate Manager.Template}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
-                    <TextBlock Text="{loc:Translate Manager.TemplateHint}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
+                    <TextBlock Text="{loc:Translate Manager.Template}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{StaticResource FontSizeCaption}"
+                               Margin="{StaticResource MarginLabelBottom}"
+                               ToolTip="{loc:Translate ToolTip.Manager.Template}" />
+                    <TextBlock Text="{loc:Translate Manager.TemplateHint}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="{StaticResource FontSizeCaption}"
+                               Margin="{StaticResource MarginLabelBottom}"
+                               ToolTip="{loc:Translate ToolTip.Manager.Template}" />
                 </StackPanel>
-                <TextBox Grid.Row="3" Margin="0,20,0,8" Text="{Binding Template, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" FontFamily="Consolas" />
+                <TextBox Grid.Row="3"
+                         Margin="0,20,0,8"
+                         Text="{Binding Template, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="{StaticResource SurfaceBrush}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         CaretBrush="{StaticResource TextPrimaryBrush}"
+                         BorderBrush="{StaticResource BorderBrush}"
+                         Padding="{StaticResource PaddingInput}"
+                         FontFamily="Consolas"
+                         ToolTip="{loc:Translate ToolTip.Manager.Template}" />
 
-                <TextBlock Grid.Row="4" Text="{loc:Translate Manager.Parameters}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="{StaticResource FontSizeCaption}" Margin="{StaticResource MarginLabelBottom}" />
-                <TextBox Grid.Row="4" Margin="0,20,0,0" Height="90" Text="{Binding ParametersText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="{StaticResource SurfaceBrush}" Foreground="{StaticResource TextPrimaryBrush}" CaretBrush="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush}" Padding="{StaticResource PaddingInput}" FontFamily="Consolas" />
+                <TextBlock Grid.Row="4"
+                           Text="{loc:Translate Manager.Parameters}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="{StaticResource FontSizeCaption}"
+                           Margin="{StaticResource MarginLabelBottom}"
+                           ToolTip="{loc:Translate ToolTip.Manager.Parameters}" />
+                <TextBox Grid.Row="4"
+                         Margin="0,20,0,0"
+                         Height="90"
+                         Text="{Binding ParametersText, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="{StaticResource SurfaceBrush}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         CaretBrush="{StaticResource TextPrimaryBrush}"
+                         BorderBrush="{StaticResource BorderBrush}"
+                         Padding="{StaticResource PaddingInput}"
+                         FontFamily="Consolas"
+                         ToolTip="{loc:Translate ToolTip.Manager.Parameters}" />
 
                 <Grid Grid.Row="5" Margin="0,12,0,0">
                     <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,160,0">

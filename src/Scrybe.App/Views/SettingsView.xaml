@@ -71,8 +71,14 @@
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>
                         <TextBlock Text="{loc:Translate Settings.General}" Style="{StaticResource SectionHeaderStyle}" />
-                        <CheckBox Content="{loc:Translate Settings.EnableLogging}" IsChecked="{Binding EnableLogging}" Style="{StaticResource SettingCheckBoxStyle}" />
-                        <CheckBox Content="{loc:Translate Settings.PrewarmOnStartup}" IsChecked="{Binding PrewarmOnStartup}" Style="{StaticResource SettingCheckBoxStyle}" />
+                        <CheckBox Content="{loc:Translate Settings.EnableLogging}"
+                                  IsChecked="{Binding EnableLogging}"
+                                  Style="{StaticResource SettingCheckBoxStyle}"
+                                  ToolTip="{loc:Translate ToolTip.Settings.EnableLogging}" />
+                        <CheckBox Content="{loc:Translate Settings.PrewarmOnStartup}"
+                                  IsChecked="{Binding PrewarmOnStartup}"
+                                  Style="{StaticResource SettingCheckBoxStyle}"
+                                  ToolTip="{loc:Translate ToolTip.Settings.PrewarmOnStartup}" />
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                             <TextBlock Text="{loc:Translate Settings.Locale}" Style="{StaticResource FieldLabelStyle}" />
                             <ComboBox ItemsSource="{Binding LocaleChoices}" SelectedValuePath="Value" SelectedValue="{Binding LocaleCode}" Style="{StaticResource SettingComboStyle}" />
@@ -84,10 +90,19 @@
                     <StackPanel>
                         <TextBlock Text="{loc:Translate Settings.Ocr}" Style="{StaticResource SectionHeaderStyle}" />
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{loc:Translate Settings.CleanupMode}" Style="{StaticResource FieldLabelStyle}" />
-                            <ComboBox ItemsSource="{Binding CleanupModeChoices}" SelectedValuePath="Value" SelectedValue="{Binding CleanupMode}" Style="{StaticResource SettingComboStyle}" />
+                            <TextBlock Text="{loc:Translate Settings.CleanupMode}"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}" />
+                            <ComboBox ItemsSource="{Binding CleanupModeChoices}"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding CleanupMode}"
+                                      Style="{StaticResource SettingComboStyle}"
+                                      ToolTip="{loc:Translate ToolTip.Settings.CleanupMode}" />
                         </StackPanel>
-                        <CheckBox Content="{loc:Translate Settings.EnablePreprocessing}" IsChecked="{Binding EnablePreprocessing}" Style="{StaticResource SettingCheckBoxStyle}" />
+                        <CheckBox Content="{loc:Translate Settings.EnablePreprocessing}"
+                                  IsChecked="{Binding EnablePreprocessing}"
+                                  Style="{StaticResource SettingCheckBoxStyle}"
+                                  ToolTip="{loc:Translate ToolTip.Settings.EnablePreprocessing}" />
                     </StackPanel>
                 </Border>
 
@@ -95,15 +110,27 @@
                     <StackPanel>
                         <TextBlock Text="{loc:Translate Settings.Injection}" Style="{StaticResource SectionHeaderStyle}" />
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{loc:Translate Settings.InjectionMode}" Style="{StaticResource FieldLabelStyle}" />
-                            <ComboBox ItemsSource="{Binding InjectionModeChoices}" SelectedValuePath="Value" SelectedValue="{Binding InjectionMode}" Style="{StaticResource SettingComboStyle}" />
+                            <TextBlock Text="{loc:Translate Settings.InjectionMode}"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       ToolTip="{loc:Translate ToolTip.Settings.InjectionMode}" />
+                            <ComboBox ItemsSource="{Binding InjectionModeChoices}"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding InjectionMode}"
+                                      Style="{StaticResource SettingComboStyle}"
+                                      ToolTip="{loc:Translate ToolTip.Settings.InjectionMode}" />
                         </StackPanel>
                         <CheckBox Content="{loc:Translate Settings.ClearClipboardAfterInjection}"
                                   IsChecked="{Binding ClearClipboardAfterInjection}"
-                                  Style="{StaticResource SettingCheckBoxStyle}" />
+                                  Style="{StaticResource SettingCheckBoxStyle}"
+                                  ToolTip="{loc:Translate ToolTip.Settings.ClearClipboardAfterInjection}" />
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="{loc:Translate Settings.Pacing}" Style="{StaticResource FieldLabelStyle}" />
-                            <TextBox Text="{Binding InjectionKeyDelayMs, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingTextBoxStyle}" Width="100" />
+                            <TextBlock Text="{loc:Translate Settings.Pacing}"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       ToolTip="{loc:Translate ToolTip.Settings.Pacing}" />
+                            <TextBox Text="{Binding InjectionKeyDelayMs, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SettingTextBoxStyle}"
+                                     Width="100"
+                                     ToolTip="{loc:Translate ToolTip.Settings.Pacing}" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -112,20 +139,36 @@
                     <StackPanel>
                         <TextBlock Text="{loc:Translate Settings.Captures}" Style="{StaticResource SectionHeaderStyle}" />
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{loc:Translate Settings.CapturesDirectory}" Style="{StaticResource FieldLabelStyle}" />
-                            <TextBox Text="{Binding CapturesDirectory, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingTextBoxStyle}" />
+                            <TextBlock Text="{loc:Translate Settings.CapturesDirectory}"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       ToolTip="{loc:Translate ToolTip.Settings.CapturesDirectory}" />
+                            <TextBox Text="{Binding CapturesDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SettingTextBoxStyle}"
+                                     ToolTip="{loc:Translate ToolTip.Settings.CapturesDirectory}" />
                         </StackPanel>
-                        <CheckBox Content="{loc:Translate Settings.SaveCaptureCrop}" IsChecked="{Binding SaveCaptureCrop}" Style="{StaticResource SettingCheckBoxStyle}" Margin="0,10,0,0" />
+                        <CheckBox Content="{loc:Translate Settings.SaveCaptureCrop}"
+                                  IsChecked="{Binding SaveCaptureCrop}"
+                                  Style="{StaticResource SettingCheckBoxStyle}"
+                                  Margin="0,10,0,0"
+                                  ToolTip="{loc:Translate ToolTip.Settings.SaveCaptureCrop}" />
                     </StackPanel>
                 </Border>
 
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>
                         <TextBlock Text="{loc:Translate Settings.History}" Style="{StaticResource SectionHeaderStyle}" />
-                        <CheckBox Content="{loc:Translate Settings.EnableCaptureHistory}" IsChecked="{Binding EnableCaptureHistory}" Style="{StaticResource SettingCheckBoxStyle}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <TextBlock Text="{loc:Translate Settings.HistoryMaxEntries}" Style="{StaticResource FieldLabelStyle}" />
-                            <TextBox Text="{Binding CaptureHistoryMaxEntries, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingTextBoxStyle}" Width="100" />
+                        <CheckBox Content="{loc:Translate Settings.EnableCaptureHistory}"
+                                  IsChecked="{Binding EnableCaptureHistory}"
+                                  Style="{StaticResource SettingCheckBoxStyle}"
+                                  ToolTip="{loc:Translate ToolTip.Settings.EnableCaptureHistory}" />
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,8,0,0"
+                                    ToolTip="{loc:Translate ToolTip.Settings.HistoryMaxEntries}">
+                            <TextBlock Text="{loc:Translate Settings.HistoryMaxEntries}"
+                                       Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding CaptureHistoryMaxEntries, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource SettingTextBoxStyle}"
+                                     Width="100" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
