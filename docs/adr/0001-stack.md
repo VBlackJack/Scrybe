@@ -174,3 +174,26 @@ The remote-console gate is now measured on real targets, not inferred from local
   default pacing for these profiles; no escalation to 50/100 ms was needed.
 - **Scope of proof:** this validates the current RDP Windows Server 2022 and XRDP-through-gateway targets.
   VMRC, iDRAC/iLO, browser noVNC, VNC and BIOS/UEFI remain separate profile validations, not assumptions.
+
+## Addendum 2026-06-09 - DPAPI entropy and protected-value versioning (post-audit I-1)
+
+The initial secret vault used DPAPI `CurrentUser` without `optionalEntropy`. That protected secrets
+against other Windows users, but any process already running as the same user could attempt generic
+DPAPI unprotect sweeps over `%LOCALAPPDATA%/Scrybe/secrets.json`.
+
+- **Decision:** Scrybe now passes stable application-specific entropy to both `CryptProtectData` and
+  `CryptUnprotectData`. This is defense in depth, not a cryptographic boundary against a fully
+  compromised user session: a targeted attacker that reverse-engineers Scrybe can recover the entropy.
+  The proportionate goal is to bind the vault to Scrybe's scheme and defeat opportunistic tools that
+  blindly unprotect every DPAPI blob they find for the current user.
+- **Protected-value format:** the JSON schema is unchanged. `SecretEntry.ProtectedSecret` remains a
+  base64 string, but new values encode `SCRYBEDPAPI` magic bytes, a version byte `0x01`, then the DPAPI
+  ciphertext protected with Scrybe entropy. Values without that marker are treated as legacy DPAPI blobs
+  and are unprotected without entropy.
+- **Migration:** `SecretLibrary.LoadAsync` performs eager, per-entry migration when the configured
+  protector supports it. A legacy value is decrypted with the legacy path, re-protected with the current
+  entropy scheme, and the store is saved once only if at least one entry changed. If one entry cannot be
+  migrated, Scrybe logs the failure and keeps that original protected value rather than dropping or
+  corrupting it.
+- **UX unchanged:** no master password or additional prompt is introduced. The vault remains local-first
+  and auto-type still works without placing secrets on the clipboard.

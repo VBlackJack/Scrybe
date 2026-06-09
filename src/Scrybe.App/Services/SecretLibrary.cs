@@ -15,6 +15,7 @@
  */
 
 using Scrybe.Core.Interfaces;
+using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 
 namespace Scrybe.App.Services;
@@ -44,8 +45,9 @@ public sealed class SecretLibrary
     public async Task LoadAsync()
     {
         IReadOnlyList<SecretEntry> loaded = await _store.LoadAsync().ConfigureAwait(false);
+        IReadOnlyList<SecretEntry> current = await MigrateIfNeededAsync(loaded).ConfigureAwait(false);
         _secrets.Clear();
-        _secrets.AddRange(loaded);
+        _secrets.AddRange(current);
     }
 
     /// <summary>Adds or replaces a secret, protecting new plaintext immediately before persistence.</summary>
@@ -108,5 +110,44 @@ public sealed class SecretLibrary
     {
         SecretEntry? secret = _secrets.FirstOrDefault(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
         return secret is null ? null : _protector.UnprotectToChars(secret.ProtectedSecret);
+    }
+
+    private async Task<IReadOnlyList<SecretEntry>> MigrateIfNeededAsync(IReadOnlyList<SecretEntry> loaded)
+    {
+        if (_protector is not IMigratingSecretProtector migratingProtector)
+        {
+            return loaded;
+        }
+
+        List<SecretEntry> migrated = new(loaded.Count);
+        bool changed = false;
+
+        foreach (SecretEntry secret in loaded)
+        {
+            try
+            {
+                if (migratingProtector.IsProtectedWithCurrentScheme(secret.ProtectedSecret))
+                {
+                    migrated.Add(secret);
+                    continue;
+                }
+
+                string upgraded = migratingProtector.ReprotectWithCurrentScheme(secret.ProtectedSecret);
+                migrated.Add(secret with { ProtectedSecret = upgraded });
+                changed = true;
+            }
+            catch (Exception exception)
+            {
+                FileLogger.Error($"Failed to migrate protected secret '{secret.Id}'; keeping the existing value.", exception);
+                migrated.Add(secret);
+            }
+        }
+
+        if (changed)
+        {
+            await _store.SaveAsync(migrated).ConfigureAwait(false);
+        }
+
+        return migrated;
     }
 }
