@@ -63,6 +63,7 @@
   "Palette.Title": "Inject a snippet",
   "Palette.Parameters": "Parameters",
   "Palette.Inject": "Inject",
+  "Palette.TargetUnavailable": "Could not return to the target window. Snippet was not typed.",
   "Manager.Title": "Manage snippets",
   "Manager.New": "New",
   "Manager.Name": "Name",

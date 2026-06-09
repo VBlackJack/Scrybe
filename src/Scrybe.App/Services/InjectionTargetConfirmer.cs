@@ -15,16 +15,28 @@
  */
 
 using System.Globalization;
-using System.Windows;
-using Scrybe.App.Interop;
 using Scrybe.Core.Logging;
-using WpfMessageBox = System.Windows.MessageBox;
 
 namespace Scrybe.App.Services;
 
 /// <summary>Shared native target-confirmation gate for password-grade injection flows.</summary>
 public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
 {
+    private readonly ITargetWindowGateway _targetGateway;
+    private readonly ITargetConfirmationPrompt _prompt;
+
+    /// <summary>Initializes the target confirmer with testable OS-bound seams.</summary>
+    /// <param name="targetGateway">Gateway for target-window metadata and foreground restore.</param>
+    /// <param name="prompt">Native confirmation prompt abstraction.</param>
+    public InjectionTargetConfirmer(ITargetWindowGateway targetGateway, ITargetConfirmationPrompt prompt)
+    {
+        ArgumentNullException.ThrowIfNull(targetGateway);
+        ArgumentNullException.ThrowIfNull(prompt);
+
+        _targetGateway = targetGateway;
+        _prompt = prompt;
+    }
+
     /// <summary>
     /// Confirms the captured target with a native OS dialog and restores focus before injection.
     /// </summary>
@@ -41,40 +53,39 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
         string targetUnavailableMessage,
         string untitledTargetText)
     {
-        if (!TryConfirmTarget(target, confirmTitle, confirmMessageTemplate, targetUnavailableMessage, untitledTargetText))
+        if (!_targetGateway.TryGetInfo(target, out TargetWindowInfo? targetInfo) || targetInfo is null)
+        {
+            _prompt.ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
+            return false;
+        }
+
+        if (!ConfirmTarget(targetInfo, confirmTitle, confirmMessageTemplate, untitledTargetText))
         {
             return false;
         }
 
-        if (!InjectionInterop.TryGetTargetInfo(target, out _))
+        if (!_targetGateway.TryGetInfo(target, out TargetWindowInfo? currentTarget) || currentTarget is null)
         {
-            ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
+            _prompt.ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
             return false;
         }
 
-        if (!InjectionInterop.TryRestoreForeground(target))
+        if (!_targetGateway.TryRestore(target))
         {
             FileLogger.Warn("Injection target restore failed; injection aborted.");
-            ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
+            _prompt.ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
             return false;
         }
 
         return true;
     }
 
-    private static bool TryConfirmTarget(
-        IntPtr target,
+    private bool ConfirmTarget(
+        TargetWindowInfo targetInfo,
         string confirmTitle,
         string confirmMessageTemplate,
-        string targetUnavailableMessage,
         string untitledTargetText)
     {
-        if (!InjectionInterop.TryGetTargetInfo(target, out InjectionInterop.TargetInfo? targetInfo) || targetInfo is null)
-        {
-            ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
-            return false;
-        }
-
         string title = string.IsNullOrWhiteSpace(targetInfo.Title)
             ? untitledTargetText
             : targetInfo.Title;
@@ -87,27 +98,12 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
             targetInfo.ProcessId,
             handle);
 
-        MessageBoxResult result = WpfMessageBox.Show(
-            message,
-            confirmTitle,
-            MessageBoxButton.OKCancel,
-            MessageBoxImage.Warning);
-
-        if (result != MessageBoxResult.OK)
+        if (!_prompt.Confirm(confirmTitle, message))
         {
             FileLogger.Info("Injection target confirmation cancelled.");
             return false;
         }
 
         return true;
-    }
-
-    private static void ShowTargetUnavailable(string confirmTitle, string targetUnavailableMessage)
-    {
-        WpfMessageBox.Show(
-            targetUnavailableMessage,
-            confirmTitle,
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
     }
 }

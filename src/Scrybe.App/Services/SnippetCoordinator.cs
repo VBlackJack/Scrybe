@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-using Scrybe.App.Interop;
 using Scrybe.App.ViewModels;
 using Scrybe.App.Views;
+using Scrybe.Core.Interfaces;
 using Scrybe.Core.Logging;
 
 namespace Scrybe.App.Services;
@@ -30,20 +30,35 @@ public sealed class SnippetCoordinator
 {
     private readonly SnippetLibrary _library;
     private readonly InjectionCoordinator _injection;
+    private readonly ITargetWindowGateway _targetGateway;
+    private readonly INotificationService _notification;
+    private readonly ILocalizationManager _localization;
 
     private SnippetPaletteWindow? _palette;
 
-    /// <summary>Initializes the coordinator with the snippet library and the injection coordinator.</summary>
+    /// <summary>Initializes the coordinator with snippet injection dependencies.</summary>
     /// <param name="library">The snippet library.</param>
     /// <param name="injection">The injection coordinator used to type the resolved text.</param>
+    /// <param name="targetGateway">Gateway used to capture and restore the target window.</param>
+    /// <param name="notification">Notification service for restore failures.</param>
+    /// <param name="localization">Localization source for user-facing messages.</param>
     public SnippetCoordinator(
         SnippetLibrary library,
-        InjectionCoordinator injection)
+        InjectionCoordinator injection,
+        ITargetWindowGateway targetGateway,
+        INotificationService notification,
+        ILocalizationManager localization)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(injection);
+        ArgumentNullException.ThrowIfNull(targetGateway);
+        ArgumentNullException.ThrowIfNull(notification);
+        ArgumentNullException.ThrowIfNull(localization);
         _library = library;
         _injection = injection;
+        _targetGateway = targetGateway;
+        _notification = notification;
+        _localization = localization;
     }
 
     /// <summary>Opens (or focuses) the snippet palette, remembering the current foreground console.</summary>
@@ -55,21 +70,39 @@ public sealed class SnippetCoordinator
             return;
         }
 
-        IntPtr target = InjectionInterop.GetForegroundWindowHandle();
+        IntPtr target = _targetGateway.GetForegroundWindow();
         SnippetPaletteViewModel viewModel = new(_library.Snippets);
         SnippetPaletteWindow window = new(viewModel);
 
         viewModel.InjectRequested += (_, text) =>
         {
             window.Close();
-            InjectionInterop.RestoreForeground(target);
-            FileLogger.Info("Snippet injection requested from palette.");
-            _ = _injection.InjectTextAsync(text);
+            _ = InjectResolvedSnippetAsync(target, text);
         };
         window.Closed += (_, _) => _palette = null;
 
         _palette = window;
         window.Show();
         window.Activate();
+    }
+
+    /// <summary>Restores the captured target and injects a resolved snippet only if restore succeeds.</summary>
+    /// <param name="target">Captured target window handle.</param>
+    /// <param name="text">Resolved snippet text to type.</param>
+    /// <returns><see langword="true"/> when injection was started after a successful restore.</returns>
+    public async Task<bool> InjectResolvedSnippetAsync(IntPtr target, string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        if (!_targetGateway.TryRestore(target))
+        {
+            FileLogger.Warn("Snippet target restore failed; snippet injection aborted.");
+            _notification.Notify(_localization["AppTitle"], _localization["Palette.TargetUnavailable"]);
+            return false;
+        }
+
+        FileLogger.Info("Snippet injection requested from palette.");
+        await _injection.InjectTextAsync(text).ConfigureAwait(false);
+        return true;
     }
 }

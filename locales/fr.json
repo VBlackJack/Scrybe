@@ -63,6 +63,7 @@
   "Palette.Title": "Injecter un snippet",
   "Palette.Parameters": "Paramètres",
   "Palette.Inject": "Injecter",
+  "Palette.TargetUnavailable": "Impossible de revenir à la fenêtre cible. Le snippet n'a pas été tapé.",
   "Manager.Title": "Gérer les snippets",
   "Manager.New": "Nouveau",
   "Manager.Name": "Nom",
