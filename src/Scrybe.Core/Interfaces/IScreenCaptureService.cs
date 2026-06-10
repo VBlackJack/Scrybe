@@ -26,11 +26,12 @@ namespace Scrybe.Core.Interfaces;
 public interface IScreenCaptureService
 {
     /// <summary>
-    /// Captures the primary monitor at its physical-pixel resolution into an in-memory frame.
+    /// Captures the monitor under the mouse cursor at its physical-pixel resolution into an
+    /// in-memory frame.
     /// </summary>
     /// <param name="cancellationToken">Token used to cancel the capture.</param>
     /// <returns>The captured frame, including pixels, size and DPI.</returns>
-    Task<CapturedFrame> CapturePrimaryMonitorFrameAsync(CancellationToken cancellationToken = default);
+    Task<CapturedFrame> CaptureCursorMonitorFrameAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Eagerly initializes the capture device so the first capture is fast. Safe to call repeatedly.</summary>
     void Prewarm();

@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+using System.Globalization;
 using System.Runtime.InteropServices;
 using Scrybe.App.Interop;
 using Scrybe.Core.Interfaces;
+using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 using Vortice.Direct3D11;
 using Windows.Foundation;
@@ -26,7 +28,7 @@ using Windows.Graphics.DirectX;
 namespace Scrybe.App.Services;
 
 /// <summary>
-/// Captures the primary monitor into an in-memory <see cref="CapturedFrame"/> with
+/// Captures the monitor under the mouse cursor into an in-memory <see cref="CapturedFrame"/> with
 /// Windows.Graphics.Capture and a Vortice Direct3D11 device. The device is created once and kept
 /// warm across captures so the hotkey-to-overlay latency stays low; the frame pool and session are
 /// lightweight and created per shot. Disposing the service releases the warm device.
@@ -43,7 +45,7 @@ public sealed class WgcScreenCaptureService : IScreenCaptureService, IDisposable
     private bool _isDisposed;
 
     /// <inheritdoc />
-    public async Task<CapturedFrame> CapturePrimaryMonitorFrameAsync(CancellationToken cancellationToken = default)
+    public async Task<CapturedFrame> CaptureCursorMonitorFrameAsync(CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
 
@@ -54,9 +56,20 @@ public sealed class WgcScreenCaptureService : IScreenCaptureService, IDisposable
 
         CaptureInterop.CaptureDevice device = EnsureWarmDevice();
 
-        IntPtr monitor = CaptureInterop.GetPrimaryMonitor();
+        IntPtr monitor = CaptureInterop.GetCursorMonitor();
         (uint dpiX, uint dpiY) = CaptureInterop.GetMonitorDpi(monitor);
-        (int monitorLeft, int monitorTop, int _, int _) = CaptureInterop.GetMonitorBounds(monitor);
+        (int monitorLeft, int monitorTop, int monitorWidth, int monitorHeight) =
+            CaptureInterop.GetMonitorBounds(monitor);
+
+        FileLogger.Info(string.Format(
+            CultureInfo.InvariantCulture,
+            "Capturing monitor at ({0},{1}) {2}x{3}, DPI {4}.",
+            monitorLeft,
+            monitorTop,
+            monitorWidth,
+            monitorHeight,
+            dpiX));
+
         GraphicsCaptureItem item = CaptureInterop.CreateCaptureItemForMonitor(monitor);
 
         Direct3D11CaptureFramePool? framePool = null;

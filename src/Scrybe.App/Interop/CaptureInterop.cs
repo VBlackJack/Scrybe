@@ -32,6 +32,7 @@ namespace Scrybe.App.Interop;
 internal static class CaptureInterop
 {
     private const uint MonitorDefaultToPrimary = 0x00000001;
+    private const uint MonitorDefaultToNearest = 0x00000002;
     private const int MonitorDpiTypeEffective = 0;
     private const uint DefaultDpi = 96;
 
@@ -49,6 +50,20 @@ internal static class CaptureInterop
     {
         NativePoint origin = new(0, 0);
         return MonitorFromPoint(origin, MonitorDefaultToPrimary);
+    }
+
+    /// <summary>
+    /// Returns the handle of the monitor under the current cursor position. Falls back to the
+    /// primary monitor if the cursor position cannot be resolved; never throws.
+    /// </summary>
+    public static IntPtr GetCursorMonitor()
+    {
+        if (GetCursorPos(out NativePoint point))
+        {
+            return MonitorFromPoint(point, MonitorDefaultToNearest);
+        }
+
+        return GetPrimaryMonitor();
     }
 
     /// <summary>Returns the effective DPI of the given monitor, falling back to 96 on failure.</summary>
@@ -146,6 +161,10 @@ internal static class CaptureInterop
 
     [DllImport("user32.dll")]
     private static extern IntPtr MonitorFromPoint(NativePoint point, uint flags);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out NativePoint point);
 
     [DllImport("shcore.dll")]
     private static extern int GetDpiForMonitor(IntPtr monitor, int dpiType, out uint dpiX, out uint dpiY);

@@ -29,7 +29,7 @@ using Scrybe.Core.Text;
 namespace Scrybe.App.Services;
 
 /// <summary>
-/// Orchestrates the full capture-to-clipboard flow: grab the primary monitor into a frozen frame,
+/// Orchestrates the full capture-to-clipboard flow: grab the monitor under the cursor into a frozen frame,
 /// show the selection overlay, OCR the chosen region, copy the recognized text to the clipboard, and
 /// show a brief confirmation. A single capture runs at a time; failures are logged. Win32/WPF concerns
 /// are kept out of Core and the view models.
@@ -49,7 +49,7 @@ public sealed class CaptureCoordinator
     private int _captureInProgress;
 
     /// <summary>Initializes the coordinator with its capture, OCR, clipboard and notification dependencies.</summary>
-    /// <param name="captureService">Service that captures the primary monitor into a frame.</param>
+    /// <param name="captureService">Service that captures the monitor under the cursor into a frame.</param>
     /// <param name="ocrEngine">OCR engine used to recognize the selected region.</param>
     /// <param name="clipboard">Clipboard service for the recognized text.</param>
     /// <param name="textStore">Store that retains the recognized text for the injection flow.</param>
@@ -105,7 +105,7 @@ public sealed class CaptureCoordinator
             long startTimestamp = Stopwatch.GetTimestamp();
 
             CapturedFrame frame = await _captureService
-                .CapturePrimaryMonitorFrameAsync()
+                .CaptureCursorMonitorFrameAsync()
                 .ConfigureAwait(false);
 
             OverlayOutcome outcome = await ShowOverlayAsync(frame, startTimestamp).ConfigureAwait(false);

@@ -20,6 +20,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Scrybe.App.Interop;
 using Scrybe.Core;
 using Scrybe.Core.Capture;
 using Scrybe.Core.Interfaces;
@@ -79,8 +80,7 @@ public sealed partial class CaptureOverlayWindow : Window
         LoupeCenterMarker.Width = LoupeMagnification / _scale;
         LoupeCenterMarker.Height = LoupeMagnification / _scale;
 
-        PositionWindowOverMonitor();
-
+        SourceInitialized += OnSourceInitialized;
         Loaded += OnLoaded;
         MouseLeftButtonDown += OnMouseLeftButtonDown;
         MouseMove += OnMouseMove;
@@ -92,12 +92,13 @@ public sealed partial class CaptureOverlayWindow : Window
     /// <summary>Raised once when the user confirms a selection (with a rectangle) or cancels (with <see langword="null"/>).</summary>
     public event EventHandler<PixelRect?>? SelectionCompleted;
 
-    private void PositionWindowOverMonitor()
+    private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        Left = _frame.MonitorLeft / _scale;
-        Top = _frame.MonitorTop / _scale;
-        Width = _frame.Width / _scale;
-        Height = _frame.Height / _scale;
+        // Place the overlay in physical pixels once the HWND exists. WPF would otherwise convert
+        // DIP coordinates using the primary monitor DPI, mislocating the window on other monitors
+        // under mixed-DPI setups. After this move WPF adopts the target monitor DPI (Per-Monitor v2).
+        WindowPlacementInterop.MoveToPhysicalBounds(
+            this, _frame.MonitorLeft, _frame.MonitorTop, _frame.Width, _frame.Height);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
