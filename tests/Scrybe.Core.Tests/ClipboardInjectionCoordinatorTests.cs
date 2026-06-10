@@ -124,6 +124,18 @@ public sealed class ClipboardInjectionCoordinatorTests
         firstResult.Success.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task VerbatimInjection_UnrepresentableCharacterFailsBeforeTyping()
+    {
+        GuardedTestInjector injector = new();
+
+        InjectionResult result = await injector.InjectAsync("déjà-secret".AsMemory());
+
+        result.Success.Should().BeFalse();
+        result.KeystrokesSent.Should().Be(0);
+        injector.SentCharacters.Should().BeEmpty();
+    }
+
     private static ClipboardInjectionCoordinator CreateClipboardCoordinator(
         InjectionResult injectionResult,
         TestClipboardService clipboard,
@@ -194,6 +206,29 @@ public sealed class ClipboardInjectionCoordinatorTests
             }
 
             return _result;
+        }
+    }
+
+    private sealed class GuardedTestInjector : KeystrokeInjectorBase
+    {
+        public List<char> SentCharacters { get; } = [];
+
+        public GuardedTestInjector()
+            : base(new AppSettings())
+        {
+        }
+
+        protected override bool CanRepresentStroke(KeyStroke stroke)
+            => stroke.IsSpecial || stroke.Character < 0x80;
+
+        protected override StrokeResult SendStroke(KeyStroke stroke)
+        {
+            if (!stroke.IsSpecial)
+            {
+                SentCharacters.Add(stroke.Character);
+            }
+
+            return StrokeResult.Sent(1);
         }
     }
 

@@ -141,6 +141,14 @@ public abstract class KeystrokeInjectorBase : IKeystrokeInjector
     /// <inheritdoc />
     public async Task<InjectionResult> InjectAsync(ReadOnlyMemory<char> text, CancellationToken cancellationToken = default)
     {
+        int unrepresentableBeforeTyping = CountUnrepresentableVerbatimCharacters(text.Span);
+        if (unrepresentableBeforeTyping > 0)
+        {
+            FileLogger.Error(
+                $"{unrepresentableBeforeTyping} characters cannot be represented in {GetType().Name}; verbatim injection blocked before typing.");
+            return new InjectionResult(Success: false, KeystrokesSent: 0, UipiBlocked: false, Aborted: false);
+        }
+
         if (InjectionInterop.IsForegroundHigherIntegrity())
         {
             FileLogger.Warn("Injection blocked by UIPI: the focused window runs at a higher integrity level than Scrybe.");
@@ -222,10 +230,35 @@ public abstract class KeystrokeInjectorBase : IKeystrokeInjector
 
         if (unresolved > 0)
         {
-            FileLogger.Warn($"{unresolved} characters could not be represented in {GetType().Name} and were skipped.");
+            FileLogger.Error($"{unresolved} characters could not be represented in {GetType().Name}; verbatim injection failed.");
+            return new InjectionResult(Success: false, KeystrokesSent: sent, UipiBlocked: false, Aborted: false);
         }
 
         return new InjectionResult(Success: true, KeystrokesSent: sent, UipiBlocked: false, Aborted: false);
+    }
+
+    private int CountUnrepresentableVerbatimCharacters(ReadOnlySpan<char> text)
+    {
+        int unrepresentable = 0;
+        foreach (char character in text)
+        {
+            if (!KeystrokeBuilder.TryBuildStroke(character, out KeyStroke? stroke, out bool skipped))
+            {
+                if (skipped)
+                {
+                    unrepresentable++;
+                }
+
+                continue;
+            }
+
+            if (!CanRepresentStroke(stroke!))
+            {
+                unrepresentable++;
+            }
+        }
+
+        return unrepresentable;
     }
 
     /// <summary>Resets per-injection state before the first keystroke. Default: no-op.</summary>
@@ -237,6 +270,13 @@ public abstract class KeystrokeInjectorBase : IKeystrokeInjector
     protected virtual void EndInjection()
     {
     }
+
+    /// <summary>
+    /// Returns whether <paramref name="stroke"/> can be represented before a verbatim secret or
+    /// clipboard injection starts. Sequence injection keeps the existing best-effort behavior.
+    /// </summary>
+    /// <param name="stroke">The keystroke to inspect.</param>
+    protected virtual bool CanRepresentStroke(KeyStroke stroke) => true;
 
     /// <summary>Sends the Win32 events for a single keystroke.</summary>
     /// <param name="stroke">The keystroke to send.</param>

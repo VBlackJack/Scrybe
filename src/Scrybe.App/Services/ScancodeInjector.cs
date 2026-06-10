@@ -53,6 +53,10 @@ public sealed class ScancodeInjector : KeystrokeInjectorBase
     }
 
     /// <inheritdoc />
+    protected override bool CanRepresentStroke(KeyStroke stroke)
+        => stroke.IsSpecial || InjectionInterop.TryResolveScanCode(stroke.Character, out _, out _);
+
+    /// <inheritdoc />
     protected override StrokeResult SendStroke(KeyStroke stroke)
     {
         _events.Clear();

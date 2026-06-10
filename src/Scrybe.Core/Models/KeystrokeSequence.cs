@@ -18,5 +18,5 @@ namespace Scrybe.Core.Models;
 
 /// <summary>An ordered sequence of keystroke intents plus the count of characters that were skipped.</summary>
 /// <param name="Strokes">The ordered keystroke intents to send.</param>
-/// <param name="SkippedCharacters">Characters outside the safe-ASCII set that were reported and skipped.</param>
+/// <param name="SkippedCharacters">Control characters that were reported and skipped by the builder.</param>
 public sealed record KeystrokeSequence(IReadOnlyList<KeyStroke> Strokes, int SkippedCharacters);

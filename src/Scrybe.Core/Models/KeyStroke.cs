@@ -18,8 +18,7 @@ namespace Scrybe.Core.Models;
 
 /// <summary>
 /// One logical keystroke intent: either a character to type or a special key. The character is
-/// resolved to a hardware scancode and shift state against the active keyboard layout at injection
-/// time, so the pure builder stays layout-independent.
+/// resolved by the active injector at injection time, so the pure builder stays layout-independent.
 /// </summary>
 public sealed record KeyStroke
 {

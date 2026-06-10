@@ -53,7 +53,7 @@ internal static class InjectionInterop
     /// <summary>
     /// Resolves a character to a hardware scancode and shift state against the active keyboard layout,
     /// so injection types correctly regardless of the local layout (e.g. AZERTY vs QWERTY). Characters
-    /// that require AltGr (Ctrl+Alt) on the active layout are out of safe-ASCII scope and rejected.
+    /// that require AltGr (Ctrl+Alt) on the active layout are outside the simple scancode path and rejected.
     /// </summary>
     /// <param name="character">The character to resolve.</param>
     /// <param name="scanCode">The resolved scancode when successful.</param>

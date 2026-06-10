@@ -23,8 +23,8 @@ namespace Scrybe.Core.Tests;
 
 /// <summary>
 /// Tests for the pure <see cref="KeystrokeBuilder"/>: it emits layout-independent keystroke intents
-/// (characters and special keys) and reports skipped characters. The character→scancode/shift mapping
-/// is the injector's responsibility (against the active keyboard layout), so it is not asserted here.
+/// (characters and special keys) and reports skipped control characters. Character representation is
+/// the injector's responsibility, so layout- and mode-specific mapping is not asserted here.
 /// </summary>
 public sealed class KeystrokeBuilderTests
 {
@@ -43,7 +43,7 @@ public sealed class KeystrokeBuilderTests
     [Fact]
     public void Build_ReadOnlySpan_YieldsSameStrokesAsStringPath()
     {
-        char[] text = "SafeSecret#2026!\n".ToCharArray();
+        char[] text = "CléSecrète#2026!\n".ToCharArray();
 
         KeystrokeSequence fromString = KeystrokeBuilder.Build(new string(text));
         KeystrokeSequence fromSpan = KeystrokeBuilder.Build(text.AsSpan());
@@ -83,9 +83,24 @@ public sealed class KeystrokeBuilderTests
     }
 
     [Fact]
-    public void Build_NonSafeAsciiCharacter_IsSkippedAndCounted()
+    public void Build_ExtendedUnicodeParagraph_EmitsCharacterStrokes()
     {
-        KeystrokeSequence sequence = KeystrokeBuilder.Build("aéb");
+        const string text = "À creuser : « noyé », génériques règlent peut-être le rôle \u2014 dédiée.";
+
+        KeystrokeSequence sequence = KeystrokeBuilder.Build(text);
+
+        sequence.SkippedCharacters.Should().Be(0);
+        sequence.Strokes.Should().HaveCount(text.Length);
+        sequence.Strokes.Should().OnlyContain(stroke => !stroke.IsSpecial);
+        sequence.Strokes.Select(stroke => stroke.Character).Should().Equal(text);
+        KeystrokeBuilder.CountStrokes(text.AsSpan()).Should().Be(text.Length);
+        KeystrokeBuilder.CountSkipped(text.AsSpan()).Should().Be(0);
+    }
+
+    [Fact]
+    public void Build_UnsupportedControlCharacter_IsSkippedAndCounted()
+    {
+        KeystrokeSequence sequence = KeystrokeBuilder.Build("a\u001Bb");
 
         sequence.SkippedCharacters.Should().Be(1);
         sequence.Strokes.Should().Equal(
