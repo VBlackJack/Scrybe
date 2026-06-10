@@ -17,6 +17,7 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Scrybe.App.Services;
 using Scrybe.Core;
 using Scrybe.Core.Input;
 using Scrybe.Core.Interfaces;
@@ -38,6 +39,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly ILocalizationManager _localization;
     private readonly INotificationService _notification;
     private readonly HotkeyRegistrar _registrar;
+    private readonly IStartupRegistration _startupRegistration;
     private readonly bool _initialized;
 
     [ObservableProperty]
@@ -45,6 +47,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _prewarmOnStartup;
+
+    [ObservableProperty]
+    private bool _startWithWindows;
 
     [ObservableProperty]
     private bool _enablePreprocessing;
@@ -88,27 +93,32 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <param name="localization">Source of localized strings (and the live locale switch).</param>
     /// <param name="notification">Notification service used when settings cannot be persisted.</param>
     /// <param name="registrar">The hotkey registrar used to re-register edited hotkeys.</param>
+    /// <param name="startupRegistration">Registry-backed source of truth for the start-with-Windows entry.</param>
     public SettingsViewModel(
         AppSettings settings,
         ISettingsStore store,
         ILocalizationManager localization,
         INotificationService notification,
-        HotkeyRegistrar registrar)
+        HotkeyRegistrar registrar,
+        IStartupRegistration startupRegistration)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(notification);
         ArgumentNullException.ThrowIfNull(registrar);
+        ArgumentNullException.ThrowIfNull(startupRegistration);
 
         _settings = settings;
         _store = store;
         _localization = localization;
         _notification = notification;
         _registrar = registrar;
+        _startupRegistration = startupRegistration;
 
         _enableLogging = settings.EnableLogging;
         _prewarmOnStartup = settings.PrewarmOnStartup;
+        _startWithWindows = startupRegistration.IsEnabled();
         _enablePreprocessing = settings.EnablePreprocessing;
         _saveCaptureCrop = settings.SaveCaptureCrop;
         _enableCaptureHistory = settings.EnableCaptureHistory;
@@ -289,9 +299,40 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         FileLogger.Info("Settings saved.");
 
+        if (!TryApplyStartupRegistration())
+        {
+            // The JSON save already succeeded; surface the registry error without rolling it back.
+            return;
+        }
+
         StatusMessage = _localization["Settings.Saved"];
         IsStatusError = false;
         Saved?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool TryApplyStartupRegistration()
+    {
+        try
+        {
+            bool currentlyEnabled = _startupRegistration.IsEnabled();
+            if (StartWithWindows && !currentlyEnabled)
+            {
+                _startupRegistration.Enable();
+            }
+            else if (!StartWithWindows && currentlyEnabled)
+            {
+                _startupRegistration.Disable();
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            FileLogger.Error("Failed to apply the start-with-Windows registry state.", exception);
+            StatusMessage = _localization["Persist.SaveFailed"];
+            IsStatusError = true;
+            return false;
+        }
     }
 
     private void ShowSaveFailure()

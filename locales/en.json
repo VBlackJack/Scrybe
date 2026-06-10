@@ -146,6 +146,7 @@
   "Settings.Hotkeys": "Hotkeys",
   "Settings.EnableLogging": "Enable file logging",
   "Settings.PrewarmOnStartup": "Pre-warm capture and OCR on startup",
+  "Settings.StartWithWindows": "Start with Windows",
   "Settings.Locale": "Language",
   "Settings.LangEnglish": "English",
   "Settings.LangFrench": "French",

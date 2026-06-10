@@ -146,6 +146,7 @@
   "Settings.Hotkeys": "Raccourcis",
   "Settings.EnableLogging": "Activer la journalisation",
   "Settings.PrewarmOnStartup": "Préchauffer la capture et l'OCR au démarrage",
+  "Settings.StartWithWindows": "Démarrer avec Windows",
   "Settings.Locale": "Langue",
   "Settings.LangEnglish": "Anglais",
   "Settings.LangFrench": "Français",

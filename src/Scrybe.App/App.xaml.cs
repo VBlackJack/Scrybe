@@ -197,6 +197,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<TrayIconService>();
         services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<TrayIconService>());
         services.AddSingleton<IConfirmationService, ThemedConfirmationService>();
+        services.AddSingleton<IStartupRegistration, StartupRegistrationService>();
 
         string snippetsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -300,6 +301,10 @@ public partial class App : System.Windows.Application
             RegisterHotkey(AppConstants.ToggleInjectionModeHotkeyId, AppConstants.DefaultDebugHotkeyModifiers, AppConstants.DefaultToggleInjectionModeKey);
             RegisterHotkey(AppConstants.CycleInjectionPacingHotkeyId, AppConstants.DefaultDebugHotkeyModifiers, AppConstants.DefaultCycleInjectionPacingKey);
         }
+
+        // Conservative self-heal: re-register only when our own entry points at a now-missing
+        // executable. Never throws, so it cannot block startup.
+        provider.GetRequiredService<IStartupRegistration>().HealIfStale();
 
         if (settings.PrewarmOnStartup)
         {

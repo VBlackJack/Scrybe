@@ -15,6 +15,7 @@
  */
 
 using FluentAssertions;
+using Scrybe.App.Services;
 using Scrybe.App.ViewModels;
 using Scrybe.Core;
 using Scrybe.Core.Input;
@@ -35,7 +36,7 @@ public sealed class SettingsViewModelTests
         FakeHotkeyService hotkeys = new();
         HotkeyRegistrar registrar = new(hotkeys);
         TestNotificationService notification = new();
-        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), notification, registrar);
+        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), notification, registrar, new NoopStartupRegistration());
 
         viewModel.ClipboardInjectRecorder.Capture("Control+Alt", "Y");
         viewModel.HistoryPaletteRecorder.Capture("Control+Alt", "U");
@@ -64,7 +65,7 @@ public sealed class SettingsViewModelTests
         InMemorySettingsStore store = new();
         FakeHotkeyService hotkeys = new();
         HotkeyRegistrar registrar = new(hotkeys);
-        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), new TestNotificationService(), registrar);
+        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), new TestNotificationService(), registrar, new NoopStartupRegistration());
 
         viewModel.HistoryPaletteRecorder.Capture("Alt+Control", "B");
 
@@ -89,7 +90,7 @@ public sealed class SettingsViewModelTests
         FakeHotkeyService hotkeys = new();
         HotkeyRegistrar registrar = new(hotkeys);
         TestNotificationService notification = new();
-        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), notification, registrar);
+        SettingsViewModel viewModel = new(settings, store, new TestLocalizationManager(), notification, registrar, new NoopStartupRegistration());
         int savedEvents = 0;
         viewModel.Saved += (_, _) => savedEvents++;
 
@@ -194,5 +195,24 @@ public sealed class SettingsViewModelTests
 
         public void Notify(string title, string message)
             => Messages.Add(message);
+    }
+
+    private sealed class NoopStartupRegistration : IStartupRegistration
+    {
+        public bool IsEnabled() => false;
+
+        public string? GetRegisteredCommand() => null;
+
+        public void Enable()
+        {
+        }
+
+        public void Disable()
+        {
+        }
+
+        public void HealIfStale()
+        {
+        }
     }
 }

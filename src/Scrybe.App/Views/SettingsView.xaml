@@ -99,6 +99,10 @@
                                   ToolTip="{loc:Translate ToolTip.Settings.PrewarmOnStartup}"
                                   AutomationProperties.Name="{loc:Translate Settings.PrewarmOnStartup}"
                                   AutomationProperties.HelpText="{loc:Translate ToolTip.Settings.PrewarmOnStartup}" />
+                        <CheckBox Content="{loc:Translate Settings.StartWithWindows}"
+                                  IsChecked="{Binding StartWithWindows}"
+                                  Style="{StaticResource SettingCheckBoxStyle}"
+                                  AutomationProperties.Name="{loc:Translate Settings.StartWithWindows}" />
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                             <TextBlock Text="{loc:Translate Settings.Locale}" Style="{StaticResource FieldLabelStyle}" />
                             <ComboBox ItemsSource="{Binding LocaleChoices}" SelectedValuePath="Value" SelectedValue="{Binding LocaleCode}" Style="{StaticResource SettingComboStyle}" AutomationProperties.Name="{loc:Translate Settings.Locale}" />
