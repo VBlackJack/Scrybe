@@ -17,6 +17,7 @@
 using System.Globalization;
 using Scrybe.App.ViewModels;
 using Scrybe.App.Views;
+using Scrybe.Core;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
@@ -112,6 +113,44 @@ public sealed class CaptureHistoryCoordinator
         return true;
     }
 
+    /// <summary>Confirms and deletes one history entry.</summary>
+    /// <param name="entryId">The history entry id.</param>
+    /// <returns><see langword="true"/> when the entry was deleted in memory.</returns>
+    public async Task<bool> DeleteAsync(string entryId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entryId);
+
+        CaptureHistoryEntry? entry = _library.Entries.FirstOrDefault(
+            candidate => string.Equals(candidate.Id, entryId, StringComparison.Ordinal));
+        if (entry is null)
+        {
+            FileLogger.Warn($"Capture history delete requested for missing entry '{entryId}'.");
+            return false;
+        }
+
+        string timestamp = entry.CapturedAtUtc
+            .ToLocalTime()
+            .ToString(AppConstants.CaptureHistoryTimestampFormat, CultureInfo.CurrentCulture);
+        string message = string.Format(
+            CultureInfo.CurrentCulture,
+            _localization["History.DeleteConfirmMessage"],
+            timestamp);
+        if (!_confirmation.ConfirmDanger(_localization["History.DeleteConfirmTitle"], message))
+        {
+            FileLogger.Info("Capture history entry delete cancelled.");
+            return false;
+        }
+
+        bool persisted = await _library.DeleteAsync(entryId).ConfigureAwait(false);
+        if (!persisted)
+        {
+            NotifySaveFailure();
+            FileLogger.Warn("Capture history entry delete completed in memory but was not persisted.");
+        }
+
+        return true;
+    }
+
     private async Task CopyToClipboardAsync(string entryId)
     {
         try
@@ -156,12 +195,10 @@ public sealed class CaptureHistoryCoordinator
     {
         try
         {
-            bool persisted = await _library.DeleteAsync(entryId).ConfigureAwait(true);
-            viewModel.ReplaceEntries(BuildItems());
-            if (!persisted)
+            bool deleted = await DeleteAsync(entryId).ConfigureAwait(true);
+            if (deleted)
             {
-                NotifySaveFailure();
-                FileLogger.Warn("Capture history palette delete completed in memory but was not persisted.");
+                viewModel.ReplaceEntries(BuildItems());
             }
         }
         catch (Exception exception)

@@ -78,7 +78,10 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        string logDirectory = Path.Combine(AppContext.BaseDirectory, AppConstants.LogSubDirName);
+        string logDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            AppConstants.AppName,
+            AppConstants.LogSubDirName);
         FileLogger.Initialize(logDirectory);
         FileLogger.Info($"{AppConstants.AppName} starting.");
 
@@ -178,6 +181,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<ISettingsStore>(_ => BuildSettingsStore());
         services.AddSingleton<ILocalizationManager>(_ => new LocalizationManager(localesDirectory));
         services.AddSingleton<AboutInfoProvider>();
+        services.AddSingleton<DiagnosticsInfoProvider>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<AboutViewModel>();

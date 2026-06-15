@@ -59,7 +59,13 @@ public sealed class JsonCaptureHistoryStore : ICaptureHistoryStore
                 .ConfigureAwait(false);
             return entries?.Where(IsValid).ToList() ?? [];
         }
-        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
+        catch (JsonException exception)
+        {
+            FileLogger.Error($"Failed to read capture history from {_filePath}; starting with an empty history.", exception);
+            CorruptJsonQuarantine.TryMoveAside(_filePath, "capture history");
+            return [];
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             FileLogger.Error($"Failed to read capture history from {_filePath}; starting with an empty history.", exception);
             return [];

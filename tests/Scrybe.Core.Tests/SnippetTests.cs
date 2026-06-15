@@ -123,7 +123,8 @@ public sealed class SnippetTests
     public async Task JsonStore_CorruptFile_LoadsEmptyWithoutThrowing()
     {
         string path = CreateTempPath();
-        await File.WriteAllTextAsync(path, "{ this is not valid json ][");
+        const string CorruptJson = "{ this is not valid json ][";
+        await File.WriteAllTextAsync(path, CorruptJson);
         try
         {
             ISnippetStore store = new JsonSnippetStore(path);
@@ -131,10 +132,15 @@ public sealed class SnippetTests
             IReadOnlyList<Snippet> loaded = await store.LoadAsync();
 
             loaded.Should().BeEmpty();
+            File.Exists(path).Should().BeFalse();
+            IReadOnlyList<string> quarantined = EnumerateQuarantinedFiles(path);
+            quarantined.Should().ContainSingle();
+            File.ReadAllText(quarantined[0]).Should().Be(CorruptJson);
         }
         finally
         {
             TryDelete(path);
+            TryDeleteQuarantined(path);
         }
     }
 
@@ -152,6 +158,13 @@ public sealed class SnippetTests
         return Directory.EnumerateFiles(directory, pattern).ToList();
     }
 
+    private static IReadOnlyList<string> EnumerateQuarantinedFiles(string path)
+    {
+        string directory = Path.GetDirectoryName(path)!;
+        string pattern = Path.GetFileName(path) + ".corrupt.*.json";
+        return Directory.EnumerateFiles(directory, pattern).ToList();
+    }
+
     private static void TryDelete(string path)
     {
         try
@@ -164,6 +177,14 @@ public sealed class SnippetTests
         catch
         {
             // Best-effort cleanup.
+        }
+    }
+
+    private static void TryDeleteQuarantined(string path)
+    {
+        foreach (string quarantined in EnumerateQuarantinedFiles(path))
+        {
+            TryDelete(quarantined);
         }
     }
 }

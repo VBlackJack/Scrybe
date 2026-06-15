@@ -44,7 +44,7 @@ flowchart LR
 ### Capture To Clipboard
 
 1. A hotkey, tray item or hub action calls `CaptureCoordinator`.
-2. `WgcScreenCaptureService` captures the primary monitor.
+2. `WgcScreenCaptureService` captures the monitor under the cursor.
 3. `CaptureOverlayWindow` lets the user select a region.
 4. `ImagePreprocessor` prepares the crop when enabled.
 5. `TesseractOcrEngine` recognizes text.

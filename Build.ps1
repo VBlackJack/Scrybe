@@ -325,6 +325,55 @@ function New-ReleaseArchive {
     return $zipPath
 }
 
+function Assert-PublishArtifact {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Path,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Description
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "Published artifact missing: $Description ($Path)"
+    }
+
+    [System.IO.FileInfo] $artifact = Get-Item -LiteralPath $Path
+    if ($artifact.Length -le 0) {
+        throw "Published artifact is empty: $Description ($Path)"
+    }
+}
+
+function Assert-PublishLayout {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $PublishDirectory,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $ExecutableFileName
+    )
+
+    [object[]] $requiredArtifacts = @(
+        [pscustomobject] @{ RelativePath = $ExecutableFileName; Description = 'application executable' },
+        [pscustomobject] @{ RelativePath = 'Tesseract.dll'; Description = 'Tesseract managed assembly' },
+        [pscustomobject] @{ RelativePath = 'x64\leptonica-1.82.0.dll'; Description = 'Leptonica native runtime' },
+        [pscustomobject] @{ RelativePath = 'x64\tesseract50.dll'; Description = 'Tesseract native runtime' },
+        [pscustomobject] @{ RelativePath = 'tessdata\eng.traineddata'; Description = 'English OCR trained data' },
+        [pscustomobject] @{ RelativePath = 'locales\en.json'; Description = 'English locale' },
+        [pscustomobject] @{ RelativePath = 'locales\fr.json'; Description = 'French locale' }
+    )
+
+    foreach ($artifact in $requiredArtifacts) {
+        Assert-PublishArtifact `
+            -Path (Join-Path $PublishDirectory $artifact.RelativePath) `
+            -Description $artifact.Description
+    }
+}
+
 function Publish-GitHubRelease {
     param(
         [Parameter(Mandatory = $true)]
@@ -418,11 +467,16 @@ try {
         Write-Output "Version stamped in Directory.Build.props."
     }
 
+    if (-not $NoRestore) {
+        Write-Output "Restoring packages in locked mode..."
+        Invoke-Tool -FilePath 'dotnet' -Arguments @('restore', $solutionPath, '--locked-mode')
+    }
+
     Write-Output "Verifying formatting..."
-    Invoke-Tool -FilePath 'dotnet' -Arguments @('format', $solutionPath, '--verify-no-changes')
+    Invoke-Tool -FilePath 'dotnet' -Arguments @('format', $solutionPath, '--verify-no-changes', '--no-restore')
 
     Write-Output "Running tests..."
-    Invoke-Tool -FilePath 'dotnet' -Arguments @('test', $solutionPath, '--configuration', $Mode, '--verbosity', 'normal')
+    Invoke-Tool -FilePath 'dotnet' -Arguments @('test', $solutionPath, '--configuration', $Mode, '--no-restore', '--verbosity', 'normal')
 
 
     if ($Publish -and -not $DryRun) {
@@ -439,7 +493,7 @@ try {
     }
 
     Write-Output "Building solution..."
-    [string[]] $buildArgs = @('build', $solutionPath, '--configuration', $Mode) + $buildMetadataProperties
+    [string[]] $buildArgs = @('build', $solutionPath, '--configuration', $Mode, '--no-restore') + $buildMetadataProperties
     Invoke-Tool -FilePath 'dotnet' -Arguments $buildArgs
 
     if (Test-Path -LiteralPath $publishDirectory) {
@@ -461,12 +515,9 @@ try {
         '-p:IncludeNativeLibrariesForSelfExtract=true',
         '-p:PublishTrimmed=false',
         '-p:DebugType=embedded',
-        '-p:DebugSymbols=false'
+        '-p:DebugSymbols=false',
+        '--no-restore'
     ) + $buildMetadataProperties
-
-    if ($NoRestore) {
-        $publishArgs += '--no-restore'
-    }
 
     Write-Output "Publishing application..."
     Invoke-Tool -FilePath 'dotnet' -Arguments $publishArgs
@@ -474,6 +525,9 @@ try {
     if (-not (Test-Path -LiteralPath $exePath)) {
         throw "Published executable not found: $exePath"
     }
+
+    Assert-PublishLayout -PublishDirectory $publishDirectory -ExecutableFileName "$assemblyName.exe"
+    Write-Output "Publish layout verified."
 
     [System.IO.FileInfo] $exe = Get-Item -LiteralPath $exePath
     Write-Output ("Published executable: {0}" -f $exe.FullName)

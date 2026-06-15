@@ -59,7 +59,13 @@ public sealed class JsonSettingsStore : ISettingsStore
                 .ConfigureAwait(false);
             return new SettingsLoadResult(SettingsValidator.Validate(settings ?? new AppSettings()), Existed: true);
         }
-        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
+        catch (JsonException exception)
+        {
+            FileLogger.Error($"Failed to read settings from {_filePath}; falling back to defaults.", exception);
+            CorruptJsonQuarantine.TryMoveAside(_filePath, "settings");
+            return new SettingsLoadResult(SettingsValidator.Validate(new AppSettings()), Existed: false);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             FileLogger.Error($"Failed to read settings from {_filePath}; falling back to defaults.", exception);
             return new SettingsLoadResult(SettingsValidator.Validate(new AppSettings()), Existed: false);

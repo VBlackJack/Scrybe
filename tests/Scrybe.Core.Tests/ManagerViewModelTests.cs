@@ -117,6 +117,30 @@ public sealed class ManagerViewModelTests
     }
 
     [Fact]
+    public async Task CaptureHistoryPalette_DeleteCancelled_KeepsHistoryAndDoesNotPersistDelete()
+    {
+        InMemoryCaptureHistoryStore store = new();
+        CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
+        await library.AddAsync("palette history entry");
+        int saveCountAfterArrange = store.SaveCount;
+        DenyingConfirmationService confirmation = new();
+        CaptureHistoryCoordinator coordinator = new(
+            library,
+            new TestClipboardService(),
+            new TestNotificationService(),
+            new TestLocalizationManager(),
+            confirmation);
+
+        bool deleted = await coordinator.DeleteAsync(library.Entries.Single().Id);
+
+        deleted.Should().BeFalse();
+        confirmation.CallCount.Should().Be(1);
+        library.Entries.Should().ContainSingle();
+        store.SavedEntries.Should().ContainSingle();
+        store.SaveCount.Should().Be(saveCountAfterArrange);
+    }
+
+    [Fact]
     public async Task HistoryManager_ClearAllCancelled_KeepsHistoryAndDoesNotPersistClear()
     {
         InMemoryCaptureHistoryStore store = new();

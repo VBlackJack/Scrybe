@@ -14,7 +14,7 @@
 
     <Grid x:Name="RootGrid" ClipToBounds="True">
 
-        <!-- Frozen capture of the primary monitor, shown full-bleed. -->
+        <!-- Frozen capture of the selected monitor, shown full-bleed. -->
         <Image x:Name="FrozenImage" Stretch="Fill" />
 
         <Canvas x:Name="OverlayCanvas">

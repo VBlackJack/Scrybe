@@ -179,7 +179,8 @@ public sealed class SecretVaultTests
     public async Task JsonSecretStore_CorruptFile_LoadsEmptyWithoutThrowing()
     {
         string path = CreateTempPath();
-        await File.WriteAllTextAsync(path, "{ not valid secrets json ]");
+        const string CorruptJson = "{ not valid secrets json ]";
+        await File.WriteAllTextAsync(path, CorruptJson);
         try
         {
             ISecretStore store = new JsonSecretStore(path);
@@ -187,10 +188,15 @@ public sealed class SecretVaultTests
             IReadOnlyList<SecretEntry> loaded = await store.LoadAsync();
 
             loaded.Should().BeEmpty();
+            File.Exists(path).Should().BeFalse();
+            IReadOnlyList<string> quarantined = EnumerateQuarantinedFiles(path);
+            quarantined.Should().ContainSingle();
+            File.ReadAllText(quarantined[0]).Should().Be(CorruptJson);
         }
         finally
         {
             TryDelete(path);
+            TryDeleteQuarantined(path);
         }
     }
 
@@ -205,6 +211,13 @@ public sealed class SecretVaultTests
     {
         string directory = Path.GetDirectoryName(path)!;
         string pattern = "." + Path.GetFileName(path) + ".*.tmp";
+        return Directory.EnumerateFiles(directory, pattern).ToList();
+    }
+
+    private static IReadOnlyList<string> EnumerateQuarantinedFiles(string path)
+    {
+        string directory = Path.GetDirectoryName(path)!;
+        string pattern = Path.GetFileName(path) + ".corrupt.*.json";
         return Directory.EnumerateFiles(directory, pattern).ToList();
     }
 
@@ -310,6 +323,14 @@ public sealed class SecretVaultTests
         catch
         {
             // Best-effort cleanup.
+        }
+    }
+
+    private static void TryDeleteQuarantined(string path)
+    {
+        foreach (string quarantined in EnumerateQuarantinedFiles(path))
+        {
+            TryDelete(quarantined);
         }
     }
 

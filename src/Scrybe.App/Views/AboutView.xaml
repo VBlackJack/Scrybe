@@ -24,6 +24,11 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
+        <Style x:Key="AboutSectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeLarge}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -32,6 +37,8 @@
               MaxWidth="620"
               HorizontalAlignment="Center">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
@@ -83,6 +90,37 @@
                                            Style="{StaticResource AboutLabelStyle}" />
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding Value}"
+                                           Style="{StaticResource AboutValueStyle}"
+                                           Margin="16,0,0,0" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <TextBlock Grid.Row="2"
+                       Text="{Binding DiagnosticsTitle}"
+                       Style="{StaticResource AboutSectionHeaderStyle}"
+                       Margin="0,20,0,10"
+                       AutomationProperties.Name="{Binding DiagnosticsTitle}" />
+
+            <Border Grid.Row="3"
+                    Style="{StaticResource AboutCardStyle}">
+                <ItemsControl ItemsSource="{Binding DiagnosticRows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Label}"
+                                           Style="{StaticResource AboutLabelStyle}" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Value}"
+                                           ToolTip="{Binding Value}"
                                            Style="{StaticResource AboutValueStyle}"
                                            Margin="16,0,0,0" />
                             </Grid>

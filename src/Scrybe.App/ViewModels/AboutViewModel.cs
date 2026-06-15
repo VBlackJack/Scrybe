@@ -27,20 +27,28 @@ public sealed class AboutViewModel : ObservableObject
 
     private readonly ILocalizationManager _localization;
     private readonly AboutInfoProvider _aboutInfoProvider;
+    private readonly DiagnosticsInfoProvider _diagnosticsInfoProvider;
     private string _title = string.Empty;
     private string _appName = string.Empty;
     private string _tagline = string.Empty;
     private string _version = string.Empty;
+    private string _diagnosticsTitle = string.Empty;
     private IReadOnlyList<AboutDetailRow> _rows = [];
+    private IReadOnlyList<AboutDetailRow> _diagnosticRows = [];
 
     /// <summary>Initializes the About view model from localization and assembly metadata.</summary>
-    public AboutViewModel(ILocalizationManager localization, AboutInfoProvider aboutInfoProvider)
+    public AboutViewModel(
+        ILocalizationManager localization,
+        AboutInfoProvider aboutInfoProvider,
+        DiagnosticsInfoProvider diagnosticsInfoProvider)
     {
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(aboutInfoProvider);
+        ArgumentNullException.ThrowIfNull(diagnosticsInfoProvider);
 
         _localization = localization;
         _aboutInfoProvider = aboutInfoProvider;
+        _diagnosticsInfoProvider = diagnosticsInfoProvider;
 
         Refresh();
         localization.LocaleChanged += OnLocaleChanged;
@@ -74,11 +82,25 @@ public sealed class AboutViewModel : ObservableObject
         private set => SetProperty(ref _version, value);
     }
 
+    /// <summary>Localized diagnostics section title.</summary>
+    public string DiagnosticsTitle
+    {
+        get => _diagnosticsTitle;
+        private set => SetProperty(ref _diagnosticsTitle, value);
+    }
+
     /// <summary>Localized detail rows.</summary>
     public IReadOnlyList<AboutDetailRow> Rows
     {
         get => _rows;
         private set => SetProperty(ref _rows, value);
+    }
+
+    /// <summary>Localized runtime diagnostic rows.</summary>
+    public IReadOnlyList<AboutDetailRow> DiagnosticRows
+    {
+        get => _diagnosticRows;
+        private set => SetProperty(ref _diagnosticRows, value);
     }
 
     private void OnLocaleChanged(object? sender, EventArgs e)
@@ -94,6 +116,7 @@ public sealed class AboutViewModel : ObservableObject
         AppName = _localization["AppTitle"];
         Tagline = _localization["AppTagline"];
         Version = aboutInfo.Version;
+        DiagnosticsTitle = _localization["Diagnostics.Title"];
 
         List<AboutDetailRow> rows = [];
         AddRow(rows, _localization["About.Version"], aboutInfo.Version, includeUnknown: true);
@@ -102,6 +125,11 @@ public sealed class AboutViewModel : ObservableObject
         AddRow(rows, _localization["About.License"], aboutInfo.License, includeUnknown: true);
         AddRow(rows, _localization["About.Copyright"], aboutInfo.Copyright, includeUnknown: true);
         Rows = rows;
+
+        DiagnosticRows = _diagnosticsInfoProvider
+            .GetDiagnosticsInfo()
+            .Select(row => new AboutDetailRow(_localization[row.LabelKey], FormatDiagnosticValue(row)))
+            .ToList();
     }
 
     private static void AddRow(List<AboutDetailRow> rows, string label, string value, bool includeUnknown = false)
@@ -115,4 +143,17 @@ public sealed class AboutViewModel : ObservableObject
     private static bool IsKnown(string value)
         => !string.IsNullOrWhiteSpace(value)
         && !string.Equals(value.Trim(), UnknownValue, StringComparison.Ordinal);
+
+    private string FormatDiagnosticValue(DiagnosticInfoRow row)
+    {
+        if (row.Exists is null)
+        {
+            return row.Value;
+        }
+
+        string state = row.Exists.Value
+            ? _localization["Diagnostics.Present"]
+            : _localization["Diagnostics.Missing"];
+        return $"{state}: {row.Value}";
+    }
 }

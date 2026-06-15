@@ -12,7 +12,8 @@ SSH or terminal sessions.
 In these consoles, copy/paste often fails in both directions. Scrybe restores
 that bridge without cloud services:
 
-- **Extraction** (screen to local): capture a primary-screen region, run OCR, and
+- **Extraction** (screen to local): capture a region from the monitor under the
+  cursor, run OCR, and
   copy cleaned, code-aware text to the local clipboard.
 - **Injection** (local to remote): type text as synthetic keystrokes into the
   target console, including long commands and DPAPI-protected stored secrets,
@@ -28,9 +29,8 @@ remote console. Scrybe covers both directions.
 - **License:** Apache 2.0.
 - **Local-first:** offline, no telemetry, no cloud OCR.
 - **Windows-native:** WPF, tray app, Per-Monitor DPI Aware v2.
-- **Capture scope today:** primary monitor only. Multi-monitor capture is on the
-  backlog; DPI awareness is already enabled, but the capture surface is not yet
-  multi-screen.
+- **Capture scope today:** monitor under cursor, with Per-Monitor DPI Aware v2
+  coordinate handling.
 - **Theme:** Dracula.
 
 ## Prerequisites

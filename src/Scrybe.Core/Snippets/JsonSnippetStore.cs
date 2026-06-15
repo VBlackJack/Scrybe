@@ -59,7 +59,13 @@ public sealed class JsonSnippetStore : ISnippetStore
                 .ConfigureAwait(false);
             return snippets ?? [];
         }
-        catch (Exception exception) when (exception is JsonException or IOException or UnauthorizedAccessException)
+        catch (JsonException exception)
+        {
+            FileLogger.Error($"Failed to read snippets from {_filePath}; starting with an empty library.", exception);
+            CorruptJsonQuarantine.TryMoveAside(_filePath, "snippets");
+            return [];
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             FileLogger.Error($"Failed to read snippets from {_filePath}; starting with an empty library.", exception);
             return [];
