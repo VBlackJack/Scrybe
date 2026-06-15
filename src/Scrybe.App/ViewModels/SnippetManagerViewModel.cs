@@ -199,6 +199,40 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void DetectParameters()
+    {
+        List<string> placeholders = ExtractTemplateParameterNames();
+        if (placeholders.Count == 0)
+        {
+            StatusMessage = _localization["Manager.ParametersNoneDetected"];
+            IsStatusError = false;
+            return;
+        }
+
+        HashSet<string> existing = ParameterRows
+            .Select(row => row.Name.Trim())
+            .Where(name => name.Length > 0)
+            .ToHashSet(StringComparer.Ordinal);
+
+        int added = 0;
+        foreach (string name in placeholders)
+        {
+            if (!existing.Add(name))
+            {
+                continue;
+            }
+
+            ParameterRows.Add(new SnippetParameterEditorViewModel(new SnippetParameter(name, name, null)));
+            added++;
+        }
+
+        StatusMessage = added == 0
+            ? _localization["Manager.ParametersAlreadyDetected"]
+            : string.Format(CultureInfo.CurrentCulture, _localization["Manager.ParametersDetected"], added);
+        IsStatusError = false;
+    }
+
+    [RelayCommand]
     private async Task Delete()
     {
         if (SelectedSnippet is null)
@@ -274,9 +308,8 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     {
         HashSet<string> defined = parameters.Select(parameter => parameter.Name).ToHashSet(StringComparer.Ordinal);
         List<string> missing = [];
-        foreach (Match match in Regex.Matches(Template, AppConstants.SnippetPlaceholderPattern))
+        foreach (string name in ExtractTemplateParameterNames())
         {
-            string name = match.Groups[1].Value;
             if (name.Length == 0 || defined.Contains(name) || missing.Contains(name))
             {
                 continue;
@@ -287,6 +320,21 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
 
         missingParameters = string.Join(", ", missing);
         return missing.Count == 0;
+    }
+
+    private List<string> ExtractTemplateParameterNames()
+    {
+        List<string> names = [];
+        foreach (Match match in Regex.Matches(Template, AppConstants.SnippetPlaceholderPattern))
+        {
+            string name = match.Groups[1].Value.Trim();
+            if (name.Length > 0 && !names.Contains(name, StringComparer.Ordinal))
+            {
+                names.Add(name);
+            }
+        }
+
+        return names;
     }
 
     private static string FormatParameters(IReadOnlyList<SnippetParameter> parameters)

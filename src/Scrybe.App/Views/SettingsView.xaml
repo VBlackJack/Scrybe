@@ -57,61 +57,66 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="1" Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="1"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="{x:Type TextBlock}">
-                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <TextBlock Text="{loc:Translate Settings.UnsavedChanges}"
-                           Foreground="{StaticResource WarningBrush}"
-                           FontSize="{StaticResource FontSizeCaption}">
-                    <TextBlock.Style>
-                        <Style TargetType="{x:Type TextBlock}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasPendingChanges}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </StackPanel>
-            <Button Command="{Binding SaveCommand}"
-                    Grid.Column="1"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Padding="{StaticResource PaddingButtonPrimary}"
-                    Background="{StaticResource AccentBrush}"
-                    Foreground="{StaticResource ActionOnBrightBrush}"
-                    BorderThickness="0"
-                    FontWeight="SemiBold"
-                    AutomationProperties.Name="{loc:Translate Settings.Save}">
-                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
-                    <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
-                    <TextBlock Text="{loc:Translate Settings.Save}" Style="{StaticResource AppIconTextStyle}" />
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{loc:Translate Settings.UnsavedChanges}"
+                               Foreground="{StaticResource WarningBrush}"
+                               FontSize="{StaticResource FontSizeCaption}">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasPendingChanges}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
-            </Button>
-        </Grid>
+                <Button Command="{Binding SaveCommand}"
+                        Grid.Column="1"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Padding="{StaticResource PaddingButtonPrimary}"
+                        Background="{StaticResource AccentBrush}"
+                        Foreground="{StaticResource ActionOnBrightBrush}"
+                        BorderThickness="0"
+                        FontWeight="SemiBold"
+                        AutomationProperties.Name="{loc:Translate Settings.Save}">
+                    <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                        <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
+                        <TextBlock Text="{loc:Translate Settings.Save}" Style="{StaticResource AppIconTextStyle}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
 
         <ScrollViewer Grid.Row="0"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
-            <StackPanel>
+            <StackPanel Margin="0,0,0,12">
 
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>

@@ -40,6 +40,7 @@
     <sys:String x:Key="IconActionOpenFolder">&#xE838;</sys:String>
     <sys:String x:Key="IconActionPlay">&#xE768;</sys:String>
     <sys:String x:Key="IconActionReveal">&#xE890;</sys:String>
+    <sys:String x:Key="IconActionSearch">&#xE721;</sys:String>
 
     <!-- Spacing (Thickness) -->
     <Thickness x:Key="SpacingXs">4</Thickness>
