@@ -177,9 +177,19 @@
                                 <Border Grid.Column="1"
                                         Style="{StaticResource AboutStatusBadgeStyle}">
                                     <TextBlock Text="{Binding Status}"
-                                               Foreground="{StaticResource TextPrimaryBrush}"
                                                FontSize="{StaticResource FontSizeCaption}"
-                                               FontWeight="SemiBold" />
+                                               FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="{x:Type TextBlock}">
+                                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource ActionOnBrightBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </Border>
                                 <TextBlock Grid.Column="2"
                                            Text="{Binding Value}"

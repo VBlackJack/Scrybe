@@ -86,9 +86,9 @@
     <CornerRadius x:Key="ConfirmationDialogCornerRadius">6</CornerRadius>
 
     <!-- Shell tabs -->
-    <sys:Double x:Key="ShellTabHeaderMinWidth">96</sys:Double>
+    <sys:Double x:Key="ShellTabHeaderMinWidth">86</sys:Double>
     <Thickness x:Key="ShellTabControlMargin">12,10,12,12</Thickness>
-    <Thickness x:Key="ShellTabHeaderPadding">14,8</Thickness>
+    <Thickness x:Key="ShellTabHeaderPadding">10,8</Thickness>
     <Thickness x:Key="ShellTabItemMargin">0,0,4,0</Thickness>
     <Thickness x:Key="ShellTabPanelMargin">1,0,1,-1</Thickness>
     <Thickness x:Key="ShellTabContentPadding">0</Thickness>

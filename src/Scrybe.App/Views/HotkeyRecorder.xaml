@@ -7,7 +7,7 @@
              AutomationProperties.Name="{Binding Label}">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="170" />
+            <ColumnDefinition Width="160" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
@@ -18,7 +18,7 @@
                    Foreground="{StaticResource TextSecondaryBrush}"
                    FontSize="{StaticResource FontSizeBody}" />
         <Border Grid.Column="1"
-                MinWidth="150"
+                MinWidth="140"
                 Background="{StaticResource SurfaceBrush}"
                 BorderThickness="1"
                 CornerRadius="4"

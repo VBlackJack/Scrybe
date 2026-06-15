@@ -42,7 +42,7 @@
                              VirtualizingStackPanel.IsVirtualizing="True"
                              VirtualizingStackPanel.VirtualizationMode="Recycling"
                              FontSize="{StaticResource FontSizeBody}" />
-                    <TextBlock Text="{loc:Translate Manager.Empty}">
+                    <TextBlock Text="{loc:Translate Manager.EmptyCreateHint}">
                         <TextBlock.Style>
                             <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource ManagerEmptyStateTextStyle}">
                                 <Style.Triggers>
@@ -220,18 +220,34 @@
                 </Grid>
 
                 <Grid Grid.Row="4" Margin="0,12,0,0">
-                    <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,160,0">
-                        <TextBlock.Style>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
+                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{loc:Translate Manager.UnsavedChanges}"
+                                   Foreground="{StaticResource WarningBrush}"
+                                   FontSize="{StaticResource FontSizeCaption}">
+                            <TextBlock.Style>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasPendingChanges}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Command="{Binding DeleteCommand}" Margin="0,0,8,0" Padding="{StaticResource PaddingButtonPrimary}" Background="{StaticResource ErrorBrush}" Foreground="{StaticResource ActionOnBrightBrush}" BorderThickness="0" AutomationProperties.Name="{loc:Translate Manager.Delete}">
                             <StackPanel Style="{StaticResource AppIconTextContentStyle}">

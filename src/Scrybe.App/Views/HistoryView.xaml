@@ -43,7 +43,7 @@
                     <TextBlock Grid.Row="0" Text="{loc:Translate History.PaletteTitle}" Style="{StaticResource HistoryHeaderStyle}" />
 
                     <TextBlock Grid.Row="1"
-                               Text="{loc:Translate History.Empty}"
+                               Text="{loc:Translate History.EmptyCaptureHint}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center">
                         <TextBlock.Style>
