@@ -38,7 +38,8 @@
                         MinWidth="{StaticResource ConfirmationDialogButtonMinWidth}"
                         Margin="{StaticResource ConfirmationDialogButtonMargin}" />
 
-                <Button Content="{Binding OkText, RelativeSource={RelativeSource AncestorType=Window}}"
+                <Button x:Name="OkButton"
+                        Content="{Binding OkText, RelativeSource={RelativeSource AncestorType=Window}}"
                         Click="OnOkClicked"
                         MinWidth="{StaticResource ConfirmationDialogButtonMinWidth}"
                         Background="{StaticResource ErrorBrush}"

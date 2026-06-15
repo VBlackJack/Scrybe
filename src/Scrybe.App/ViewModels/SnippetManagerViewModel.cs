@@ -15,6 +15,8 @@
  */
 
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -38,6 +40,10 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     private readonly SnippetLibrary _library;
     private readonly ILocalizationManager _localization;
     private readonly IConfirmationService _confirmation;
+    private bool _suppressPendingChanges;
+    private bool _suppressDiscardPrompt;
+    private bool _restoringRejectedSelection;
+    private Snippet? _selectionBeforeChange;
 
     [ObservableProperty]
     private Snippet? _selectedSnippet;
@@ -63,6 +69,9 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     [ObservableProperty]
     private bool _isStatusError;
 
+    [ObservableProperty]
+    private bool _hasPendingChanges;
+
     /// <summary>Initializes the manager from the snippet library.</summary>
     /// <param name="library">The snippet library.</param>
     /// <param name="localization">Localization source for status text.</param>
@@ -79,6 +88,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         _localization = localization;
         _confirmation = confirmation;
         Snippets = new ObservableCollection<Snippet>(library.Snippets);
+        ParameterRows.CollectionChanged += OnParameterRowsCollectionChanged;
     }
 
     /// <summary>The snippets shown in the list.</summary>
@@ -101,34 +111,80 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             ?? Snippets.FirstOrDefault();
     }
 
+    partial void OnSelectedSnippetChanging(Snippet? oldValue, Snippet? newValue)
+    {
+        _selectionBeforeChange = oldValue;
+    }
+
     partial void OnSelectedSnippetChanged(Snippet? value)
     {
+        if (_restoringRejectedSelection)
+        {
+            return;
+        }
+
+        if (!_suppressDiscardPrompt
+            && HasPendingChanges
+            && !ReferenceEquals(value, _selectionBeforeChange)
+            && !ConfirmDiscardChanges())
+        {
+            _restoringRejectedSelection = true;
+            try
+            {
+                SelectedSnippet = _selectionBeforeChange;
+            }
+            finally
+            {
+                _restoringRejectedSelection = false;
+            }
+
+            return;
+        }
+
         if (value is null)
         {
             return;
         }
 
-        Name = value.Name;
-        Category = value.Category ?? string.Empty;
-        Template = value.Template;
-        ParametersText = FormatParameters(value.Parameters);
-        LoadParameterRows(value.Parameters);
-        StatusMessage = string.Empty;
-        IsStatusError = false;
+        LoadEditor(value);
     }
+
+    partial void OnNameChanged(string value) => MarkPendingChanges();
+
+    partial void OnCategoryChanged(string value) => MarkPendingChanges();
+
+    partial void OnTemplateChanged(string value) => MarkPendingChanges();
+
+    partial void OnParametersTextChanged(string value) => MarkPendingChanges();
 
     [RelayCommand]
     private void New()
     {
-        SelectedSnippet = null;
-        Name = string.Empty;
-        Category = string.Empty;
-        Template = string.Empty;
-        ParametersText = string.Empty;
-        ParameterRows.Clear();
-        SelectedParameter = null;
-        StatusMessage = string.Empty;
-        IsStatusError = false;
+        if (!_suppressDiscardPrompt && !ConfirmDiscardChanges())
+        {
+            return;
+        }
+
+        _suppressDiscardPrompt = true;
+        _suppressPendingChanges = true;
+        try
+        {
+            SelectedSnippet = null;
+            Name = string.Empty;
+            Category = string.Empty;
+            Template = string.Empty;
+            ParametersText = string.Empty;
+            ParameterRows.Clear();
+            SelectedParameter = null;
+            StatusMessage = string.Empty;
+            IsStatusError = false;
+            HasPendingChanges = false;
+        }
+        finally
+        {
+            _suppressPendingChanges = false;
+            _suppressDiscardPrompt = false;
+        }
     }
 
     [RelayCommand]
@@ -163,8 +219,17 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             parameters);
 
         bool persisted = await _library.SaveAsync(snippet).ConfigureAwait(true);
-        Reload();
-        SelectedSnippet = Snippets.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.Ordinal));
+        _suppressDiscardPrompt = true;
+        try
+        {
+            Reload();
+            SelectedSnippet = Snippets.FirstOrDefault(s => string.Equals(s.Id, id, StringComparison.Ordinal));
+        }
+        finally
+        {
+            _suppressDiscardPrompt = false;
+        }
+
         if (!persisted)
         {
             ShowSaveFailure();
@@ -173,6 +238,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
 
         StatusMessage = _localization["Manager.Saved"];
         IsStatusError = false;
+        HasPendingChanges = false;
     }
 
     [RelayCommand]
@@ -196,6 +262,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         SelectedParameter = ParameterRows.Count == 0
             ? null
             : ParameterRows[Math.Clamp(index, 0, ParameterRows.Count - 1)];
+        MarkPendingChanges();
     }
 
     [RelayCommand]
@@ -230,6 +297,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             ? _localization["Manager.ParametersAlreadyDetected"]
             : string.Format(CultureInfo.CurrentCulture, _localization["Manager.ParametersDetected"], added);
         IsStatusError = false;
+        MarkPendingChanges();
     }
 
     [RelayCommand]
@@ -253,8 +321,17 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         }
 
         bool persisted = await _library.DeleteAsync(SelectedSnippet.Id).ConfigureAwait(true);
-        Reload();
-        New();
+        _suppressDiscardPrompt = true;
+        try
+        {
+            Reload();
+            New();
+        }
+        finally
+        {
+            _suppressDiscardPrompt = false;
+        }
+
         if (!persisted)
         {
             ShowSaveFailure();
@@ -269,17 +346,75 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     {
         StatusMessage = _localization["Persist.SaveFailed"];
         IsStatusError = true;
+        HasPendingChanges = true;
+    }
+
+    private void LoadEditor(Snippet value)
+    {
+        _suppressPendingChanges = true;
+        try
+        {
+            Name = value.Name;
+            Category = value.Category ?? string.Empty;
+            Template = value.Template;
+            ParametersText = FormatParameters(value.Parameters);
+            LoadParameterRows(value.Parameters);
+            StatusMessage = string.Empty;
+            IsStatusError = false;
+            HasPendingChanges = false;
+        }
+        finally
+        {
+            _suppressPendingChanges = false;
+        }
     }
 
     private void LoadParameterRows(IReadOnlyList<SnippetParameter> parameters)
     {
+        foreach (SnippetParameterEditorViewModel row in ParameterRows)
+        {
+            row.PropertyChanged -= OnParameterRowPropertyChanged;
+        }
+
         ParameterRows.Clear();
         foreach (SnippetParameter parameter in parameters)
         {
-            ParameterRows.Add(new SnippetParameterEditorViewModel(parameter));
+            SnippetParameterEditorViewModel row = new(parameter);
+            ParameterRows.Add(row);
         }
 
         SelectedParameter = ParameterRows.FirstOrDefault();
+    }
+
+    private void OnParameterRowsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (SnippetParameterEditorViewModel row in e.OldItems)
+            {
+                row.PropertyChanged -= OnParameterRowPropertyChanged;
+            }
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (SnippetParameterEditorViewModel row in e.NewItems)
+            {
+                row.PropertyChanged += OnParameterRowPropertyChanged;
+            }
+        }
+
+        MarkPendingChanges();
+    }
+
+    private void OnParameterRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(SnippetParameterEditorViewModel.Name)
+            or nameof(SnippetParameterEditorViewModel.Label)
+            or nameof(SnippetParameterEditorViewModel.DefaultValue))
+        {
+            MarkPendingChanges();
+        }
     }
 
     private IReadOnlyList<SnippetParameter> BuildParameters()
@@ -321,6 +456,77 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         missingParameters = string.Join(", ", missing);
         return missing.Count == 0;
     }
+
+    private bool ConfirmDiscardChanges()
+    {
+        if (!HasPendingChanges)
+        {
+            return true;
+        }
+
+        return _confirmation.ConfirmDanger(
+            _localization["Manager.DiscardConfirmTitle"],
+            _localization["Manager.DiscardConfirmMessage"],
+            _localization["Dialog.Discard"]);
+    }
+
+    private void MarkPendingChanges()
+    {
+        if (_suppressPendingChanges)
+        {
+            return;
+        }
+
+        HasPendingChanges = HasUnsavedChanges();
+        if (HasPendingChanges && !IsStatusError)
+        {
+            StatusMessage = string.Empty;
+        }
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        if (SelectedSnippet is null)
+        {
+            return !string.IsNullOrWhiteSpace(Name)
+                || !string.IsNullOrWhiteSpace(Category)
+                || !string.IsNullOrWhiteSpace(Template)
+                || BuildParameters().Count > 0;
+        }
+
+        return !Same(Name.Trim(), SelectedSnippet.Name)
+            || !Same(NormalizeOptional(Category), SelectedSnippet.Category)
+            || !Same(Template, SelectedSnippet.Template)
+            || !ParametersEqual(BuildParameters(), SelectedSnippet.Parameters);
+    }
+
+    private static string? NormalizeOptional(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool ParametersEqual(IReadOnlyList<SnippetParameter> left, IReadOnlyList<SnippetParameter> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        for (int index = 0; index < left.Count; index++)
+        {
+            SnippetParameter leftParameter = left[index];
+            SnippetParameter rightParameter = right[index];
+            if (!Same(leftParameter.Name, rightParameter.Name)
+                || !Same(leftParameter.Label, rightParameter.Label)
+                || !Same(leftParameter.Default, rightParameter.Default))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool Same(string? left, string? right) =>
+        string.Equals(left, right, StringComparison.Ordinal);
 
     private List<string> ExtractTemplateParameterNames()
     {

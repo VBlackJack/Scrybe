@@ -31,7 +31,7 @@
         <Style x:Key="HubActionButtonStyle" TargetType="Button" BasedOn="{StaticResource AppButtonStyle}">
             <Setter Property="Padding" Value="{StaticResource PaddingButtonPrimary}" />
             <Setter Property="Margin" Value="0,0,8,8" />
-            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="MinHeight" Value="42" />
             <Setter Property="MinWidth" Value="0" />
             <Setter Property="Background" Value="{StaticResource AccentBrush}" />
             <Setter Property="Foreground" Value="{StaticResource ActionOnBrightBrush}" />
@@ -40,7 +40,8 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
         <Style x:Key="HubActionContentTextStyle" TargetType="TextBlock" BasedOn="{StaticResource AppIconTextStyle}">
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="TextTrimming" Value="WordEllipsis" />
         </Style>
         <Style x:Key="HubSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource HubActionButtonStyle}">
             <Setter Property="Background" Value="{StaticResource CardBrush}" />

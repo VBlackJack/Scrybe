@@ -100,6 +100,47 @@ public sealed class ManagerViewModelTests
     }
 
     [Fact]
+    public async Task SnippetManager_SelectionChangeCancelled_KeepsUnsavedEditor()
+    {
+        InMemorySnippetStore store = new();
+        SnippetLibrary library = new(store);
+        await library.SaveAsync(new Snippet("one", "Package acceptance", null, "apt install {{package}}", []));
+        await library.SaveAsync(new Snippet("two", "Restart service", null, "systemctl restart nginx", []));
+        DenyingConfirmationService confirmation = new();
+        SnippetManagerViewModel viewModel = new(library, new TestLocalizationManager(), confirmation);
+        viewModel.Reload();
+
+        viewModel.Name = "Edited locally";
+        viewModel.SelectedSnippet = viewModel.Snippets.Single(snippet => snippet.Id == "two");
+
+        confirmation.CallCount.Should().Be(1);
+        viewModel.SelectedSnippet!.Id.Should().Be("one");
+        viewModel.Name.Should().Be("Edited locally");
+        viewModel.HasPendingChanges.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SecretManager_SelectionChangeCancelled_KeepsUnsavedEditor()
+    {
+        InMemorySecretStore store = new();
+        SecretLibrary library = new(store, new TestSecretProtector());
+        await library.SaveAsync(null, "Production login", "admin", "secret");
+        await library.SaveAsync(null, "Router", "root", "router-secret");
+        DenyingConfirmationService confirmation = new();
+        SecretManagerViewModel viewModel = new(library, new TestLocalizationManager(), confirmation);
+        viewModel.Reload();
+        string selectedId = viewModel.SelectedSecret!.Id;
+
+        viewModel.UserName = "edited-admin";
+        viewModel.SelectedSecret = viewModel.Secrets.Single(secret => secret.Id != selectedId);
+
+        confirmation.CallCount.Should().Be(1);
+        viewModel.SelectedSecret!.Id.Should().Be(selectedId);
+        viewModel.UserName.Should().Be("edited-admin");
+        viewModel.HasPendingChanges.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task CaptureHistory_ClearAllCancelled_KeepsHistoryAndDoesNotPersistClear()
     {
         InMemoryCaptureHistoryStore store = new();
@@ -361,8 +402,13 @@ public sealed class ManagerViewModelTests
         {
             "Manager.DeleteConfirmTitle" => "Delete snippet",
             "Manager.DeleteConfirmMessage" => "Delete snippet \"{0}\"?",
+            "Manager.DiscardConfirmTitle" => "Discard snippet changes?",
+            "Manager.DiscardConfirmMessage" => "Discard snippet changes?",
             "Secrets.DeleteConfirmTitle" => "Delete secret",
             "Secrets.DeleteConfirmMessage" => "Delete secret \"{0}\"?",
+            "Secrets.DiscardConfirmTitle" => "Discard secret changes?",
+            "Secrets.DiscardConfirmMessage" => "Discard secret changes?",
+            "Dialog.Discard" => "Discard changes",
             "History.DeleteConfirmTitle" => "Delete history entry",
             "History.DeleteConfirmMessage" => "Delete history entry from {0}?",
             "History.ClearConfirmTitle" => "Clear history",

@@ -30,6 +30,10 @@ public sealed partial class SecretManagerViewModel : ObservableObject
     private readonly SecretLibrary _library;
     private readonly ILocalizationManager _localization;
     private readonly IConfirmationService _confirmation;
+    private bool _suppressPendingChanges;
+    private bool _suppressDiscardPrompt;
+    private bool _restoringRejectedSelection;
+    private SecretEntry? _selectionBeforeChange;
 
     [ObservableProperty]
     private SecretEntry? _selectedSecret;
@@ -48,6 +52,9 @@ public sealed partial class SecretManagerViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isStatusError;
+
+    [ObservableProperty]
+    private bool _hasPendingChanges;
 
     /// <summary>Initializes the manager from the protected secret library.</summary>
     /// <param name="library">The secret library.</param>
@@ -91,31 +98,76 @@ public sealed partial class SecretManagerViewModel : ObservableObject
     /// <param name="value">The current password-box value.</param>
     public void SetSecretValue(string value) => SecretValue = value;
 
+    partial void OnSelectedSecretChanging(SecretEntry? oldValue, SecretEntry? newValue)
+    {
+        _selectionBeforeChange = oldValue;
+    }
+
     partial void OnSelectedSecretChanged(SecretEntry? value)
     {
+        if (_restoringRejectedSelection)
+        {
+            return;
+        }
+
+        if (!_suppressDiscardPrompt
+            && HasPendingChanges
+            && !ReferenceEquals(value, _selectionBeforeChange)
+            && !ConfirmDiscardChanges())
+        {
+            _restoringRejectedSelection = true;
+            try
+            {
+                SelectedSecret = _selectionBeforeChange;
+            }
+            finally
+            {
+                _restoringRejectedSelection = false;
+            }
+
+            return;
+        }
+
         if (value is null)
         {
             return;
         }
 
-        Name = value.Name;
-        UserName = value.UserName ?? string.Empty;
-        SecretValue = string.Empty;
-        StatusMessage = string.Empty;
-        IsStatusError = false;
-        SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
+        LoadEditor(value);
     }
+
+    partial void OnNameChanged(string value) => MarkPendingChanges();
+
+    partial void OnUserNameChanged(string value) => MarkPendingChanges();
+
+    partial void OnSecretValueChanged(string value) => MarkPendingChanges();
 
     [RelayCommand]
     private void New()
     {
-        SelectedSecret = null;
-        Name = string.Empty;
-        UserName = string.Empty;
-        SecretValue = string.Empty;
-        StatusMessage = string.Empty;
-        IsStatusError = false;
-        SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
+        if (!_suppressDiscardPrompt && !ConfirmDiscardChanges())
+        {
+            return;
+        }
+
+        _suppressDiscardPrompt = true;
+        _suppressPendingChanges = true;
+        try
+        {
+            SelectedSecret = null;
+            Name = string.Empty;
+            UserName = string.Empty;
+            SecretValue = string.Empty;
+            StatusMessage = string.Empty;
+            IsStatusError = false;
+            HasPendingChanges = false;
+            SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            _suppressPendingChanges = false;
+            _suppressDiscardPrompt = false;
+        }
     }
 
     [RelayCommand]
@@ -140,8 +192,17 @@ public sealed partial class SecretManagerViewModel : ObservableObject
             .ConfigureAwait(true);
         SecretValue = string.Empty;
         SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
-        Reload();
-        SelectedSecret = Secrets.FirstOrDefault(secret => string.Equals(secret.Id, result.Entry.Id, StringComparison.Ordinal));
+        _suppressDiscardPrompt = true;
+        try
+        {
+            Reload();
+            SelectedSecret = Secrets.FirstOrDefault(secret => string.Equals(secret.Id, result.Entry.Id, StringComparison.Ordinal));
+        }
+        finally
+        {
+            _suppressDiscardPrompt = false;
+        }
+
         if (!result.Persisted)
         {
             ShowSaveFailure();
@@ -150,6 +211,7 @@ public sealed partial class SecretManagerViewModel : ObservableObject
 
         StatusMessage = _localization["Secrets.Saved"];
         IsStatusError = false;
+        HasPendingChanges = false;
     }
 
     [RelayCommand]
@@ -173,8 +235,17 @@ public sealed partial class SecretManagerViewModel : ObservableObject
         }
 
         bool persisted = await _library.DeleteAsync(SelectedSecret.Id).ConfigureAwait(true);
-        Reload();
-        New();
+        _suppressDiscardPrompt = true;
+        try
+        {
+            Reload();
+            New();
+        }
+        finally
+        {
+            _suppressDiscardPrompt = false;
+        }
+
         if (!persisted)
         {
             ShowSaveFailure();
@@ -189,5 +260,72 @@ public sealed partial class SecretManagerViewModel : ObservableObject
     {
         StatusMessage = _localization["Persist.SaveFailed"];
         IsStatusError = true;
+        HasPendingChanges = true;
     }
+
+    private void LoadEditor(SecretEntry value)
+    {
+        _suppressPendingChanges = true;
+        try
+        {
+            Name = value.Name;
+            UserName = value.UserName ?? string.Empty;
+            SecretValue = string.Empty;
+            StatusMessage = string.Empty;
+            IsStatusError = false;
+            HasPendingChanges = false;
+            SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            _suppressPendingChanges = false;
+        }
+    }
+
+    private bool ConfirmDiscardChanges()
+    {
+        if (!HasPendingChanges)
+        {
+            return true;
+        }
+
+        return _confirmation.ConfirmDanger(
+            _localization["Secrets.DiscardConfirmTitle"],
+            _localization["Secrets.DiscardConfirmMessage"],
+            _localization["Dialog.Discard"]);
+    }
+
+    private void MarkPendingChanges()
+    {
+        if (_suppressPendingChanges)
+        {
+            return;
+        }
+
+        HasPendingChanges = HasUnsavedChanges();
+        if (HasPendingChanges && !IsStatusError)
+        {
+            StatusMessage = string.Empty;
+        }
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        if (SelectedSecret is null)
+        {
+            return !string.IsNullOrWhiteSpace(Name)
+                || !string.IsNullOrWhiteSpace(UserName)
+                || !string.IsNullOrEmpty(SecretValue);
+        }
+
+        return !Same(Name.Trim(), SelectedSecret.Name)
+            || !Same(NormalizeOptional(UserName), SelectedSecret.UserName)
+            || !string.IsNullOrEmpty(SecretValue);
+    }
+
+    private static string? NormalizeOptional(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool Same(string? left, string? right) =>
+        string.Equals(left, right, StringComparison.Ordinal);
 }

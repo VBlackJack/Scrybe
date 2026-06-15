@@ -15,6 +15,8 @@
  */
 
 using System.Windows;
+using Scrybe.App.Views;
+using Scrybe.Core.Interfaces;
 using WpfMessageBox = System.Windows.MessageBox;
 
 namespace Scrybe.App.Services;
@@ -22,15 +24,36 @@ namespace Scrybe.App.Services;
 /// <summary>Native OS MessageBox prompt used for password-grade target confirmation.</summary>
 public sealed class NativeTargetConfirmationPrompt : ITargetConfirmationPrompt
 {
+    private readonly ILocalizationManager _localization;
+
+    /// <summary>Initializes the prompt with localized action labels.</summary>
+    /// <param name="localization">Localization source.</param>
+    public NativeTargetConfirmationPrompt(ILocalizationManager localization)
+    {
+        ArgumentNullException.ThrowIfNull(localization);
+        _localization = localization;
+    }
+
     /// <inheritdoc />
     public bool Confirm(string title, string message)
     {
-        MessageBoxResult result = WpfMessageBox.Show(
-            message,
-            title,
-            MessageBoxButton.OKCancel,
-            MessageBoxImage.Question);
-        return result == MessageBoxResult.OK;
+        System.Windows.Application? application = System.Windows.Application.Current;
+        if (application is null)
+        {
+            MessageBoxResult result = WpfMessageBox.Show(
+                message,
+                title,
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning);
+            return result == MessageBoxResult.OK;
+        }
+
+        if (application.Dispatcher.CheckAccess())
+        {
+            return ConfirmOnUiThread(title, message, application);
+        }
+
+        return application.Dispatcher.Invoke(() => ConfirmOnUiThread(title, message, application));
     }
 
     /// <inheritdoc />
@@ -41,5 +64,38 @@ public sealed class NativeTargetConfirmationPrompt : ITargetConfirmationPrompt
             title,
             MessageBoxButton.OK,
             MessageBoxImage.Warning);
+    }
+
+    private bool ConfirmOnUiThread(string title, string message, System.Windows.Application application)
+    {
+        ConfirmationDialog dialog = new(
+            title,
+            message,
+            _localization["Dialog.Inject"],
+            _localization["Dialog.Cancel"],
+            isDanger: false);
+
+        Window? owner = ResolveOwner(application);
+        if (owner is not null)
+        {
+            dialog.Owner = owner;
+        }
+
+        bool? result = dialog.ShowDialog();
+        return result == true;
+    }
+
+    private static Window? ResolveOwner(System.Windows.Application application)
+    {
+        foreach (Window window in application.Windows)
+        {
+            if (window.IsActive)
+            {
+                return window;
+            }
+        }
+
+        Window? mainWindow = application.MainWindow;
+        return mainWindow is { IsVisible: true } ? mainWindow : null;
     }
 }

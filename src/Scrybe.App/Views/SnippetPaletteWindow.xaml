@@ -7,7 +7,7 @@
         Width="820"
         MinHeight="420"
         MinWidth="640"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Background="{StaticResource BackgroundBrush}"
         ShowInTaskbar="False"
         UseLayoutRounding="True">

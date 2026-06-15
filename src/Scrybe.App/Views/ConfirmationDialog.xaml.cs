@@ -15,6 +15,7 @@
  */
 
 using System.Windows;
+using MediaBrush = System.Windows.Media.Brush;
 
 namespace Scrybe.App.Views;
 
@@ -26,7 +27,7 @@ public sealed partial class ConfirmationDialog : Window
     /// <param name="message">Dialog message.</param>
     /// <param name="okText">Confirm button label.</param>
     /// <param name="cancelText">Cancel button label.</param>
-    public ConfirmationDialog(string title, string message, string okText, string cancelText)
+    public ConfirmationDialog(string title, string message, string okText, string cancelText, bool isDanger = true)
     {
         ArgumentNullException.ThrowIfNull(title);
         ArgumentNullException.ThrowIfNull(message);
@@ -37,8 +38,15 @@ public sealed partial class ConfirmationDialog : Window
         DialogMessage = message;
         OkText = okText;
         CancelText = cancelText;
+        IsDanger = isDanger;
 
         InitializeComponent();
+        if (!IsDanger)
+        {
+            OkButton.Background = (MediaBrush)FindResource("AccentBrush");
+            OkButton.Foreground = (MediaBrush)FindResource("ActionOnBrightBrush");
+        }
+
         Loaded += OnLoaded;
     }
 
@@ -53,6 +61,9 @@ public sealed partial class ConfirmationDialog : Window
 
     /// <summary>Cancel button label.</summary>
     public string CancelText { get; }
+
+    /// <summary>Whether the primary action is destructive.</summary>
+    public bool IsDanger { get; }
 
     private void OnLoaded(object sender, RoutedEventArgs args)
     {
