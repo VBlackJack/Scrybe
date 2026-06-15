@@ -76,11 +76,15 @@ public sealed partial class SecretManagerViewModel : ObservableObject
     /// <summary>Reloads the visible secrets from the current library state.</summary>
     public void Reload()
     {
+        string? selectedId = SelectedSecret?.Id;
         Secrets.Clear();
         foreach (SecretEntry secret in _library.Secrets)
         {
             Secrets.Add(secret);
         }
+
+        SelectedSecret = Secrets.FirstOrDefault(secret => string.Equals(secret.Id, selectedId, StringComparison.Ordinal))
+            ?? Secrets.FirstOrDefault();
     }
 
     /// <summary>Updates the in-memory plaintext field from the WPF password box.</summary>

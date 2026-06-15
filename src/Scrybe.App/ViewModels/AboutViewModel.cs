@@ -145,7 +145,11 @@ public sealed partial class AboutViewModel : ObservableObject
 
         DiagnosticRows = _diagnosticsInfoProvider
             .GetDiagnosticsInfo()
-            .Select(row => new AboutDetailRow(_localization[row.LabelKey], FormatDiagnosticValue(row), row.Exists == false))
+            .Select(row => new AboutDetailRow(
+                _localization[row.LabelKey],
+                row.Value,
+                row.Exists == false,
+                FormatDiagnosticStatus(row)))
             .ToList();
     }
 
@@ -177,17 +181,16 @@ public sealed partial class AboutViewModel : ObservableObject
         => !string.IsNullOrWhiteSpace(value)
         && !string.Equals(value.Trim(), UnknownValue, StringComparison.Ordinal);
 
-    private string FormatDiagnosticValue(DiagnosticInfoRow row)
+    private string FormatDiagnosticStatus(DiagnosticInfoRow row)
     {
         if (row.Exists is null)
         {
-            return row.Value;
+            return string.Empty;
         }
 
-        string state = row.Exists.Value
+        return row.Exists.Value
             ? _localization["Diagnostics.Present"]
             : _localization["Diagnostics.Missing"];
-        return $"{state}: {row.Value}";
     }
 
     private void OpenDirectory(string directory, string successMessage)
@@ -223,7 +226,8 @@ public sealed partial class AboutViewModel : ObservableObject
         builder.AppendLine(_localization["Diagnostics.Title"]);
         foreach (AboutDetailRow row in DiagnosticRows)
         {
-            builder.AppendLine($"{row.Label}: {row.Value}");
+            string status = row.HasStatus ? $" [{row.Status}]" : string.Empty;
+            builder.AppendLine($"{row.Label}{status}: {row.Value}");
         }
 
         return builder.ToString();

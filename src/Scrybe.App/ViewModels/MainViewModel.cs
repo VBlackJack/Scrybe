@@ -173,6 +173,12 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Raised when the user requests immediate capture from the hub.</summary>
     public event EventHandler? CaptureRequested;
 
+    /// <summary>Raised when the user requests injection of the last OCR text from the hub.</summary>
+    public event EventHandler? InjectLastTextRequested;
+
+    /// <summary>Raised when the user requests clipboard injection from the hub.</summary>
+    public event EventHandler? ClipboardInjectRequested;
+
     /// <summary>Raised when the user selects a different cleanup mode from the hub.</summary>
     public event EventHandler<OcrCleanupMode>? CleanupModeChanged;
 
@@ -235,6 +241,21 @@ public sealed partial class MainViewModel : ObservableObject
 
     [RelayCommand]
     private void Capture() => CaptureRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void InjectLastText() => InjectLastTextRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void ClipboardInject() => ClipboardInjectRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void OpenSnippets() => ShowSnippetsTab();
+
+    [RelayCommand]
+    private void OpenSecrets() => ShowSecretsTab();
+
+    [RelayCommand]
+    private void OpenHistory() => ShowHistoryTab();
 
     [RelayCommand]
     private void OpenAbout() => ShowAboutTab();

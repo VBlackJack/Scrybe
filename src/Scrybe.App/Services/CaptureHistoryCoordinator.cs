@@ -212,18 +212,7 @@ public sealed class CaptureHistoryCoordinator
         List<HistoryPaletteListItem> items = [];
         foreach (CaptureHistoryEntry entry in _library.Entries)
         {
-            try
-            {
-                string? text = _library.RevealText(entry.Id);
-                if (text is not null)
-                {
-                    items.Add(HistoryPaletteListItem.FromEntry(entry, text));
-                }
-            }
-            catch (Exception exception)
-            {
-                FileLogger.Error($"Failed to reveal capture history entry '{entry.Id}'.", exception);
-            }
+            items.Add(HistoryPaletteListItem.FromMetadata(entry, _localization["History.ProtectedPreview"]));
         }
 
         return items;

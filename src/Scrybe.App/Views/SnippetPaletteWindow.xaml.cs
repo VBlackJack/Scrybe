@@ -32,6 +32,7 @@ public sealed partial class SnippetPaletteWindow : Window
 
         InitializeComponent();
         DataContext = viewModel;
+        Loaded += (_, _) => SearchBox.Focus();
         KeyDown += OnKeyDown;
     }
 

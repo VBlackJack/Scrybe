@@ -49,7 +49,8 @@ public sealed class AboutViewModelTests
             && row.Value.EndsWith(Path.Combine(AppConstants.AppName, AppConstants.SettingsFileName), StringComparison.Ordinal));
         viewModel.DiagnosticRows.Should().Contain(row =>
             row.Label == "OCR data"
-            && (row.Value.StartsWith("Present: ", StringComparison.Ordinal) || row.Value.StartsWith("Missing: ", StringComparison.Ordinal)));
+            && row.HasStatus
+            && (row.Status == "Present" || row.Status == "Missing"));
 
         localization.Set("Diagnostics.Title", "Diagnostics runtime");
         localization.RaiseLocaleChanged();

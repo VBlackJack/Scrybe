@@ -42,7 +42,7 @@
                         Click="OnOkClicked"
                         MinWidth="{StaticResource ConfirmationDialogButtonMinWidth}"
                         Background="{StaticResource AccentBrush}"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{StaticResource ActionOnBrightBrush}"
                         BorderThickness="{StaticResource ConfirmationDialogPrimaryBorderThickness}"
                         FontWeight="SemiBold" />
             </StackPanel>

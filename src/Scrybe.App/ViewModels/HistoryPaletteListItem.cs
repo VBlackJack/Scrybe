@@ -22,37 +22,23 @@ namespace Scrybe.App.ViewModels;
 
 /// <summary>Display item for one capture-history palette entry.</summary>
 /// <param name="Id">History entry id.</param>
-/// <param name="Preview">Single-line runtime plaintext preview.</param>
+/// <param name="Preview">Single-line metadata preview that does not expose protected plaintext.</param>
 /// <param name="Timestamp">Localized capture timestamp.</param>
 /// <param name="CharCount">Plaintext character count.</param>
 public sealed record HistoryPaletteListItem(string Id, string Preview, string Timestamp, int CharCount)
 {
-    /// <summary>Builds a display item from a protected entry and its runtime plaintext.</summary>
+    /// <summary>Builds a display item from metadata only, without revealing protected text.</summary>
     /// <param name="entry">The protected history entry.</param>
-    /// <param name="text">The revealed plaintext used only for the runtime preview.</param>
-    public static HistoryPaletteListItem FromEntry(CaptureHistoryEntry entry, string text)
+    /// <param name="protectedPreview">The localized placeholder shown until the user reveals or copies text.</param>
+    public static HistoryPaletteListItem FromMetadata(CaptureHistoryEntry entry, string protectedPreview)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(protectedPreview);
 
         string timestamp = entry.CapturedAtUtc
             .ToLocalTime()
             .ToString(AppConstants.CaptureHistoryTimestampFormat, CultureInfo.CurrentCulture);
 
-        return new HistoryPaletteListItem(entry.Id, BuildPreview(text), timestamp, entry.CharCount);
-    }
-
-    private static string BuildPreview(string text)
-    {
-        string singleLine = string.Join(" ", text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-        if (singleLine.Length <= AppConstants.CaptureHistoryPreviewMaxChars)
-        {
-            return singleLine;
-        }
-
-        int visibleLength = Math.Max(
-            0,
-            AppConstants.CaptureHistoryPreviewMaxChars - AppConstants.CaptureHistoryPreviewSuffix.Length);
-        return singleLine[..visibleLength] + AppConstants.CaptureHistoryPreviewSuffix;
+        return new HistoryPaletteListItem(entry.Id, protectedPreview, timestamp, entry.CharCount);
     }
 }

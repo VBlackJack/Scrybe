@@ -32,6 +32,7 @@ public sealed partial class HistoryPaletteWindow : Window
 
         InitializeComponent();
         DataContext = viewModel;
+        Loaded += (_, _) => SearchBox.Focus();
         KeyDown += OnKeyDown;
     }
 

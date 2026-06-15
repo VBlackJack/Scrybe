@@ -3,12 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:Scrybe.App.Localization"
         Title="{loc:Translate Palette.Title}"
-        Height="500"
-        Width="800"
+        Height="520"
+        Width="820"
+        MinHeight="420"
+        MinWidth="640"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundBrush}"
         ShowInTaskbar="False"
         UseLayoutRounding="True">
+
+    <Window.Resources>
+        <Style x:Key="PaletteEmptyTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ManagerEmptyStateTextStyle}">
+            <Setter Property="Visibility" Value="Collapsed" />
+        </Style>
+    </Window.Resources>
 
     <Grid Margin="{StaticResource SpacingLg}">
         <Grid.ColumnDefinitions>
@@ -16,17 +24,62 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <ListBox x:Name="SnippetList"
-                 Grid.Column="0"
-                 ItemsSource="{Binding Snippets}"
-                 SelectedItem="{Binding SelectedSnippet}"
-                 DisplayMemberPath="Name"
-                 Background="{StaticResource SurfaceBrush}"
-                 Foreground="{StaticResource TextPrimaryBrush}"
-                 BorderBrush="{StaticResource BorderBrush}"
-                 BorderThickness="1"
-                 FontSize="{StaticResource FontSizeBody}"
-                 Margin="0,0,16,0" />
+        <DockPanel Grid.Column="0" Margin="0,0,16,0">
+            <TextBox x:Name="SearchBox"
+                     DockPanel.Dock="Top"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Background="{StaticResource SurfaceBrush}"
+                     Foreground="{StaticResource TextPrimaryBrush}"
+                     CaretBrush="{StaticResource TextPrimaryBrush}"
+                     BorderBrush="{StaticResource BorderBrush}"
+                     Padding="{StaticResource PaddingInput}"
+                     Margin="0,0,0,8"
+                     AutomationProperties.Name="{loc:Translate Palette.Search}" />
+
+            <Grid>
+                <ListBox x:Name="SnippetList"
+                         ItemsSource="{Binding Snippets}"
+                         SelectedItem="{Binding SelectedSnippet}"
+                         DisplayMemberPath="Name"
+                         Background="{StaticResource SurfaceBrush}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         BorderBrush="{StaticResource BorderBrush}"
+                         BorderThickness="1"
+                         ScrollViewer.CanContentScroll="True"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         FontSize="{StaticResource FontSizeBody}"
+                         AutomationProperties.Name="{loc:Translate Shell.TabSnippets}" />
+
+                <TextBlock Text="{loc:Translate Manager.Empty}">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource PaletteEmptyTextStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSnippets}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBlock Text="{loc:Translate Palette.NoMatches}">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource PaletteEmptyTextStyle}">
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding HasSnippets}" Value="True" />
+                                        <Condition Binding="{Binding IsEmpty}" Value="True" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </DockPanel>
 
         <DockPanel Grid.Column="1">
 
@@ -36,26 +89,32 @@
                        FontSize="{StaticResource FontSizeCaption}"
                        Margin="{StaticResource MarginLabelBottom}" />
 
-            <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Fields}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <DockPanel Margin="{StaticResource MarginStackItem}">
-                            <TextBlock DockPanel.Dock="Left"
-                                       Text="{Binding Label}"
-                                       Width="130"
-                                       VerticalAlignment="Center"
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       FontSize="{StaticResource FontSizeBody}" />
-                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="{StaticResource SurfaceBrush}"
-                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                     CaretBrush="{StaticResource TextPrimaryBrush}"
-                                     BorderBrush="{StaticResource BorderBrush}"
-                                     Padding="{StaticResource PaddingInput}" />
-                        </DockPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <ScrollViewer DockPanel.Dock="Top"
+                          MaxHeight="150"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Fields}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Margin="{StaticResource MarginStackItem}">
+                                <TextBlock DockPanel.Dock="Left"
+                                           Text="{Binding Label}"
+                                           Width="130"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="{StaticResource FontSizeBody}" />
+                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         CaretBrush="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"
+                                         Padding="{StaticResource PaddingInput}"
+                                         AutomationProperties.Name="{Binding Label}" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
                 <Button Content="{loc:Translate Palette.Inject}"
@@ -64,7 +123,7 @@
                         IsDefault="True"
                         Padding="{StaticResource PaddingButtonPrimary}"
                         Background="{StaticResource AccentBrush}"
-                        Foreground="{StaticResource TextPrimaryBrush}"
+                        Foreground="{StaticResource ActionOnBrightBrush}"
                         BorderThickness="0"
                         FontWeight="SemiBold"
                         AutomationProperties.Name="{loc:Translate Palette.Inject}" />
@@ -85,7 +144,8 @@
                          Foreground="{StaticResource SuccessBrush}"
                          BorderThickness="0"
                          FontFamily="Consolas"
-                         FontSize="{StaticResource FontSizeBody}" />
+                         FontSize="{StaticResource FontSizeBody}"
+                         AutomationProperties.Name="{loc:Translate History.Preview}" />
             </Border>
         </DockPanel>
     </Grid>

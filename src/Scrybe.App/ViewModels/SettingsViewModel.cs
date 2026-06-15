@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using System.ComponentModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -42,6 +43,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly IStartupRegistration _startupRegistration;
     private readonly IClipboardService _clipboard;
     private readonly bool _initialized;
+    private bool _suppressPendingChanges;
 
     [ObservableProperty]
     private bool _enableLogging;
@@ -96,6 +98,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isInjectionIntegrityStatusError;
+
+    [ObservableProperty]
+    private bool _hasPendingChanges;
 
     /// <summary>Initializes the view model from the current settings.</summary>
     /// <param name="settings">The live settings instance.</param>
@@ -191,6 +196,11 @@ public sealed partial class SettingsViewModel : ObservableObject
             settings.HistoryPaletteHotkeyModifiers,
             settings.HistoryPaletteHotkeyKey);
 
+        foreach (HotkeyRecorderViewModel recorder in AllRecorders())
+        {
+            recorder.PropertyChanged += OnRecorderPropertyChanged;
+        }
+
         _initialized = true;
     }
 
@@ -240,8 +250,33 @@ public sealed partial class SettingsViewModel : ObservableObject
             return;
         }
 
+        MarkPendingChanges();
         _ = _localization.LoadAsync(value);
     }
+
+    partial void OnEnableLoggingChanged(bool value) => MarkPendingChanges();
+
+    partial void OnPrewarmOnStartupChanged(bool value) => MarkPendingChanges();
+
+    partial void OnStartWithWindowsChanged(bool value) => MarkPendingChanges();
+
+    partial void OnEnablePreprocessingChanged(bool value) => MarkPendingChanges();
+
+    partial void OnSaveCaptureCropChanged(bool value) => MarkPendingChanges();
+
+    partial void OnEnableCaptureHistoryChanged(bool value) => MarkPendingChanges();
+
+    partial void OnCaptureHistoryMaxEntriesChanged(int value) => MarkPendingChanges();
+
+    partial void OnCleanupModeChanged(OcrCleanupMode value) => MarkPendingChanges();
+
+    partial void OnInjectionModeChanged(InjectionMode value) => MarkPendingChanges();
+
+    partial void OnClearClipboardAfterInjectionChanged(bool value) => MarkPendingChanges();
+
+    partial void OnInjectionKeyDelayMsChanged(int value) => MarkPendingChanges();
+
+    partial void OnCapturesDirectoryChanged(string value) => MarkPendingChanges();
 
     [RelayCommand]
     private async Task Save()
@@ -310,8 +345,16 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.CapturesDirectory = string.IsNullOrWhiteSpace(CapturesDirectory) ? null : CapturesDirectory.Trim();
 
         SettingsValidator.Validate(_settings);
-        InjectionKeyDelayMs = _settings.InjectionKeyDelayMs;
-        CaptureHistoryMaxEntries = _settings.CaptureHistoryMaxEntries;
+        _suppressPendingChanges = true;
+        try
+        {
+            InjectionKeyDelayMs = _settings.InjectionKeyDelayMs;
+            CaptureHistoryMaxEntries = _settings.CaptureHistoryMaxEntries;
+        }
+        finally
+        {
+            _suppressPendingChanges = false;
+        }
 
         FileLogger.SetEnabled(_settings.EnableLogging);
         bool persisted = await _store.SaveAsync(_settings).ConfigureAwait(true);
@@ -332,6 +375,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         StatusMessage = _localization["Settings.Saved"];
         IsStatusError = false;
+        HasPendingChanges = false;
         Saved?.Invoke(this, EventArgs.Empty);
     }
 
@@ -380,6 +424,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             FileLogger.Error("Failed to apply the start-with-Windows registry state.", exception);
             StatusMessage = _localization["Persist.SaveFailed"];
             IsStatusError = true;
+            HasPendingChanges = true;
             return false;
         }
     }
@@ -389,8 +434,78 @@ public sealed partial class SettingsViewModel : ObservableObject
         string message = _localization["Persist.SaveFailed"];
         StatusMessage = message;
         IsStatusError = true;
+        HasPendingChanges = true;
         _notification.Notify(_localization["AppTitle"], message);
     }
+
+    private IReadOnlyList<HotkeyRecorderViewModel> AllRecorders() =>
+    [
+        CaptureRecorder,
+        InjectRecorder,
+        ClipboardInjectRecorder,
+        AbortRecorder,
+        PaletteRecorder,
+        SecretPaletteRecorder,
+        HistoryPaletteRecorder,
+    ];
+
+    private void OnRecorderPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(HotkeyRecorderViewModel.Modifiers) or nameof(HotkeyRecorderViewModel.Key))
+        {
+            MarkPendingChanges();
+        }
+    }
+
+    private void MarkPendingChanges()
+    {
+        if (!_initialized || _suppressPendingChanges)
+        {
+            return;
+        }
+
+        HasPendingChanges = HasUnsavedChanges();
+        if (HasPendingChanges && !IsStatusError)
+        {
+            StatusMessage = string.Empty;
+        }
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        string? capturesDirectory = string.IsNullOrWhiteSpace(CapturesDirectory) ? null : CapturesDirectory.Trim();
+
+        return EnableLogging != _settings.EnableLogging
+            || PrewarmOnStartup != _settings.PrewarmOnStartup
+            || StartWithWindows != _startupRegistration.IsEnabled()
+            || EnablePreprocessing != _settings.EnablePreprocessing
+            || SaveCaptureCrop != _settings.SaveCaptureCrop
+            || EnableCaptureHistory != _settings.EnableCaptureHistory
+            || CaptureHistoryMaxEntries != _settings.CaptureHistoryMaxEntries
+            || !Same(LocaleCode, _settings.LocaleCode)
+            || CleanupMode != _settings.CleanupMode
+            || InjectionMode != _settings.InjectionMode
+            || ClearClipboardAfterInjection != _settings.ClearClipboardAfterInjection
+            || InjectionKeyDelayMs != _settings.InjectionKeyDelayMs
+            || !Same(capturesDirectory, _settings.CapturesDirectory)
+            || !Same(CaptureRecorder.Modifiers, _settings.HotkeyModifiers)
+            || !Same(CaptureRecorder.Key, _settings.HotkeyKey)
+            || !Same(InjectRecorder.Modifiers, _settings.InjectHotkeyModifiers)
+            || !Same(InjectRecorder.Key, _settings.InjectHotkeyKey)
+            || !Same(ClipboardInjectRecorder.Modifiers, _settings.ClipboardInjectHotkeyModifiers)
+            || !Same(ClipboardInjectRecorder.Key, _settings.ClipboardInjectHotkeyKey)
+            || !Same(AbortRecorder.Modifiers, _settings.AbortHotkeyModifiers)
+            || !Same(AbortRecorder.Key, _settings.AbortHotkeyKey)
+            || !Same(PaletteRecorder.Modifiers, _settings.PaletteHotkeyModifiers)
+            || !Same(PaletteRecorder.Key, _settings.PaletteHotkeyKey)
+            || !Same(SecretPaletteRecorder.Modifiers, _settings.SecretPaletteHotkeyModifiers)
+            || !Same(SecretPaletteRecorder.Key, _settings.SecretPaletteHotkeyKey)
+            || !Same(HistoryPaletteRecorder.Modifiers, _settings.HistoryPaletteHotkeyModifiers)
+            || !Same(HistoryPaletteRecorder.Key, _settings.HistoryPaletteHotkeyKey);
+    }
+
+    private static bool Same(string? left, string? right) =>
+        string.Equals(left, right, StringComparison.Ordinal);
 
     private string LabelForAction(string? actionId) => actionId switch
     {

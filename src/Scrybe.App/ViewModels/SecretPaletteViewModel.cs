@@ -24,19 +24,31 @@ namespace Scrybe.App.ViewModels;
 /// <summary>View model for selecting a stored secret and requesting injection.</summary>
 public sealed partial class SecretPaletteViewModel : ObservableObject
 {
+    private readonly IReadOnlyList<SecretEntry> _allSecrets;
+
     [ObservableProperty]
     private SecretEntry? _selectedSecret;
 
     [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
     private bool _canInject;
+
+    [ObservableProperty]
+    private bool _hasSecrets;
+
+    [ObservableProperty]
+    private bool _isEmpty;
 
     /// <summary>Initializes the palette with the available secrets.</summary>
     /// <param name="secrets">The protected secret library entries.</param>
     public SecretPaletteViewModel(IReadOnlyList<SecretEntry> secrets)
     {
         ArgumentNullException.ThrowIfNull(secrets);
-        Secrets = new ObservableCollection<SecretEntry>(secrets);
-        SelectedSecret = Secrets.FirstOrDefault();
+        _allSecrets = secrets;
+        Secrets = [];
+        ApplyFilter();
     }
 
     /// <summary>Raised with the selected secret id when the user confirms injection.</summary>
@@ -46,6 +58,48 @@ public sealed partial class SecretPaletteViewModel : ObservableObject
     public ObservableCollection<SecretEntry> Secrets { get; }
 
     partial void OnSelectedSecretChanged(SecretEntry? value) => CanInject = value is not null;
+
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        string query = SearchText.Trim();
+        string? selectedId = SelectedSecret?.Id;
+        Secrets.Clear();
+
+        foreach (SecretEntry secret in _allSecrets.Where(secret => Matches(secret, query)))
+        {
+            Secrets.Add(secret);
+        }
+
+        HasSecrets = _allSecrets.Count > 0;
+        IsEmpty = Secrets.Count == 0;
+        SecretEntry? nextSelection = Secrets.FirstOrDefault(secret => string.Equals(secret.Id, selectedId, StringComparison.Ordinal))
+            ?? Secrets.FirstOrDefault();
+
+        if (ReferenceEquals(SelectedSecret, nextSelection))
+        {
+            CanInject = nextSelection is not null;
+        }
+        else
+        {
+            SelectedSecret = nextSelection;
+        }
+    }
+
+    private static bool Matches(SecretEntry secret, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return true;
+        }
+
+        return Contains(secret.Name, query)
+            || Contains(secret.UserName, query);
+    }
+
+    private static bool Contains(string? value, string query) =>
+        value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
 
     [RelayCommand]
     private void Inject()

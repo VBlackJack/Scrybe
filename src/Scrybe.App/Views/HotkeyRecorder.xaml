@@ -5,33 +5,51 @@
              Focusable="True"
              Margin="0,3,0,3"
              AutomationProperties.Name="{Binding Label}">
-    <StackPanel Orientation="Horizontal">
-        <TextBlock Text="{Binding Label}"
-                   Width="170"
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="170" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Column="0"
+                   Text="{Binding Label}"
                    VerticalAlignment="Center"
                    Foreground="{StaticResource TextSecondaryBrush}"
                    FontSize="{StaticResource FontSizeBody}" />
-        <Border Width="150"
+        <Border Grid.Column="1"
+                MinWidth="150"
                 Background="{StaticResource SurfaceBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
                 CornerRadius="4"
                 Padding="8,4,8,4"
                 VerticalAlignment="Center"
                 AutomationProperties.Name="{Binding Label}">
+            <Border.Style>
+                <Style TargetType="{x:Type Border}">
+                    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource FocusIndicatorBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <TextBlock Text="{Binding Display}"
                        Foreground="{StaticResource TextPrimaryBrush}"
                        FontFamily="Consolas"
-                       TextAlignment="Center" />
+                       TextAlignment="Center"
+                       TextTrimming="CharacterEllipsis" />
         </Border>
-        <Button Content="{loc:Translate Settings.Record}"
+        <Button Grid.Column="2"
+                Content="{loc:Translate Settings.Record}"
                 Click="OnRecordClick"
                 Margin="8,0,0,0"
                 Padding="10,4,10,4"
                 Background="{StaticResource CardBrush}"
                 Foreground="{StaticResource TextPrimaryBrush}"
                 BorderThickness="0"
-                AutomationProperties.Name="{loc:Translate Settings.Record}"
+                AutomationProperties.Name="{Binding RecordAutomationName}"
                 AutomationProperties.HelpText="{Binding Label}" />
-    </StackPanel>
+    </Grid>
 </UserControl>

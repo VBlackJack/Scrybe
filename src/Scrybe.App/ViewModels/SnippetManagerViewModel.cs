@@ -82,11 +82,15 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     /// <summary>Reloads the visible snippets from the current library state.</summary>
     public void Reload()
     {
+        string? selectedId = SelectedSnippet?.Id;
         Snippets.Clear();
         foreach (Snippet snippet in _library.Snippets)
         {
             Snippets.Add(snippet);
         }
+
+        SelectedSnippet = Snippets.FirstOrDefault(snippet => string.Equals(snippet.Id, selectedId, StringComparison.Ordinal))
+            ?? Snippets.FirstOrDefault();
     }
 
     partial void OnSelectedSnippetChanged(Snippet? value)

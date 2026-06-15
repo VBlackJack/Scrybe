@@ -55,7 +55,29 @@ public sealed class SettingsViewModelTests
         registrar.Current.Should().HaveCount(7);
         viewModel.StatusMessage.Should().Be("Saved");
         viewModel.IsStatusError.Should().BeFalse();
+        viewModel.HasPendingChanges.Should().BeFalse();
         notification.Messages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void EditingSetting_SetsPendingChangesAndClearsSuccessStatus()
+    {
+        SettingsViewModel viewModel = new(
+            new AppSettings(),
+            new InMemorySettingsStore(),
+            new TestLocalizationManager(),
+            new TestNotificationService(),
+            new HotkeyRegistrar(new FakeHotkeyService()),
+            new NoopStartupRegistration())
+        {
+            StatusMessage = "Saved",
+            IsStatusError = false,
+        };
+
+        viewModel.InjectionKeyDelayMs = 50;
+
+        viewModel.HasPendingChanges.Should().BeTrue();
+        viewModel.StatusMessage.Should().BeEmpty();
     }
 
     [Fact]

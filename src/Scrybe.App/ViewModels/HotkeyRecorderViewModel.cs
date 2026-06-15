@@ -55,8 +55,11 @@ public sealed partial class HotkeyRecorderViewModel : ObservableObject
 
     /// <summary>The combo shown to the user (an ellipsis while recording).</summary>
     public string Display => IsRecording
-        ? "…"
+        ? "Recording..."
         : string.IsNullOrEmpty(Modifiers) ? Key : $"{Modifiers}+{Key}";
+
+    /// <summary>Accessible label for the record button, scoped to this action.</summary>
+    public string RecordAutomationName => $"Record {Label}";
 
     /// <summary>Begins capturing the next pressed combo.</summary>
     public void StartRecording() => IsRecording = true;

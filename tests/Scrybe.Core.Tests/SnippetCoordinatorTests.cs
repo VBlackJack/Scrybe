@@ -29,45 +29,45 @@ public sealed class SnippetCoordinatorTests
     private static readonly IntPtr Target = new(0x5678);
 
     [Fact]
-    public async Task InjectResolvedSnippetAsync_RestoreFails_DoesNotInjectAndNotifiesFailure()
+    public async Task InjectResolvedSnippetAsync_ConfirmationFails_DoesNotInject()
     {
         FakeKeystrokeInjector injector = new();
-        FakeTargetWindowGateway gateway = new()
+        FakeTargetConfirmer confirmer = new()
         {
-            RestoreResult = false,
+            ConfirmResult = false,
         };
+        FakeTargetWindowGateway gateway = new();
         TestNotificationService notification = new();
-        SnippetCoordinator coordinator = CreateCoordinator(injector, gateway, notification);
+        SnippetCoordinator coordinator = CreateCoordinator(injector, gateway, confirmer, notification);
 
         bool result = await coordinator.InjectResolvedSnippetAsync(Target, "echo ok");
 
         result.Should().BeFalse();
-        gateway.RestoreCallCount.Should().Be(1);
+        confirmer.CallCount.Should().Be(1);
         injector.SequenceInjectionCallCount.Should().Be(0);
-        notification.Messages.Should().ContainSingle().Which.Should().Be("Snippet not typed");
+        notification.Messages.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task InjectResolvedSnippetAsync_RestoreOk_InvokesInjectionOnce()
+    public async Task InjectResolvedSnippetAsync_ConfirmationOk_InvokesInjectionOnce()
     {
         FakeKeystrokeInjector injector = new();
-        FakeTargetWindowGateway gateway = new()
-        {
-            RestoreResult = true,
-        };
+        FakeTargetWindowGateway gateway = new();
+        FakeTargetConfirmer confirmer = new();
         TestNotificationService notification = new();
-        SnippetCoordinator coordinator = CreateCoordinator(injector, gateway, notification);
+        SnippetCoordinator coordinator = CreateCoordinator(injector, gateway, confirmer, notification);
 
         bool result = await coordinator.InjectResolvedSnippetAsync(Target, "echo ok");
 
         result.Should().BeTrue();
-        gateway.RestoreCallCount.Should().Be(1);
+        confirmer.CallCount.Should().Be(1);
         injector.SequenceInjectionCallCount.Should().Be(1);
     }
 
     private static SnippetCoordinator CreateCoordinator(
         FakeKeystrokeInjector injector,
         FakeTargetWindowGateway gateway,
+        FakeTargetConfirmer confirmer,
         TestNotificationService notification)
     {
         InjectionCoordinator injection = new(
@@ -82,16 +82,12 @@ public sealed class SnippetCoordinatorTests
             new SnippetLibrary(new EmptySnippetStore()),
             injection,
             gateway,
-            notification,
+            confirmer,
             new TestLocalizationManager());
     }
 
     private sealed class FakeTargetWindowGateway : ITargetWindowGateway
     {
-        public bool RestoreResult { get; init; } = true;
-
-        public int RestoreCallCount { get; private set; }
-
         public IntPtr GetForegroundWindow() => Target;
 
         public bool TryGetInfo(IntPtr window, out TargetWindowInfo? target)
@@ -102,8 +98,30 @@ public sealed class SnippetCoordinatorTests
 
         public bool TryRestore(IntPtr window)
         {
-            RestoreCallCount++;
-            return RestoreResult;
+            return true;
+        }
+    }
+
+    private sealed class FakeTargetConfirmer : IInjectionTargetConfirmer
+    {
+        public bool ConfirmResult { get; init; } = true;
+
+        public int CallCount { get; private set; }
+
+        public bool TryConfirmAndRestore(
+            IntPtr target,
+            string confirmTitle,
+            string confirmMessageTemplate,
+            string targetUnavailableMessage,
+            string untitledTargetText)
+        {
+            CallCount++;
+            target.Should().Be(Target);
+            confirmTitle.Should().Be("Confirm snippet");
+            confirmMessageTemplate.Should().Be("Inject snippet?");
+            targetUnavailableMessage.Should().Be("Snippet not typed");
+            untitledTargetText.Should().Be("(untitled)");
+            return ConfirmResult;
         }
     }
 
@@ -155,7 +173,10 @@ public sealed class SnippetCoordinatorTests
         {
             "AppTitle" => "Scrybe",
             "Inject.Done" => "Typed {0} key events ({1} characters skipped)",
+            "Palette.ConfirmTitle" => "Confirm snippet",
+            "Palette.ConfirmTarget" => "Inject snippet?",
             "Palette.TargetUnavailable" => "Snippet not typed",
+            "Palette.UntitledTarget" => "(untitled)",
             _ => key,
         };
 

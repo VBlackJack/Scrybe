@@ -20,7 +20,7 @@ namespace Scrybe.App.ViewModels;
 public sealed class AboutDetailRow
 {
     /// <summary>Initializes an About detail row.</summary>
-    public AboutDetailRow(string label, string value, bool isMissing = false)
+    public AboutDetailRow(string label, string value, bool isMissing = false, string status = "")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(label);
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
@@ -28,6 +28,7 @@ public sealed class AboutDetailRow
         Label = label;
         Value = value;
         IsMissing = isMissing;
+        Status = status;
     }
 
     /// <summary>Localized row label.</summary>
@@ -38,4 +39,10 @@ public sealed class AboutDetailRow
 
     /// <summary>Whether this row represents a missing runtime asset.</summary>
     public bool IsMissing { get; }
+
+    /// <summary>Optional localized status badge text.</summary>
+    public string Status { get; }
+
+    /// <summary>Whether this row should show a status badge.</summary>
+    public bool HasStatus => !string.IsNullOrWhiteSpace(Status);
 }

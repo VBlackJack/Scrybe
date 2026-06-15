@@ -15,6 +15,7 @@
  */
 
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -23,8 +24,13 @@ namespace Scrybe.App.ViewModels;
 /// <summary>View model for selecting a capture-history entry and copying it back to the clipboard.</summary>
 public sealed partial class HistoryPaletteViewModel : ObservableObject
 {
+    private readonly List<HistoryPaletteListItem> _allEntries;
+
     [ObservableProperty]
     private HistoryPaletteListItem? _selectedEntry;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
 
     [ObservableProperty]
     private string _selectedPreview = string.Empty;
@@ -43,8 +49,9 @@ public sealed partial class HistoryPaletteViewModel : ObservableObject
     public HistoryPaletteViewModel(IReadOnlyList<HistoryPaletteListItem> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        Entries = new ObservableCollection<HistoryPaletteListItem>(entries);
-        SelectedEntry = Entries.FirstOrDefault();
+        _allEntries = [.. entries];
+        Entries = [];
+        ApplyFilter();
         UpdateEntryState();
     }
 
@@ -66,14 +73,36 @@ public sealed partial class HistoryPaletteViewModel : ObservableObject
     {
         ArgumentNullException.ThrowIfNull(entries);
 
+        _allEntries.Clear();
+        _allEntries.AddRange(entries);
+        ApplyFilter();
+    }
+
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        string query = SearchText.Trim();
+        string? selectedId = SelectedEntry?.Id;
         Entries.Clear();
-        foreach (HistoryPaletteListItem entry in entries)
+
+        foreach (HistoryPaletteListItem entry in _allEntries.Where(entry => Matches(entry, query)))
         {
             Entries.Add(entry);
         }
 
-        SelectedEntry = Entries.FirstOrDefault();
         UpdateEntryState();
+        HistoryPaletteListItem? nextSelection = Entries.FirstOrDefault(entry => string.Equals(entry.Id, selectedId, StringComparison.Ordinal))
+            ?? Entries.FirstOrDefault();
+        if (ReferenceEquals(SelectedEntry, nextSelection))
+        {
+            SelectedPreview = nextSelection?.Preview ?? string.Empty;
+            CanCopy = nextSelection is not null;
+        }
+        else
+        {
+            SelectedEntry = nextSelection;
+        }
     }
 
     partial void OnSelectedEntryChanged(HistoryPaletteListItem? value)
@@ -111,9 +140,24 @@ public sealed partial class HistoryPaletteViewModel : ObservableObject
 
     private void UpdateEntryState()
     {
-        HasEntries = Entries.Count > 0;
-        IsEmpty = !HasEntries;
+        HasEntries = _allEntries.Count > 0;
+        IsEmpty = Entries.Count == 0;
         CanCopy = SelectedEntry is not null;
         SelectedPreview = SelectedEntry?.Preview ?? string.Empty;
     }
+
+    private static bool Matches(HistoryPaletteListItem entry, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return true;
+        }
+
+        return Contains(entry.Preview, query)
+            || Contains(entry.Timestamp, query)
+            || Contains(entry.CharCount.ToString(CultureInfo.CurrentCulture), query);
+    }
+
+    private static bool Contains(string? value, string query) =>
+        value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
 }
