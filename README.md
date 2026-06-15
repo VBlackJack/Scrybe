@@ -2,60 +2,65 @@
 
 > **scry** (read a remote screen) + **scribe** (write by typing)
 
-Scrybe is a standalone, local-first Windows utility for developers, SysAdmins
-and DevOps working in constrained remote consoles where the clipboard is broken
-or unavailable: RDP, vSphere/ESXi, IPMI/iDRAC/iLO, VNC/noVNC, and locked-down
-SSH or terminal sessions.
+Scrybe is a small Windows tray app for the awkward consoles where normal
+copy/paste is unreliable or simply not available.
 
-## Problem
+The idea is straightforward: capture text from the screen when you need to read
+it, then type text back into the target when paste is blocked. Everything stays
+local. There is no cloud OCR, no telemetry, and no account to create.
 
-In these consoles, copy/paste often fails in both directions. Scrybe restores
-that bridge without cloud services:
+## Why It Exists
 
-- **Extraction** (screen to local): capture a region from the monitor under the
-  cursor, run OCR, and
-  copy cleaned, code-aware text to the local clipboard.
-- **Injection** (local to remote): type text as synthetic keystrokes into the
-  target console, including long commands and DPAPI-protected stored secrets,
-  when paste is blocked.
+Remote and locked-down consoles often break the most basic workflow: getting a
+command, password, log line or token from one side to the other. You can see the
+text, but you cannot copy it. You have the text locally, but you cannot paste it.
 
-## Differentiation
+Scrybe is meant to make those moments less painful:
 
-Capture2Text and Textify extract text, but they do not type text back into a
-remote console. Scrybe covers both directions.
+- **Capture from screen:** select a region, run OCR locally, clean up the text,
+  and copy it to the local clipboard.
+- **Inject into target:** send local text as synthetic keystrokes, including
+  long commands, snippets and locally protected secrets.
+- **Stay offline:** keep settings, snippets, secrets and capture history on the
+  machine, under the current Windows user profile.
 
-## Current Scope
+## What It Does Today
 
-- **License:** Apache 2.0.
-- **Local-first:** offline, no telemetry, no cloud OCR.
-- **Windows-native:** WPF, tray app, Per-Monitor DPI Aware v2.
-- **Capture scope today:** monitor under cursor, with Per-Monitor DPI Aware v2
-  coordinate handling.
-- **Theme:** Dracula.
+- Runs as a Windows-native WPF tray application.
+- Captures the monitor under the cursor with per-monitor DPI handling.
+- Cleans OCR output with modes for plain text, code and logs.
+- Types text back through Unicode or scancode injection strategies.
+- Stores snippets and secrets for repeated remote-console work.
+- Protects secrets and capture history text with Windows DPAPI.
+- Provides a Control Hub, configurable hotkeys, diagnostics and EN/FR
+  localization.
+- Packages as a self-contained Windows release with the OCR runtime beside the
+  executable.
 
-## Operational Features
+## Local Data
 
-- **Protected local data:** settings, snippets, secrets and OCR history are
-  stored under `%LOCALAPPDATA%\Scrybe`; secrets and history text are protected
-  with DPAPI.
-- **Corruption recovery:** malformed JSON stores are moved aside as
-  `*.corrupt.<timestamp>.json` before defaults or empty collections are loaded.
-- **Diagnostics:** the About tab shows runtime paths and required OCR/runtime
-  assets, highlights missing files, copies a diagnostic report, and opens the
-  logs or app-data folder.
-- **Injection integrity test:** Settings > Injection can copy the deterministic
-  expected payload and inject 100, 500 or 1000 reference characters through the
-  selected Unicode or scancode strategy.
+Scrybe stores its data under:
 
-## Prerequisites
+```text
+%LOCALAPPDATA%\Scrybe
+```
+
+The app keeps its data local by design:
+
+- secrets and protected history text are encrypted with DPAPI;
+- malformed JSON stores are moved aside as `*.corrupt.<timestamp>.json`;
+- diagnostics show runtime paths, app-data locations and required OCR assets;
+- logs and diagnostic reports are available from the About tab.
+
+## Requirements
 
 - Windows 10 19041 or newer.
-- .NET 10 SDK. The repository pins exact SDK `10.0.103` in `global.json`.
-- The bundled `tessdata/eng.traineddata` file is required for OCR.
-- Published builds ship the Tesseract native DLLs in a loose `x64/` directory
-  beside `Scrybe.exe`; keep that folder next to the executable.
+- .NET 10 SDK. The repository pins SDK `10.0.103` in `global.json`.
+- The bundled OCR model at `tessdata/eng.traineddata`.
+- For published builds, keep the loose `x64/` runtime folder next to
+  `Scrybe.exe`.
 
-## Build / Run
+## Build And Run
 
 From a fresh clone:
 
@@ -66,19 +71,15 @@ dotnet test Scrybe.slnx --configuration Release
 dotnet run --project src\Scrybe.App\Scrybe.App.csproj
 ```
 
-Convenience scripts are provided for double-click or terminal use:
+Convenience scripts are available for terminal or double-click use:
 
 - `Run.bat` launches the app from source in Debug.
 - `Build.bat` builds Debug.
 - `Test.bat` runs the test suite.
 - `Release.bat` runs the local release pipeline.
-- `Build.ps1 -Mode Release -DryRun` verifies formatting, runs tests in Release,
-  builds, publishes locally, and prints the GitHub release commands it would run.
-- The release pipeline verifies the published layout before zipping: `Scrybe.exe`,
-  loose Tesseract/Leptonica runtime files, `tessdata/eng.traineddata`, and EN/FR
-  locale files must all be present and non-empty.
-- `Build.ps1 -Mode Release -Publish` creates the release commit/tag and GitHub
-  release; it requires a clean `main` branch and authenticated `gh`.
+
+The release pipeline verifies formatting, runs the Release tests, builds,
+publishes, checks the published layout, then creates a zip under `Dist/`.
 
 The formatting gate is:
 
@@ -86,18 +87,27 @@ The formatting gate is:
 dotnet format Scrybe.slnx --verify-no-changes
 ```
 
-## Status
+For a dry run of the release process:
 
-**v1.0 - Dogfooding.** OCR extraction, keystroke injection, a DPAPI secret vault,
-protected capture history, diagnostics, injection integrity checks, settings,
-hotkeys, packaging and the Control Hub are in place. Remaining work is limited
-to issues found through real use.
+```powershell
+.\Build.ps1 -Mode Release -DryRun
+```
 
-## Structure
+## Project Status
+
+Scrybe is in dogfooding. The main workflow is in place: OCR capture, text
+injection, snippets, DPAPI-backed secrets, protected capture history,
+diagnostics, hotkeys, packaging and the Control Hub.
+
+The remaining work is driven by real use: polishing edge cases, making failures
+clearer, and tightening the small interactions that matter when working inside
+stubborn remote consoles.
+
+## Repository Layout
 
 ```text
 Scrybe/
-|-- src/       # WPF app, Core library, OCR engine
+|-- src/       # WPF app, core library, OCR engine
 |-- tests/     # xUnit suite
 |-- locales/   # localized EN/FR strings
 |-- tessdata/  # bundled OCR model
