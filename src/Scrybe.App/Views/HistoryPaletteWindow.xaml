@@ -135,7 +135,7 @@
                                            TextTrimming="CharacterEllipsis" />
                                 <TextBlock Grid.Row="0"
                                            Grid.Column="1"
-                                           Text="{Binding CharCount}"
+                                           Text="{Binding CharCountText}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            FontSize="{StaticResource FontSizeCaption}"
                                            Margin="16,0,0,0" />

@@ -258,6 +258,9 @@ public sealed partial class MainViewModel : ObservableObject
     private void OpenHistory() => ShowHistoryTab();
 
     [RelayCommand]
+    private void OpenSettings() => ShowSettingsTab();
+
+    [RelayCommand]
     private void OpenAbout() => ShowAboutTab();
 
     partial void OnSelectedTabIndexChanged(int value)

@@ -28,8 +28,9 @@
 
     <Grid Margin="{StaticResource SpacingLg}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="300" MinWidth="240" />
+            <ColumnDefinition Width="6" />
+            <ColumnDefinition Width="*" MinWidth="320" />
         </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Style="{StaticResource HistoryCardStyle}" Margin="0,0,16,0">
@@ -102,7 +103,7 @@
                                         <TextBlock Text=" · "
                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                    FontSize="{StaticResource FontSizeCaption}" />
-                                        <TextBlock Text="{Binding CharCount}"
+                                        <TextBlock Text="{Binding CharCountText}"
                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                    FontSize="{StaticResource FontSizeCaption}" />
                                     </StackPanel>
@@ -129,7 +130,14 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Column="1" Style="{StaticResource HistoryCardStyle}">
+            <GridSplitter Grid.Column="1"
+                          Width="1"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch"
+                          Background="{StaticResource BorderBrush}"
+                          ShowsPreview="True" />
+
+            <Border Grid.Column="2" Style="{StaticResource HistoryCardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

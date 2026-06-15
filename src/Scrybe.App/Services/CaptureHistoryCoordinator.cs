@@ -213,7 +213,10 @@ public sealed class CaptureHistoryCoordinator
         List<HistoryPaletteListItem> items = [];
         foreach (CaptureHistoryEntry entry in _library.Entries)
         {
-            items.Add(HistoryPaletteListItem.FromMetadata(entry, _localization["History.ProtectedPreview"]));
+            items.Add(HistoryPaletteListItem.FromMetadata(
+                entry,
+                _localization["History.ProtectedPreview"],
+                _localization["History.CharCount"]));
         }
 
         return items;

@@ -117,7 +117,7 @@
         <ScrollViewer Grid.Row="0"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="0,0,0,12">
+            <StackPanel Margin="0,0,0,72">
 
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>
