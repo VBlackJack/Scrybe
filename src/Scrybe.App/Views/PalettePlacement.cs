@@ -15,9 +15,9 @@
  */
 
 using System.Windows;
-using WpfPoint = System.Windows.Point;
 using WinFormsCursor = System.Windows.Forms.Cursor;
 using WinFormsScreen = System.Windows.Forms.Screen;
+using WpfPoint = System.Windows.Point;
 
 namespace Scrybe.App.Views;
 
