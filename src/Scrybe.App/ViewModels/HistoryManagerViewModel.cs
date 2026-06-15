@@ -106,7 +106,10 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
 
         foreach (CaptureHistoryEntry entry in _library.Entries.OrderByDescending(entry => entry.CapturedAtUtc))
         {
-            Entries.Add(HistoryPaletteListItem.FromMetadata(entry, _localization["History.ProtectedPreview"]));
+            Entries.Add(HistoryPaletteListItem.FromMetadata(
+                entry,
+                _localization["History.ProtectedPreview"],
+                _localization["History.CharCount"]));
         }
 
         SelectedEntry = Entries.FirstOrDefault(entry => string.Equals(entry.Id, selectedId, StringComparison.Ordinal))

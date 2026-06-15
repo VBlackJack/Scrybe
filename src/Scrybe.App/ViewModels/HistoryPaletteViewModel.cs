@@ -155,6 +155,7 @@ public sealed partial class HistoryPaletteViewModel : ObservableObject
 
         return Contains(entry.Preview, query)
             || Contains(entry.Timestamp, query)
+            || Contains(entry.CharCountText, query)
             || Contains(entry.CharCount.ToString(CultureInfo.CurrentCulture), query);
     }
 

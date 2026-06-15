@@ -41,6 +41,9 @@ public sealed partial class SecretPaletteViewModel : ObservableObject
     [ObservableProperty]
     private bool _isEmpty;
 
+    [ObservableProperty]
+    private bool _isDiscreetMode = true;
+
     /// <summary>Initializes the palette with the available secrets.</summary>
     /// <param name="secrets">The protected secret library entries.</param>
     public SecretPaletteViewModel(IReadOnlyList<SecretEntry> secrets)

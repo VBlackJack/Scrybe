@@ -29,7 +29,7 @@ public sealed class NativeTargetConfirmationPrompt : ITargetConfirmationPrompt
             message,
             title,
             MessageBoxButton.OKCancel,
-            MessageBoxImage.Warning);
+            MessageBoxImage.Question);
         return result == MessageBoxResult.OK;
     }
 
