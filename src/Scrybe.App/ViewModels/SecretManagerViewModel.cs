@@ -165,7 +165,7 @@ public sealed partial class SecretManagerViewModel : ObservableObject
             CultureInfo.CurrentCulture,
             _localization["Secrets.DeleteConfirmMessage"],
             secretName);
-        if (!_confirmation.ConfirmDanger(_localization["Secrets.DeleteConfirmTitle"], message))
+        if (!_confirmation.ConfirmDanger(_localization["Secrets.DeleteConfirmTitle"], message, _localization["Dialog.Delete"]))
         {
             StatusMessage = string.Empty;
             IsStatusError = false;

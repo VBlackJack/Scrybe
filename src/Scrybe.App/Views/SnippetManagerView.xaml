@@ -132,16 +132,91 @@
                                Text="{loc:Translate Manager.Parameters}"
                                Style="{StaticResource ManagerFormLabelStyle}"
                                ToolTip="{loc:Translate ToolTip.Manager.Parameters}" />
-                    <TextBox Grid.Column="1"
-                             Height="90"
-                             Text="{Binding ParametersText, UpdateSourceTrigger=PropertyChanged}"
-                             AcceptsReturn="True"
-                             VerticalScrollBarVisibility="Auto"
-                             Style="{StaticResource ManagerTextBoxStyle}"
-                             FontFamily="Consolas"
-                             ToolTip="{loc:Translate ToolTip.Manager.Parameters}"
-                             AutomationProperties.Name="{loc:Translate Manager.Parameters}"
-                             AutomationProperties.HelpText="{loc:Translate ToolTip.Manager.Parameters}" />
+                    <DockPanel Grid.Column="1">
+                        <StackPanel DockPanel.Dock="Bottom"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,8,0,0">
+                            <Button Command="{Binding DetectParametersCommand}"
+                                    Margin="0,0,8,0"
+                                    Padding="10,4"
+                                    ToolTip="{loc:Translate ToolTip.Manager.DetectParameters}"
+                                    AutomationProperties.Name="{loc:Translate Manager.DetectParameters}"
+                                    AutomationProperties.HelpText="{loc:Translate ToolTip.Manager.DetectParameters}">
+                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                    <TextBlock Text="{StaticResource IconActionSearch}" Style="{StaticResource AppIconGlyphStyle}" />
+                                    <TextBlock Text="{loc:Translate Manager.DetectParameters}" Style="{StaticResource AppIconTextStyle}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding AddParameterCommand}"
+                                    Margin="0,0,8,0"
+                                    Padding="10,4"
+                                    AutomationProperties.Name="{loc:Translate Manager.AddParameter}">
+                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                    <TextBlock Text="{StaticResource IconActionNew}" Style="{StaticResource AppIconGlyphStyle}" />
+                                    <TextBlock Text="{loc:Translate Manager.AddParameter}" Style="{StaticResource AppIconTextStyle}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding RemoveParameterCommand}"
+                                    Padding="10,4"
+                                    Background="{StaticResource CardBrush}"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    AutomationProperties.Name="{loc:Translate Manager.RemoveParameter}">
+                                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                    <TextBlock Text="{StaticResource IconActionDelete}" Style="{StaticResource AppIconGlyphStyle}" />
+                                    <TextBlock Text="{loc:Translate Manager.RemoveParameter}" Style="{StaticResource AppIconTextStyle}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding ParameterRows}"
+                                  SelectedItem="{Binding SelectedParameter, Mode=TwoWay}"
+                                  Height="118"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="True"
+                                  CanUserDeleteRows="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  Background="{StaticResource SurfaceBrush}"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderBrush}"
+                                  BorderThickness="1"
+                                  RowBackground="{StaticResource SurfaceBrush}"
+                                  AlternatingRowBackground="{StaticResource BackgroundBrush}"
+                                  HorizontalGridLinesBrush="{StaticResource BorderBrush}"
+                                  VerticalGridLinesBrush="{StaticResource BorderBrush}"
+                                  ToolTip="{loc:Translate ToolTip.Manager.Parameters}"
+                                  AutomationProperties.Name="{loc:Translate Manager.Parameters}"
+                                  AutomationProperties.HelpText="{loc:Translate ToolTip.Manager.Parameters}">
+                            <DataGrid.Resources>
+                                <Style TargetType="{x:Type DataGridColumnHeader}">
+                                    <Setter Property="Background" Value="{StaticResource CardBrush}" />
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                    <Setter Property="Padding" Value="8,4" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                                </Style>
+                                <Style TargetType="{x:Type DataGridCell}">
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                    <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                                    <Setter Property="Padding" Value="4,2" />
+                                </Style>
+                                <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource ManagerTextBoxStyle}" />
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{loc:Translate Manager.ParameterName}"
+                                                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="1*" />
+                                <DataGridTextColumn Header="{loc:Translate Manager.ParameterLabel}"
+                                                    Binding="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="1.2*" />
+                                <DataGridTextColumn Header="{loc:Translate Manager.ParameterDefault}"
+                                                    Binding="{Binding DefaultValue, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="1.2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
                 </Grid>
 
                 <Grid Grid.Row="4" Margin="0,12,0,0">

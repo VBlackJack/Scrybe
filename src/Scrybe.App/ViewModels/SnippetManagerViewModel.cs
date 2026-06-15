@@ -16,9 +16,11 @@
 
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Scrybe.App.Services;
+using Scrybe.Core;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Models;
 
@@ -53,6 +55,9 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     private string _parametersText = string.Empty;
 
     [ObservableProperty]
+    private SnippetParameterEditorViewModel? _selectedParameter;
+
+    [ObservableProperty]
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
@@ -79,6 +84,9 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     /// <summary>The snippets shown in the list.</summary>
     public ObservableCollection<Snippet> Snippets { get; }
 
+    /// <summary>The editable parameter definitions for the current snippet.</summary>
+    public ObservableCollection<SnippetParameterEditorViewModel> ParameterRows { get; } = [];
+
     /// <summary>Reloads the visible snippets from the current library state.</summary>
     public void Reload()
     {
@@ -104,6 +112,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         Category = value.Category ?? string.Empty;
         Template = value.Template;
         ParametersText = FormatParameters(value.Parameters);
+        LoadParameterRows(value.Parameters);
         StatusMessage = string.Empty;
         IsStatusError = false;
     }
@@ -116,6 +125,8 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         Category = string.Empty;
         Template = string.Empty;
         ParametersText = string.Empty;
+        ParameterRows.Clear();
+        SelectedParameter = null;
         StatusMessage = string.Empty;
         IsStatusError = false;
     }
@@ -131,12 +142,25 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         }
 
         string id = SelectedSnippet?.Id ?? Guid.NewGuid().ToString("N");
+        IReadOnlyList<SnippetParameter> parameters = BuildParameters();
+        if (!ValidateTemplateParameters(parameters, out string missingParameters))
+        {
+            StatusMessage = string.Format(
+                CultureInfo.CurrentCulture,
+                _localization["Manager.ParametersMissing"],
+                missingParameters);
+            IsStatusError = true;
+            return;
+        }
+
+        ParametersText = FormatParameters(parameters);
+
         Snippet snippet = new(
             id,
             Name.Trim(),
             string.IsNullOrWhiteSpace(Category) ? null : Category.Trim(),
             Template,
-            ParseParameters(ParametersText));
+            parameters);
 
         bool persisted = await _library.SaveAsync(snippet).ConfigureAwait(true);
         Reload();
@@ -148,6 +172,63 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         }
 
         StatusMessage = _localization["Manager.Saved"];
+        IsStatusError = false;
+    }
+
+    [RelayCommand]
+    private void AddParameter()
+    {
+        SnippetParameterEditorViewModel row = new();
+        ParameterRows.Add(row);
+        SelectedParameter = row;
+    }
+
+    [RelayCommand]
+    private void RemoveParameter()
+    {
+        if (SelectedParameter is null)
+        {
+            return;
+        }
+
+        int index = ParameterRows.IndexOf(SelectedParameter);
+        ParameterRows.Remove(SelectedParameter);
+        SelectedParameter = ParameterRows.Count == 0
+            ? null
+            : ParameterRows[Math.Clamp(index, 0, ParameterRows.Count - 1)];
+    }
+
+    [RelayCommand]
+    private void DetectParameters()
+    {
+        List<string> placeholders = ExtractTemplateParameterNames();
+        if (placeholders.Count == 0)
+        {
+            StatusMessage = _localization["Manager.ParametersNoneDetected"];
+            IsStatusError = false;
+            return;
+        }
+
+        HashSet<string> existing = ParameterRows
+            .Select(row => row.Name.Trim())
+            .Where(name => name.Length > 0)
+            .ToHashSet(StringComparer.Ordinal);
+
+        int added = 0;
+        foreach (string name in placeholders)
+        {
+            if (!existing.Add(name))
+            {
+                continue;
+            }
+
+            ParameterRows.Add(new SnippetParameterEditorViewModel(new SnippetParameter(name, name, null)));
+            added++;
+        }
+
+        StatusMessage = added == 0
+            ? _localization["Manager.ParametersAlreadyDetected"]
+            : string.Format(CultureInfo.CurrentCulture, _localization["Manager.ParametersDetected"], added);
         IsStatusError = false;
     }
 
@@ -164,7 +245,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             CultureInfo.CurrentCulture,
             _localization["Manager.DeleteConfirmMessage"],
             snippetName);
-        if (!_confirmation.ConfirmDanger(_localization["Manager.DeleteConfirmTitle"], message))
+        if (!_confirmation.ConfirmDanger(_localization["Manager.DeleteConfirmTitle"], message, _localization["Dialog.Delete"]))
         {
             StatusMessage = string.Empty;
             IsStatusError = false;
@@ -188,6 +269,72 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     {
         StatusMessage = _localization["Persist.SaveFailed"];
         IsStatusError = true;
+    }
+
+    private void LoadParameterRows(IReadOnlyList<SnippetParameter> parameters)
+    {
+        ParameterRows.Clear();
+        foreach (SnippetParameter parameter in parameters)
+        {
+            ParameterRows.Add(new SnippetParameterEditorViewModel(parameter));
+        }
+
+        SelectedParameter = ParameterRows.FirstOrDefault();
+    }
+
+    private IReadOnlyList<SnippetParameter> BuildParameters()
+    {
+        List<SnippetParameter> parameters = [];
+        if (ParameterRows.Any(row => row.HasContent))
+        {
+            foreach (SnippetParameterEditorViewModel row in ParameterRows)
+            {
+                string name = row.Name.Trim();
+                if (name.Length == 0)
+                {
+                    continue;
+                }
+
+                parameters.Add(row.ToParameter());
+            }
+
+            return parameters;
+        }
+
+        return ParseParameters(ParametersText);
+    }
+
+    private bool ValidateTemplateParameters(IReadOnlyList<SnippetParameter> parameters, out string missingParameters)
+    {
+        HashSet<string> defined = parameters.Select(parameter => parameter.Name).ToHashSet(StringComparer.Ordinal);
+        List<string> missing = [];
+        foreach (string name in ExtractTemplateParameterNames())
+        {
+            if (name.Length == 0 || defined.Contains(name) || missing.Contains(name))
+            {
+                continue;
+            }
+
+            missing.Add(name);
+        }
+
+        missingParameters = string.Join(", ", missing);
+        return missing.Count == 0;
+    }
+
+    private List<string> ExtractTemplateParameterNames()
+    {
+        List<string> names = [];
+        foreach (Match match in Regex.Matches(Template, AppConstants.SnippetPlaceholderPattern))
+        {
+            string name = match.Groups[1].Value.Trim();
+            if (name.Length > 0 && !names.Contains(name, StringComparer.Ordinal))
+            {
+                names.Add(name);
+            }
+        }
+
+        return names;
     }
 
     private static string FormatParameters(IReadOnlyList<SnippetParameter> parameters)

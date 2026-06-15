@@ -165,9 +165,10 @@
                         <DataTemplate>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="130" />
-                                    <ColumnDefinition Width="82" />
+                                    <ColumnDefinition Width="124" />
+                                    <ColumnDefinition Width="76" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0"
@@ -198,6 +199,17 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
+                                <Button Grid.Column="3"
+                                        Command="{Binding DataContext.CopyDiagnosticValueCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding Value}"
+                                        Padding="8,4"
+                                        Margin="8,0,0,0"
+                                        ToolTip="{loc:Translate Diagnostics.CopyValue}"
+                                        AutomationProperties.Name="{loc:Translate Diagnostics.CopyValue}">
+                                    <TextBlock Text="{StaticResource IconActionCopy}"
+                                               Style="{StaticResource AppIconGlyphStyle}"
+                                               Margin="0" />
+                                </Button>
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

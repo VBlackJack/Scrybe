@@ -57,61 +57,66 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="1" Margin="0,12,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="1"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="{x:Type TextBlock}">
-                            <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <TextBlock Text="{loc:Translate Settings.UnsavedChanges}"
-                           Foreground="{StaticResource WarningBrush}"
-                           FontSize="{StaticResource FontSizeCaption}">
-                    <TextBlock.Style>
-                        <Style TargetType="{x:Type TextBlock}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasPendingChanges}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </StackPanel>
-            <Button Command="{Binding SaveCommand}"
-                    Grid.Column="1"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Padding="{StaticResource PaddingButtonPrimary}"
-                    Background="{StaticResource AccentBrush}"
-                    Foreground="{StaticResource ActionOnBrightBrush}"
-                    BorderThickness="0"
-                    FontWeight="SemiBold"
-                    AutomationProperties.Name="{loc:Translate Settings.Save}">
-                <StackPanel Style="{StaticResource AppIconTextContentStyle}">
-                    <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
-                    <TextBlock Text="{loc:Translate Settings.Save}" Style="{StaticResource AppIconTextStyle}" />
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{loc:Translate Settings.UnsavedChanges}"
+                               Foreground="{StaticResource WarningBrush}"
+                               FontSize="{StaticResource FontSizeCaption}">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasPendingChanges}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
-            </Button>
-        </Grid>
+                <Button Command="{Binding SaveCommand}"
+                        Grid.Column="1"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Padding="{StaticResource PaddingButtonPrimary}"
+                        Background="{StaticResource AccentBrush}"
+                        Foreground="{StaticResource ActionOnBrightBrush}"
+                        BorderThickness="0"
+                        FontWeight="SemiBold"
+                        AutomationProperties.Name="{loc:Translate Settings.Save}">
+                    <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                        <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
+                        <TextBlock Text="{loc:Translate Settings.Save}" Style="{StaticResource AppIconTextStyle}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
 
         <ScrollViewer Grid.Row="0"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
-            <StackPanel>
+            <StackPanel Margin="0,0,0,12">
 
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>
@@ -188,12 +193,33 @@
                             <TextBlock Text="{loc:Translate Settings.Pacing}"
                                        Style="{StaticResource FieldLabelStyle}"
                                        ToolTip="{loc:Translate ToolTip.Settings.Pacing}" />
-                            <TextBox Text="{Binding InjectionKeyDelayMs, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource SettingTextBoxStyle}"
-                                     Width="100"
-                                     ToolTip="{loc:Translate ToolTip.Settings.Pacing}"
-                                     AutomationProperties.Name="{loc:Translate Settings.Pacing}"
-                                     AutomationProperties.HelpText="{loc:Translate ToolTip.Settings.Pacing}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Command="{Binding DecreaseInjectionKeyDelayCommand}"
+                                        Content="-"
+                                        Width="30"
+                                        Padding="0"
+                                        ToolTip="{loc:Translate Settings.DecreaseValue}"
+                                        AutomationProperties.Name="{loc:Translate Settings.DecreaseValue}" />
+                                <TextBox Text="{Binding InjectionKeyDelayMs, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SettingTextBoxStyle}"
+                                         Width="70"
+                                         Margin="6,0"
+                                         InputScope="Number"
+                                         ToolTip="{loc:Translate ToolTip.Settings.Pacing}"
+                                         AutomationProperties.Name="{loc:Translate Settings.Pacing}"
+                                         AutomationProperties.HelpText="{loc:Translate ToolTip.Settings.Pacing}" />
+                                <Button Command="{Binding IncreaseInjectionKeyDelayCommand}"
+                                        Content="+"
+                                        Width="30"
+                                        Padding="0"
+                                        ToolTip="{loc:Translate Settings.IncreaseValue}"
+                                        AutomationProperties.Name="{loc:Translate Settings.IncreaseValue}" />
+                                <TextBlock Text="{Binding InjectionKeyDelayRangeText}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0" />
+                            </StackPanel>
                         </StackPanel>
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
@@ -256,16 +282,42 @@
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>
                         <TextBlock Text="{loc:Translate Settings.Captures}" Style="{StaticResource SectionHeaderStyle}" />
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{loc:Translate Settings.CapturesDirectory}"
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="210" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{loc:Translate Settings.CapturesDirectory}"
                                        Style="{StaticResource FieldLabelStyle}"
                                        ToolTip="{loc:Translate ToolTip.Settings.CapturesDirectory}" />
-                            <TextBox Text="{Binding CapturesDirectory, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource SettingTextBoxStyle}"
-                                     ToolTip="{loc:Translate ToolTip.Settings.CapturesDirectory}"
-                                     AutomationProperties.Name="{loc:Translate Settings.CapturesDirectory}"
-                                     AutomationProperties.HelpText="{loc:Translate ToolTip.Settings.CapturesDirectory}" />
-                        </StackPanel>
+                            <WrapPanel Grid.Column="1">
+                                <TextBox Text="{Binding CapturesDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SettingTextBoxStyle}"
+                                         Margin="0,0,8,8"
+                                         ToolTip="{loc:Translate ToolTip.Settings.CapturesDirectory}"
+                                         AutomationProperties.Name="{loc:Translate Settings.CapturesDirectory}"
+                                         AutomationProperties.HelpText="{loc:Translate ToolTip.Settings.CapturesDirectory}" />
+                                <Button Command="{Binding BrowseCapturesDirectoryCommand}"
+                                        Margin="0,0,8,8"
+                                        AutomationProperties.Name="{loc:Translate Settings.BrowseCapturesDirectory}">
+                                    <TextBlock Text="{loc:Translate Settings.BrowseCapturesDirectory}" />
+                                </Button>
+                                <Button Command="{Binding OpenCapturesDirectoryCommand}"
+                                        Margin="0,0,8,8"
+                                        AutomationProperties.Name="{loc:Translate Settings.OpenCapturesDirectory}">
+                                    <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                                        <TextBlock Text="{StaticResource IconActionOpenFolder}" Style="{StaticResource AppIconGlyphStyle}" />
+                                        <TextBlock Text="{loc:Translate Settings.OpenCapturesDirectory}" Style="{StaticResource AppIconTextStyle}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ResetCapturesDirectoryCommand}"
+                                        Margin="0,0,0,8"
+                                        AutomationProperties.Name="{loc:Translate Settings.ResetCapturesDirectory}">
+                                    <TextBlock Text="{loc:Translate Settings.ResetCapturesDirectory}" />
+                                </Button>
+                            </WrapPanel>
+                        </Grid>
                         <CheckBox Content="{loc:Translate Settings.SaveCaptureCrop}"
                                   IsChecked="{Binding SaveCaptureCrop}"
                                   Style="{StaticResource SettingCheckBoxStyle}"
@@ -290,11 +342,32 @@
                                     ToolTip="{loc:Translate ToolTip.Settings.HistoryMaxEntries}">
                             <TextBlock Text="{loc:Translate Settings.HistoryMaxEntries}"
                                        Style="{StaticResource FieldLabelStyle}" />
-                            <TextBox Text="{Binding CaptureHistoryMaxEntries, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource SettingTextBoxStyle}"
-                                     Width="100"
-                                     AutomationProperties.Name="{loc:Translate Settings.HistoryMaxEntries}"
-                                     AutomationProperties.HelpText="{loc:Translate ToolTip.Settings.HistoryMaxEntries}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Command="{Binding DecreaseCaptureHistoryMaxEntriesCommand}"
+                                        Content="-"
+                                        Width="30"
+                                        Padding="0"
+                                        ToolTip="{loc:Translate Settings.DecreaseValue}"
+                                        AutomationProperties.Name="{loc:Translate Settings.DecreaseValue}" />
+                                <TextBox Text="{Binding CaptureHistoryMaxEntries, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SettingTextBoxStyle}"
+                                         Width="70"
+                                         Margin="6,0"
+                                         InputScope="Number"
+                                         AutomationProperties.Name="{loc:Translate Settings.HistoryMaxEntries}"
+                                         AutomationProperties.HelpText="{loc:Translate ToolTip.Settings.HistoryMaxEntries}" />
+                                <Button Command="{Binding IncreaseCaptureHistoryMaxEntriesCommand}"
+                                        Content="+"
+                                        Width="30"
+                                        Padding="0"
+                                        ToolTip="{loc:Translate Settings.IncreaseValue}"
+                                        AutomationProperties.Name="{loc:Translate Settings.IncreaseValue}" />
+                                <TextBlock Text="{Binding CaptureHistoryMaxEntriesRangeText}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           VerticalAlignment="Center"
+                                           Margin="10,0,0,0" />
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </Border>

@@ -230,8 +230,8 @@ public sealed class ManagerViewModelTests
             new DenyingConfirmationService());
 
         viewModel.Entries.Should().ContainSingle();
-        viewModel.Entries.Single().Preview.Should().Be("Protected text hidden");
-        viewModel.SelectedPreview.Should().Be("Protected text hidden");
+        viewModel.Entries.Single().Preview.Should().Be($"Protected text hidden ({text.Length} chars)");
+        viewModel.SelectedPreview.Should().Be($"Protected text hidden ({text.Length} chars)");
         viewModel.EditText.Should().BeEmpty();
         viewModel.IsTextRevealed.Should().BeFalse();
         viewModel.CanSaveEdit.Should().BeFalse();
@@ -372,7 +372,7 @@ public sealed class ManagerViewModelTests
             "History.Saved" => "Saved",
             "History.EmptyTextError" => "Empty text",
             "History.SaveFailed" => "Save failed",
-            "History.ProtectedPreview" => "Protected text hidden",
+            "History.ProtectedPreview" => "Protected text hidden ({0} chars)",
             "History.Revealed" => "Revealed",
             "History.RevealFirst" => "Reveal first",
             "History.RevealFailed" => "Reveal failed",

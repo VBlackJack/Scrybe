@@ -60,6 +60,9 @@ public partial class App : System.Windows.Application
     private SecretCoordinator? _secretCoordinator;
     private CaptureHistoryCoordinator? _historyCoordinator;
     private CaptureHistoryLibrary? _historyLibrary;
+    private ITargetWindowGateway? _targetGateway;
+    private IInjectionTargetConfirmer? _targetConfirmer;
+    private ILocalizationManager? _localization;
     private MainViewModel? _mainViewModel;
     private bool _isShutdownRequested;
 
@@ -186,6 +189,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<AboutInfoProvider>();
         services.AddSingleton<DiagnosticsInfoProvider>();
         services.AddSingleton<ISystemShell, SystemShell>();
+        services.AddSingleton<IDirectoryPicker, WindowsDirectoryPicker>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<AboutViewModel>();
@@ -261,6 +265,9 @@ public partial class App : System.Windows.Application
         _secretCoordinator = provider.GetRequiredService<SecretCoordinator>();
         _historyCoordinator = provider.GetRequiredService<CaptureHistoryCoordinator>();
         _historyLibrary = provider.GetRequiredService<CaptureHistoryLibrary>();
+        _targetGateway = provider.GetRequiredService<ITargetWindowGateway>();
+        _targetConfirmer = provider.GetRequiredService<IInjectionTargetConfirmer>();
+        _localization = provider.GetRequiredService<ILocalizationManager>();
         _historyLibrary.EntriesChanged += OnHistoryEntriesChanged;
 
         _mainViewModel = provider.GetRequiredService<MainViewModel>();
@@ -390,7 +397,7 @@ public partial class App : System.Windows.Application
         HideHubWindow();
         await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         await Task.Delay(AppConstants.InjectionStartDelayMs).ConfigureAwait(true);
-        await _injectionCoordinator!.InjectLastTextAsync().ConfigureAwait(true);
+        await ConfirmAndInjectLastTextAsync(_targetGateway!.GetForegroundWindow()).ConfigureAwait(true);
     }
 
     private async Task InjectClipboardFromHubAsync()
@@ -408,6 +415,44 @@ public partial class App : System.Windows.Application
         HideHubWindow();
         await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         await Task.Delay(AppConstants.InjectionStartDelayMs).ConfigureAwait(true);
+        await ConfirmAndInjectReferenceAsync(_targetGateway!.GetForegroundWindow(), length).ConfigureAwait(true);
+    }
+
+    private async Task ConfirmAndInjectLastTextAsync(IntPtr target)
+    {
+        if (!_injectionCoordinator!.HasLastText)
+        {
+            await _injectionCoordinator.InjectLastTextAsync().ConfigureAwait(true);
+            return;
+        }
+
+        ILocalizationManager localization = _localization!;
+        if (!_targetConfirmer!.TryConfirmAndRestore(
+            target,
+            localization["Inject.ConfirmLastTextTitle"],
+            localization["Inject.ConfirmLastTextTarget"],
+            localization["Inject.TargetUnavailable"],
+            localization["Inject.UntitledTarget"]))
+        {
+            return;
+        }
+
+        await _injectionCoordinator.InjectLastTextAsync().ConfigureAwait(true);
+    }
+
+    private async Task ConfirmAndInjectReferenceAsync(IntPtr target, int length)
+    {
+        ILocalizationManager localization = _localization!;
+        if (!_targetConfirmer!.TryConfirmAndRestore(
+            target,
+            localization["Inject.ConfirmReferenceTitle"],
+            localization["Inject.ConfirmReferenceTarget"],
+            localization["Inject.TargetUnavailable"],
+            localization["Inject.UntitledTarget"]))
+        {
+            return;
+        }
+
         await _injectionCoordinator!.InjectReferenceAsync(length).ConfigureAwait(true);
     }
 
@@ -519,7 +564,7 @@ public partial class App : System.Windows.Application
                 _ = _captureCoordinator!.CaptureAsync();
                 break;
             case AppConstants.InjectHotkeyId:
-                _ = _injectionCoordinator!.InjectLastTextAsync();
+                _ = ConfirmAndInjectLastTextAsync(_targetGateway!.GetForegroundWindow());
                 break;
             case AppConstants.ClipboardInjectHotkeyId:
                 _ = _clipboardInjectionCoordinator!.InjectClipboardAsync();
@@ -528,14 +573,14 @@ public partial class App : System.Windows.Application
                 _injectionCoordinator!.Abort();
                 break;
             case AppConstants.InjectReference100HotkeyId:
-                _ = _injectionCoordinator!.InjectReferenceAsync(AppConstants.InjectionReferenceShortLength);
+                _ = ConfirmAndInjectReferenceAsync(_targetGateway!.GetForegroundWindow(), AppConstants.InjectionReferenceShortLength);
                 break;
             case AppConstants.InjectReference500HotkeyId:
-                _ = _injectionCoordinator!.InjectReferenceAsync(AppConstants.InjectionReferenceMediumLength);
+                _ = ConfirmAndInjectReferenceAsync(_targetGateway!.GetForegroundWindow(), AppConstants.InjectionReferenceMediumLength);
                 break;
             case AppConstants.InjectReference1000HotkeyId:
             case AppConstants.InjectReference1000AltHotkeyId:
-                _ = _injectionCoordinator!.InjectReferenceAsync(AppConstants.InjectionReferenceLongLength);
+                _ = ConfirmAndInjectReferenceAsync(_targetGateway!.GetForegroundWindow(), AppConstants.InjectionReferenceLongLength);
                 break;
             case AppConstants.ToggleInjectionModeHotkeyId:
                 _injectionCoordinator!.ToggleMode();

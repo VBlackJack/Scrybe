@@ -24,4 +24,11 @@ public interface IConfirmationService
     /// <param name="message">Dialog body.</param>
     /// <returns><see langword="true"/> when the user explicitly confirms.</returns>
     bool ConfirmDanger(string title, string message);
+
+    /// <summary>Asks the user to confirm an irreversible action with an explicit destructive label.</summary>
+    /// <param name="title">Dialog title.</param>
+    /// <param name="message">Dialog body.</param>
+    /// <param name="confirmText">Confirm button label.</param>
+    /// <returns><see langword="true"/> when the user explicitly confirms.</returns>
+    bool ConfirmDanger(string title, string message, string confirmText) => ConfirmDanger(title, message);
 }

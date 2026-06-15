@@ -75,6 +75,9 @@ public sealed class InjectionCoordinator
     private IKeystrokeInjector CurrentInjector
         => _settings.InjectionMode == InjectionMode.Unicode ? _unicodeInjector : _scancodeInjector;
 
+    /// <summary>Whether there is OCR text available for the "inject last text" action.</summary>
+    public bool HasLastText => !string.IsNullOrEmpty(_textStore.LastText);
+
     /// <summary>Types the last OCR text into the foreground window. Ignored if an injection is already running.</summary>
     public Task InjectLastTextAsync()
     {

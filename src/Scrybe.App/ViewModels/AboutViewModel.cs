@@ -162,6 +162,19 @@ public sealed partial class AboutViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task CopyDiagnosticValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        await _clipboard.SetTextAsync(value).ConfigureAwait(true);
+        StatusMessage = _localization["Diagnostics.ValueCopied"];
+        IsStatusError = false;
+    }
+
+    [RelayCommand]
     private void OpenLogsDirectory()
         => OpenDirectory(_diagnosticsInfoProvider.GetLogsDirectory(), _localization["Diagnostics.LogsOpened"]);
 

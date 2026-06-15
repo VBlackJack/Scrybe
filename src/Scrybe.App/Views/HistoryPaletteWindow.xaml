@@ -75,15 +75,32 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBox x:Name="SearchBox"
-                     Grid.Row="0"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     Background="{StaticResource SurfaceBrush}"
-                     Foreground="{StaticResource TextPrimaryBrush}"
-                     CaretBrush="{StaticResource TextPrimaryBrush}"
-                     BorderBrush="{StaticResource BorderBrush}"
-                     Padding="{StaticResource PaddingInput}"
-                     AutomationProperties.Name="{loc:Translate Palette.Search}" />
+            <Grid Grid.Row="0">
+                <TextBox x:Name="SearchBox"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{StaticResource SurfaceBrush}"
+                         Foreground="{StaticResource TextPrimaryBrush}"
+                         CaretBrush="{StaticResource TextPrimaryBrush}"
+                         BorderBrush="{StaticResource BorderBrush}"
+                         Padding="{StaticResource PaddingInput}"
+                         AutomationProperties.Name="{loc:Translate Palette.Search}" />
+                <TextBlock Text="{loc:Translate Palette.SearchPlaceholder}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           Margin="10,0,0,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
 
             <Grid Grid.Row="2">
                 <ListBox ItemsSource="{Binding Entries}"
