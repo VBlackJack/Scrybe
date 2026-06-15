@@ -186,6 +186,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<AboutInfoProvider>();
         services.AddSingleton<DiagnosticsInfoProvider>();
         services.AddSingleton<ISystemShell, SystemShell>();
+        services.AddSingleton<IDirectoryPicker, WindowsDirectoryPicker>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<AboutViewModel>();

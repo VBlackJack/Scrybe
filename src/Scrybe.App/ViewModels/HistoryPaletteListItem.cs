@@ -29,7 +29,7 @@ public sealed record HistoryPaletteListItem(string Id, string Preview, string Ti
 {
     /// <summary>Builds a display item from metadata only, without revealing protected text.</summary>
     /// <param name="entry">The protected history entry.</param>
-    /// <param name="protectedPreview">The localized placeholder shown until the user reveals or copies text.</param>
+    /// <param name="protectedPreview">The localized metadata placeholder shown until the user reveals or copies text.</param>
     public static HistoryPaletteListItem FromMetadata(CaptureHistoryEntry entry, string protectedPreview)
     {
         ArgumentNullException.ThrowIfNull(entry);
@@ -38,7 +38,8 @@ public sealed record HistoryPaletteListItem(string Id, string Preview, string Ti
         string timestamp = entry.CapturedAtUtc
             .ToLocalTime()
             .ToString(AppConstants.CaptureHistoryTimestampFormat, CultureInfo.CurrentCulture);
+        string preview = string.Format(CultureInfo.CurrentCulture, protectedPreview, entry.CharCount);
 
-        return new HistoryPaletteListItem(entry.Id, protectedPreview, timestamp, entry.CharCount);
+        return new HistoryPaletteListItem(entry.Id, preview, timestamp, entry.CharCount);
     }
 }

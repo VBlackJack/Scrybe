@@ -22,6 +22,7 @@ using Scrybe.App.Services;
 using Scrybe.Core;
 using Scrybe.Core.Input;
 using Scrybe.Core.Interfaces;
+using Scrybe.Core.IO;
 using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 using Scrybe.Core.Settings;
@@ -42,6 +43,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly HotkeyRegistrar _registrar;
     private readonly IStartupRegistration _startupRegistration;
     private readonly IClipboardService _clipboard;
+    private readonly ISystemShell _systemShell;
+    private readonly IDirectoryPicker _directoryPicker;
     private readonly bool _initialized;
     private bool _suppressPendingChanges;
 
@@ -116,7 +119,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         INotificationService notification,
         HotkeyRegistrar registrar,
         IStartupRegistration startupRegistration,
-        IClipboardService? clipboard = null)
+        IClipboardService? clipboard = null,
+        ISystemShell? systemShell = null,
+        IDirectoryPicker? directoryPicker = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(store);
@@ -132,6 +137,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _registrar = registrar;
         _startupRegistration = startupRegistration;
         _clipboard = clipboard ?? NoopClipboardService.Instance;
+        _systemShell = systemShell ?? NoopSystemShell.Instance;
+        _directoryPicker = directoryPicker ?? NoopDirectoryPicker.Instance;
 
         _enableLogging = settings.EnableLogging;
         _prewarmOnStartup = settings.PrewarmOnStartup;
@@ -215,6 +222,20 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>The available integrity-test reference lengths.</summary>
     public IReadOnlyList<SettingsChoice<int>> InjectionReferenceLengthChoices { get; }
+
+    /// <summary>Human-readable accepted range for base injection pacing.</summary>
+    public string InjectionKeyDelayRangeText => string.Format(
+        CultureInfo.CurrentCulture,
+        _localization["Settings.RangeMs"],
+        AppConstants.InjectionKeyDelayMinMs,
+        AppConstants.InjectionKeyDelayMaxMs);
+
+    /// <summary>Human-readable accepted range for capture-history retention.</summary>
+    public string CaptureHistoryMaxEntriesRangeText => string.Format(
+        CultureInfo.CurrentCulture,
+        _localization["Settings.RangeEntries"],
+        AppConstants.CaptureHistoryMaxEntriesMin,
+        AppConstants.CaptureHistoryMaxEntriesMax);
 
     /// <summary>Recorder for the capture hotkey.</summary>
     public HotkeyRecorderViewModel CaptureRecorder { get; }
@@ -403,6 +424,66 @@ public sealed partial class SettingsViewModel : ObservableObject
         IsInjectionIntegrityStatusError = false;
     }
 
+    [RelayCommand]
+    private void BrowseCapturesDirectory()
+    {
+        if (_directoryPicker.TryPickDirectory(CapturesDirectory, out string directory))
+        {
+            CapturesDirectory = directory;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenCapturesDirectory()
+    {
+        string directory = CapturePathResolver.ResolveDirectory(CapturesDirectory);
+        if (_systemShell.TryOpenDirectory(directory))
+        {
+            StatusMessage = _localization["Settings.CapturesOpened"];
+            IsStatusError = false;
+            return;
+        }
+
+        StatusMessage = string.Format(CultureInfo.CurrentCulture, _localization["Diagnostics.OpenFailed"], directory);
+        IsStatusError = true;
+    }
+
+    [RelayCommand]
+    private void ResetCapturesDirectory()
+    {
+        CapturesDirectory = string.Empty;
+        StatusMessage = _localization["Settings.CapturesDirectoryReset"];
+        IsStatusError = false;
+    }
+
+    [RelayCommand]
+    private void DecreaseInjectionKeyDelay()
+        => InjectionKeyDelayMs = Math.Clamp(
+            InjectionKeyDelayMs - 5,
+            AppConstants.InjectionKeyDelayMinMs,
+            AppConstants.InjectionKeyDelayMaxMs);
+
+    [RelayCommand]
+    private void IncreaseInjectionKeyDelay()
+        => InjectionKeyDelayMs = Math.Clamp(
+            InjectionKeyDelayMs + 5,
+            AppConstants.InjectionKeyDelayMinMs,
+            AppConstants.InjectionKeyDelayMaxMs);
+
+    [RelayCommand]
+    private void DecreaseCaptureHistoryMaxEntries()
+        => CaptureHistoryMaxEntries = Math.Clamp(
+            CaptureHistoryMaxEntries - 5,
+            AppConstants.CaptureHistoryMaxEntriesMin,
+            AppConstants.CaptureHistoryMaxEntriesMax);
+
+    [RelayCommand]
+    private void IncreaseCaptureHistoryMaxEntries()
+        => CaptureHistoryMaxEntries = Math.Clamp(
+            CaptureHistoryMaxEntries + 5,
+            AppConstants.CaptureHistoryMaxEntriesMin,
+            AppConstants.CaptureHistoryMaxEntriesMax);
+
     private bool TryApplyStartupRegistration()
     {
         try
@@ -533,5 +614,23 @@ public sealed partial class SettingsViewModel : ObservableObject
         public Task<string?> GetTextAsync(CancellationToken cancellationToken = default) => Task.FromResult<string?>(null);
 
         public Task SetTextAsync(string text, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class NoopSystemShell : ISystemShell
+    {
+        public static NoopSystemShell Instance { get; } = new();
+
+        public bool TryOpenDirectory(string directory) => false;
+    }
+
+    private sealed class NoopDirectoryPicker : IDirectoryPicker
+    {
+        public static NoopDirectoryPicker Instance { get; } = new();
+
+        public bool TryPickDirectory(string? initialDirectory, out string directory)
+        {
+            directory = string.Empty;
+            return false;
+        }
     }
 }

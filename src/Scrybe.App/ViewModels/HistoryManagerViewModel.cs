@@ -185,7 +185,7 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
             CultureInfo.CurrentCulture,
             _localization["History.DeleteConfirmMessage"],
             SelectedEntry.Timestamp);
-        if (!_confirmation.ConfirmDanger(_localization["History.DeleteConfirmTitle"], message))
+        if (!_confirmation.ConfirmDanger(_localization["History.DeleteConfirmTitle"], message, _localization["Dialog.Delete"]))
         {
             StatusMessage = string.Empty;
             IsStatusError = false;
@@ -276,7 +276,8 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
 
         if (!_confirmation.ConfirmDanger(
             _localization["History.ClearConfirmTitle"],
-            _localization["History.ClearConfirmMessage"]))
+            _localization["History.ClearConfirmMessage"],
+            _localization["Dialog.ClearAll"]))
         {
             StatusMessage = string.Empty;
             IsStatusError = false;

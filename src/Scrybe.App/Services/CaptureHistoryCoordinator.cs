@@ -93,7 +93,8 @@ public sealed class CaptureHistoryCoordinator
     {
         bool confirmed = _confirmation.ConfirmDanger(
             _localization["History.ClearConfirmTitle"],
-            _localization["History.ClearConfirmMessage"]);
+            _localization["History.ClearConfirmMessage"],
+            _localization["Dialog.ClearAll"]);
 
         if (!confirmed)
         {
@@ -135,7 +136,7 @@ public sealed class CaptureHistoryCoordinator
             CultureInfo.CurrentCulture,
             _localization["History.DeleteConfirmMessage"],
             timestamp);
-        if (!_confirmation.ConfirmDanger(_localization["History.DeleteConfirmTitle"], message))
+        if (!_confirmation.ConfirmDanger(_localization["History.DeleteConfirmTitle"], message, _localization["Dialog.Delete"]))
         {
             FileLogger.Info("Capture history entry delete cancelled.");
             return false;

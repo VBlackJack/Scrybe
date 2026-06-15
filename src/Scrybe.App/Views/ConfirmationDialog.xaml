@@ -41,7 +41,7 @@
                 <Button Content="{Binding OkText, RelativeSource={RelativeSource AncestorType=Window}}"
                         Click="OnOkClicked"
                         MinWidth="{StaticResource ConfirmationDialogButtonMinWidth}"
-                        Background="{StaticResource AccentBrush}"
+                        Background="{StaticResource ErrorBrush}"
                         Foreground="{StaticResource ActionOnBrightBrush}"
                         BorderThickness="{StaticResource ConfirmationDialogPrimaryBorderThickness}"
                         FontWeight="SemiBold" />

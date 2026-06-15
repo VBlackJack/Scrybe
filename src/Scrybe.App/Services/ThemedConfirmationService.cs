@@ -36,6 +36,10 @@ public sealed class ThemedConfirmationService : IConfirmationService
 
     /// <inheritdoc />
     public bool ConfirmDanger(string title, string message)
+        => ConfirmDanger(title, message, _localization["Dialog.Confirm"]);
+
+    /// <inheritdoc />
+    public bool ConfirmDanger(string title, string message, string confirmText)
     {
         System.Windows.Application? application = System.Windows.Application.Current;
         if (application is null)
@@ -46,19 +50,19 @@ public sealed class ThemedConfirmationService : IConfirmationService
 
         if (application.Dispatcher.CheckAccess())
         {
-            return ConfirmDangerOnUiThread(title, message, application);
+            return ConfirmDangerOnUiThread(title, message, confirmText, application);
         }
 
-        return application.Dispatcher.Invoke(() => ConfirmDangerOnUiThread(title, message, application));
+        return application.Dispatcher.Invoke(() => ConfirmDangerOnUiThread(title, message, confirmText, application));
     }
 
-    private bool ConfirmDangerOnUiThread(string title, string message, System.Windows.Application application)
+    private bool ConfirmDangerOnUiThread(string title, string message, string confirmText, System.Windows.Application application)
     {
         Window? owner = ResolveOwner(application);
         ConfirmationDialog dialog = new(
             title,
             message,
-            _localization["Dialog.Ok"],
+            confirmText,
             _localization["Dialog.Cancel"]);
 
         if (owner is not null)
