@@ -33,6 +33,20 @@ remote console. Scrybe covers both directions.
   coordinate handling.
 - **Theme:** Dracula.
 
+## Operational Features
+
+- **Protected local data:** settings, snippets, secrets and OCR history are
+  stored under `%LOCALAPPDATA%\Scrybe`; secrets and history text are protected
+  with DPAPI.
+- **Corruption recovery:** malformed JSON stores are moved aside as
+  `*.corrupt.<timestamp>.json` before defaults or empty collections are loaded.
+- **Diagnostics:** the About tab shows runtime paths and required OCR/runtime
+  assets, highlights missing files, copies a diagnostic report, and opens the
+  logs or app-data folder.
+- **Injection integrity test:** Settings > Injection can copy the deterministic
+  expected payload and inject 100, 500 or 1000 reference characters through the
+  selected Unicode or scancode strategy.
+
 ## Prerequisites
 
 - Windows 10 19041 or newer.
@@ -60,6 +74,9 @@ Convenience scripts are provided for double-click or terminal use:
 - `Release.bat` runs the local release pipeline.
 - `Build.ps1 -Mode Release -DryRun` verifies formatting, runs tests in Release,
   builds, publishes locally, and prints the GitHub release commands it would run.
+- The release pipeline verifies the published layout before zipping: `Scrybe.exe`,
+  loose Tesseract/Leptonica runtime files, `tessdata/eng.traineddata`, and EN/FR
+  locale files must all be present and non-empty.
 - `Build.ps1 -Mode Release -Publish` creates the release commit/tag and GitHub
   release; it requires a clean `main` branch and authenticated `gh`.
 
@@ -72,8 +89,9 @@ dotnet format Scrybe.slnx --verify-no-changes
 ## Status
 
 **v1.0 - Dogfooding.** OCR extraction, keystroke injection, a DPAPI secret vault,
-settings, hotkeys, packaging and the Control Hub are in place. Remaining work is
-limited to issues found through real use.
+protected capture history, diagnostics, injection integrity checks, settings,
+hotkeys, packaging and the Control Hub are in place. Remaining work is limited
+to issues found through real use.
 
 ## Structure
 

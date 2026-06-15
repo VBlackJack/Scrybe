@@ -17,6 +17,7 @@ flowchart LR
     User["User / global hotkeys"] --> App["Scrybe.App WPF shell"]
     App --> Coordinators["Coordinators"]
     App --> ViewModels["Manager and settings ViewModels"]
+    App --> Diagnostics["Diagnostics and support actions"]
 
     Coordinators --> Capture["Capture flow"]
     Coordinators --> Injection["Injection flow"]
@@ -33,10 +34,15 @@ flowchart LR
     Injection --> Clipboard
 
     ViewModels --> Libraries["Snippet, Secret, History libraries"]
+    Diagnostics --> LocalPaths["Runtime paths and asset checks"]
+    Diagnostics --> Shell["Windows shell folder open"]
+    Diagnostics --> Clipboard
     Libraries --> Stores["JSON stores"]
     Stores --> Atomic["AtomicFileWriter"]
+    Stores --> Quarantine["Corrupt JSON quarantine"]
     Stores --> DPAPI["DPAPI CurrentUser + Scrybe entropy"]
     Atomic --> Disk["%LOCALAPPDATA%/Scrybe"]
+    Quarantine --> Disk
 ```
 
 ## Runtime Flows
@@ -70,6 +76,25 @@ notification service rather than letting UI-triggered tasks crash the process.
 Secrets are never placed on the clipboard. The secret path decrypts into a
 caller-owned `char[]`, types from memory and clears the buffer in a `finally`.
 
+The settings screen also exposes the deterministic integrity harness used for
+dogfooding injection behavior. It can copy the expected reference payload and
+request a 100, 500 or 1000 character reference injection through the currently
+selected strategy. The WPF host hides the hub before dispatching the request so
+the target console can regain focus before `SendInput` starts.
+
+### Diagnostics
+
+The About tab uses `DiagnosticsInfoProvider` to report the local app-data
+directory, settings/logs/snippets/secrets/history paths, app base directory,
+locale directory, tessdata directory and required Tesseract/Leptonica assets.
+Rows backed by file or directory checks carry an existence state so missing
+runtime assets can be highlighted in the UI.
+
+Support actions stay in `Scrybe.App` because they touch the Windows clipboard
+and shell. `AboutViewModel` can copy a diagnostic report through
+`IClipboardService` and open the logs or app-data directory through
+`ISystemShell`.
+
 ### Persistence
 
 The four JSON-backed stores are:
@@ -84,6 +109,11 @@ directory, flush with `WriteThrough`, then atomically move over the destination.
 `SaveAsync` returns `false` on the already-caught I/O failure paths so callers
 can notify users when memory and disk may diverge.
 
+Load paths treat malformed JSON separately from missing files. A corrupt file is
+quarantined next to the original as `*.corrupt.<timestamp>.json`, then the store
+falls back to defaults or an empty collection without overwriting the preserved
+payload.
+
 Secret and history values are protected with DPAPI `CurrentUser`; secrets also
 use Scrybe-specific optional entropy and a self-describing protected-value
 header so legacy values can be migrated safely.
@@ -97,3 +127,5 @@ header so legacy values can be migrated safely.
 - User-visible text belongs in `locales/en.json` and `locales/fr.json`.
 - New persistence code should preserve atomic writes and observable save
   failures.
+- New diagnostics or shell actions should stay in `Scrybe.App` behind small
+  interfaces so ViewModels remain unit-testable.
