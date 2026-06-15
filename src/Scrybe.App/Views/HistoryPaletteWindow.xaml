@@ -13,7 +13,9 @@
         UseLayoutRounding="True">
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <Style x:Key="PaletteEmptyTextStyle" TargetType="TextBlock" BasedOn="{StaticResource ManagerEmptyStateTextStyle}">
+            <Setter Property="Visibility" Value="Collapsed" />
+        </Style>
     </Window.Resources>
 
     <DockPanel Margin="{StaticResource SpacingLg}">
@@ -51,7 +53,7 @@
                     IsDefault="True"
                     Padding="{StaticResource PaddingButtonPrimary}"
                     Background="{StaticResource AccentBrush}"
-                    Foreground="{StaticResource TextPrimaryBrush}"
+                    Foreground="{StaticResource ActionOnBrightBrush}"
                     BorderThickness="0"
                     FontWeight="SemiBold"
                     AutomationProperties.Name="{loc:Translate History.Copy}">
@@ -64,19 +66,37 @@
 
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="12" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="8" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
+            <TextBox x:Name="SearchBox"
+                     Grid.Row="0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Background="{StaticResource SurfaceBrush}"
+                     Foreground="{StaticResource TextPrimaryBrush}"
+                     CaretBrush="{StaticResource TextPrimaryBrush}"
+                     BorderBrush="{StaticResource BorderBrush}"
+                     Padding="{StaticResource PaddingInput}"
+                     AutomationProperties.Name="{loc:Translate Palette.Search}" />
+
+            <Grid Grid.Row="2">
                 <ListBox ItemsSource="{Binding Entries}"
                          SelectedItem="{Binding SelectedEntry}"
                          Background="{StaticResource SurfaceBrush}"
                          Foreground="{StaticResource TextPrimaryBrush}"
                          BorderBrush="{StaticResource BorderBrush}"
                          BorderThickness="1"
-                         FontSize="{StaticResource FontSizeBody}">
+                         ScrollViewer.CanContentScroll="True"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         FontSize="{StaticResource FontSizeBody}"
+                         AutomationProperties.Name="{loc:Translate History.PaletteTitle}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,4">
@@ -113,16 +133,42 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <TextBlock Text="{loc:Translate History.Empty}"
-                           Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           FontSize="{StaticResource FontSizeBody}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           TextAlignment="Center" />
+                <TextBlock Text="{loc:Translate History.Empty}">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource PaletteEmptyTextStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasEntries}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBlock Text="{loc:Translate History.NoMatches}">
+                    <TextBlock.Style>
+                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource PaletteEmptyTextStyle}">
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding HasEntries}" Value="True" />
+                                        <Condition Binding="{Binding IsEmpty}" Value="True" />
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
             </Grid>
 
-            <TextBox Grid.Row="2"
+            <TextBlock Grid.Row="4"
+                       Text="{loc:Translate History.RevealHint}"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       FontSize="{StaticResource FontSizeCaption}"
+                       TextWrapping="Wrap" />
+
+            <TextBox Grid.Row="6"
                      Text="{Binding SelectedPreview}"
                      IsReadOnly="True"
                      TextWrapping="Wrap"

@@ -28,8 +28,13 @@ namespace Scrybe.App.ViewModels;
 /// </summary>
 public sealed partial class SnippetPaletteViewModel : ObservableObject
 {
+    private readonly IReadOnlyList<Snippet> _allSnippets;
+
     [ObservableProperty]
     private Snippet? _selectedSnippet;
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
 
     [ObservableProperty]
     private string _preview = string.Empty;
@@ -37,12 +42,20 @@ public sealed partial class SnippetPaletteViewModel : ObservableObject
     [ObservableProperty]
     private bool _canInject;
 
+    [ObservableProperty]
+    private bool _hasSnippets;
+
+    [ObservableProperty]
+    private bool _isEmpty;
+
     /// <summary>Initializes the palette with the available snippets.</summary>
     /// <param name="snippets">The snippet library.</param>
     public SnippetPaletteViewModel(IReadOnlyList<Snippet> snippets)
     {
         ArgumentNullException.ThrowIfNull(snippets);
-        Snippets = new ObservableCollection<Snippet>(snippets);
+        _allSnippets = snippets;
+        Snippets = [];
+        ApplyFilter();
     }
 
     /// <summary>Raised with the resolved text when the user confirms injection.</summary>
@@ -68,6 +81,8 @@ public sealed partial class SnippetPaletteViewModel : ObservableObject
         UpdatePreview();
     }
 
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
+
     private void UpdatePreview()
     {
         if (SelectedSnippet is null)
@@ -87,6 +102,47 @@ public sealed partial class SnippetPaletteViewModel : ObservableObject
         Preview = result.Text;
         CanInject = result.IsComplete;
     }
+
+    private void ApplyFilter()
+    {
+        string query = SearchText.Trim();
+        string? selectedId = SelectedSnippet?.Id;
+        Snippets.Clear();
+
+        foreach (Snippet snippet in _allSnippets.Where(snippet => Matches(snippet, query)))
+        {
+            Snippets.Add(snippet);
+        }
+
+        HasSnippets = _allSnippets.Count > 0;
+        IsEmpty = Snippets.Count == 0;
+        Snippet? nextSelection = Snippets.FirstOrDefault(snippet => string.Equals(snippet.Id, selectedId, StringComparison.Ordinal))
+            ?? Snippets.FirstOrDefault();
+
+        if (ReferenceEquals(SelectedSnippet, nextSelection))
+        {
+            UpdatePreview();
+        }
+        else
+        {
+            SelectedSnippet = nextSelection;
+        }
+    }
+
+    private static bool Matches(Snippet snippet, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return true;
+        }
+
+        return Contains(snippet.Name, query)
+            || Contains(snippet.Category, query)
+            || Contains(snippet.Template, query);
+    }
+
+    private static bool Contains(string? value, string query) =>
+        value?.Contains(query, StringComparison.CurrentCultureIgnoreCase) == true;
 
     [RelayCommand]
     private void Inject()

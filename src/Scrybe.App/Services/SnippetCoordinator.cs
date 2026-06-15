@@ -31,7 +31,7 @@ public sealed class SnippetCoordinator
     private readonly SnippetLibrary _library;
     private readonly InjectionCoordinator _injection;
     private readonly ITargetWindowGateway _targetGateway;
-    private readonly INotificationService _notification;
+    private readonly IInjectionTargetConfirmer _targetConfirmer;
     private readonly ILocalizationManager _localization;
 
     private SnippetPaletteWindow? _palette;
@@ -40,24 +40,24 @@ public sealed class SnippetCoordinator
     /// <param name="library">The snippet library.</param>
     /// <param name="injection">The injection coordinator used to type the resolved text.</param>
     /// <param name="targetGateway">Gateway used to capture and restore the target window.</param>
-    /// <param name="notification">Notification service for restore failures.</param>
+    /// <param name="targetConfirmer">Shared target confirmation gate.</param>
     /// <param name="localization">Localization source for user-facing messages.</param>
     public SnippetCoordinator(
         SnippetLibrary library,
         InjectionCoordinator injection,
         ITargetWindowGateway targetGateway,
-        INotificationService notification,
+        IInjectionTargetConfirmer targetConfirmer,
         ILocalizationManager localization)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(injection);
         ArgumentNullException.ThrowIfNull(targetGateway);
-        ArgumentNullException.ThrowIfNull(notification);
+        ArgumentNullException.ThrowIfNull(targetConfirmer);
         ArgumentNullException.ThrowIfNull(localization);
         _library = library;
         _injection = injection;
         _targetGateway = targetGateway;
-        _notification = notification;
+        _targetConfirmer = targetConfirmer;
         _localization = localization;
     }
 
@@ -86,7 +86,7 @@ public sealed class SnippetCoordinator
         window.Activate();
     }
 
-    /// <summary>Restores the captured target and injects a resolved snippet only if restore succeeds.</summary>
+    /// <summary>Confirms/restores the captured target and injects a resolved snippet only if restore succeeds.</summary>
     /// <param name="target">Captured target window handle.</param>
     /// <param name="text">Resolved snippet text to type.</param>
     /// <returns><see langword="true"/> when injection was started after a successful restore.</returns>
@@ -94,14 +94,17 @@ public sealed class SnippetCoordinator
     {
         ArgumentNullException.ThrowIfNull(text);
 
-        if (!_targetGateway.TryRestore(target))
+        if (!_targetConfirmer.TryConfirmAndRestore(
+            target,
+            _localization["Palette.ConfirmTitle"],
+            _localization["Palette.ConfirmTarget"],
+            _localization["Palette.TargetUnavailable"],
+            _localization["Palette.UntitledTarget"]))
         {
-            FileLogger.Warn("Snippet target restore failed; snippet injection aborted.");
-            _notification.Notify(_localization["AppTitle"], _localization["Palette.TargetUnavailable"]);
             return false;
         }
 
-        FileLogger.Info("Snippet injection requested from palette.");
+        FileLogger.Info("Snippet injection requested after target confirmation.");
         await _injection.InjectTextAsync(text).ConfigureAwait(false);
         return true;
     }

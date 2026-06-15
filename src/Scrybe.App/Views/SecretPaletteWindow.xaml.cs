@@ -32,6 +32,7 @@ public sealed partial class SecretPaletteWindow : Window
 
         InitializeComponent();
         DataContext = viewModel;
+        Loaded += (_, _) => SearchBox.Focus();
         KeyDown += OnKeyDown;
     }
 

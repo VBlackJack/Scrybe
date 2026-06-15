@@ -149,6 +149,8 @@ public partial class App : System.Windows.Application
         if (_mainViewModel is not null)
         {
             _mainViewModel.CaptureRequested -= OnCaptureRequested;
+            _mainViewModel.InjectLastTextRequested -= OnInjectLastTextRequested;
+            _mainViewModel.ClipboardInjectRequested -= OnClipboardInjectRequested;
             _mainViewModel.CleanupModeChanged -= OnCleanupModeChanged;
             _mainViewModel.Settings.Saved -= OnSettingsSaved;
             _mainViewModel.Settings.InjectionReferenceRequested -= OnInjectionReferenceRequested;
@@ -263,6 +265,8 @@ public partial class App : System.Windows.Application
 
         _mainViewModel = provider.GetRequiredService<MainViewModel>();
         _mainViewModel.CaptureRequested += OnCaptureRequested;
+        _mainViewModel.InjectLastTextRequested += OnInjectLastTextRequested;
+        _mainViewModel.ClipboardInjectRequested += OnClipboardInjectRequested;
         _mainViewModel.CleanupModeChanged += OnCleanupModeChanged;
         _mainViewModel.Settings.Saved += OnSettingsSaved;
         _mainViewModel.Settings.InjectionReferenceRequested += OnInjectionReferenceRequested;
@@ -366,6 +370,10 @@ public partial class App : System.Windows.Application
 
     private void OnCaptureRequested(object? sender, EventArgs e) => _ = CaptureFromRequestAsync(sender);
 
+    private void OnInjectLastTextRequested(object? sender, EventArgs e) => _ = InjectLastTextFromHubAsync();
+
+    private void OnClipboardInjectRequested(object? sender, EventArgs e) => _ = InjectClipboardFromHubAsync();
+
     private async Task CaptureFromRequestAsync(object? sender)
     {
         if (ReferenceEquals(sender, _mainViewModel))
@@ -375,6 +383,22 @@ public partial class App : System.Windows.Application
         }
 
         await _captureCoordinator!.CaptureAsync().ConfigureAwait(true);
+    }
+
+    private async Task InjectLastTextFromHubAsync()
+    {
+        HideHubWindow();
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        await Task.Delay(AppConstants.InjectionStartDelayMs).ConfigureAwait(true);
+        await _injectionCoordinator!.InjectLastTextAsync().ConfigureAwait(true);
+    }
+
+    private async Task InjectClipboardFromHubAsync()
+    {
+        HideHubWindow();
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        await Task.Delay(AppConstants.InjectionStartDelayMs).ConfigureAwait(true);
+        await _clipboardInjectionCoordinator!.InjectClipboardAsync().ConfigureAwait(true);
     }
 
     private void OnInjectionReferenceRequested(object? sender, int length) => _ = InjectReferenceFromRequestAsync(length);

@@ -27,6 +27,36 @@ namespace Scrybe.Core.Tests;
 public sealed class ManagerViewModelTests
 {
     [Fact]
+    public async Task SnippetManager_Reload_SelectsFirstSnippet()
+    {
+        InMemorySnippetStore store = new();
+        SnippetLibrary library = new(store);
+        await library.SaveAsync(new Snippet("snippet-1", "Package acceptance", null, "apt install {{package}}", []));
+        SnippetManagerViewModel viewModel = new(library, new TestLocalizationManager(), new DenyingConfirmationService());
+
+        viewModel.Reload();
+
+        viewModel.SelectedSnippet.Should().NotBeNull();
+        viewModel.Name.Should().Be("Package acceptance");
+        viewModel.Template.Should().Be("apt install {{package}}");
+    }
+
+    [Fact]
+    public async Task SecretManager_Reload_SelectsFirstSecret()
+    {
+        InMemorySecretStore store = new();
+        SecretLibrary library = new(store, new TestSecretProtector());
+        await library.SaveAsync(null, "Production login", "admin", "secret");
+        SecretManagerViewModel viewModel = new(library, new TestLocalizationManager(), new DenyingConfirmationService());
+
+        viewModel.Reload();
+
+        viewModel.SelectedSecret.Should().NotBeNull();
+        viewModel.Name.Should().Be("Production login");
+        viewModel.UserName.Should().Be("admin");
+    }
+
+    [Fact]
     public async Task SecretManager_DeleteCancelled_KeepsSecretAndDoesNotPersistDelete()
     {
         InMemorySecretStore store = new();
@@ -186,7 +216,7 @@ public sealed class ManagerViewModelTests
     }
 
     [Fact]
-    public async Task HistoryManager_SelectedPreview_UsesFullRevealedText()
+    public async Task HistoryManager_SelectedPreview_HidesTextUntilReveal()
     {
         InMemoryCaptureHistoryStore store = new();
         CaptureHistoryLibrary library = new(store, new TestSecretProtector(), new AppSettings());
@@ -200,9 +230,17 @@ public sealed class ManagerViewModelTests
             new DenyingConfirmationService());
 
         viewModel.Entries.Should().ContainSingle();
-        viewModel.Entries.Single().Preview.Should().NotBe(text);
+        viewModel.Entries.Single().Preview.Should().Be("Protected text hidden");
+        viewModel.SelectedPreview.Should().Be("Protected text hidden");
+        viewModel.EditText.Should().BeEmpty();
+        viewModel.IsTextRevealed.Should().BeFalse();
+        viewModel.CanSaveEdit.Should().BeFalse();
+
+        viewModel.RevealCommand.Execute(null);
+
         viewModel.SelectedPreview.Should().Be(text);
         viewModel.EditText.Should().Be(text);
+        viewModel.IsTextRevealed.Should().BeTrue();
     }
 
     [Fact]
@@ -243,6 +281,7 @@ public sealed class ManagerViewModelTests
             new DenyingConfirmationService());
         string selectedId = viewModel.SelectedEntry!.Id;
 
+        viewModel.RevealCommand.Execute(null);
         viewModel.EditText = "managed history edited";
         await viewModel.SaveEditCommand.ExecuteAsync(null);
 
@@ -271,6 +310,7 @@ public sealed class ManagerViewModelTests
             new TestLocalizationManager(),
             new DenyingConfirmationService());
 
+        viewModel.RevealCommand.Execute(null);
         viewModel.EditText = "managed history edited";
         await viewModel.SaveEditCommand.ExecuteAsync(null);
 
@@ -294,6 +334,7 @@ public sealed class ManagerViewModelTests
             new DenyingConfirmationService());
         string selectedId = viewModel.SelectedEntry!.Id;
 
+        viewModel.RevealCommand.Execute(null);
         viewModel.EditText = "   ";
 
         viewModel.CanSaveEdit.Should().BeFalse();
@@ -331,6 +372,10 @@ public sealed class ManagerViewModelTests
             "History.Saved" => "Saved",
             "History.EmptyTextError" => "Empty text",
             "History.SaveFailed" => "Save failed",
+            "History.ProtectedPreview" => "Protected text hidden",
+            "History.Revealed" => "Revealed",
+            "History.RevealFirst" => "Reveal first",
+            "History.RevealFailed" => "Reveal failed",
             "History.Deleted" => "Deleted",
             "History.DeleteFailed" => "Delete failed",
             "History.Cleared" => "Cleared",

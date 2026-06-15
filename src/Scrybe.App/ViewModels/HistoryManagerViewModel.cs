@@ -61,6 +61,12 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
     [ObservableProperty]
     private bool _canSaveEdit;
 
+    [ObservableProperty]
+    private bool _canReveal;
+
+    [ObservableProperty]
+    private bool _isTextRevealed;
+
     /// <summary>Initializes the history manager from the protected history library.</summary>
     /// <param name="library">The protected capture-history library.</param>
     /// <param name="clipboard">Clipboard service used for copied history text.</param>
@@ -100,18 +106,7 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
 
         foreach (CaptureHistoryEntry entry in _library.Entries.OrderByDescending(entry => entry.CapturedAtUtc))
         {
-            try
-            {
-                string? text = _library.RevealText(entry.Id);
-                if (text is not null)
-                {
-                    Entries.Add(HistoryPaletteListItem.FromEntry(entry, text));
-                }
-            }
-            catch (Exception exception)
-            {
-                FileLogger.Error($"Failed to reveal capture history entry '{entry.Id}'.", exception);
-            }
+            Entries.Add(HistoryPaletteListItem.FromMetadata(entry, _localization["History.ProtectedPreview"]));
         }
 
         SelectedEntry = Entries.FirstOrDefault(entry => string.Equals(entry.Id, selectedId, StringComparison.Ordinal))
@@ -122,13 +117,24 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
     partial void OnSelectedEntryChanged(HistoryPaletteListItem? value)
     {
         CanCopy = value is not null;
-        UpdateSelectedText(value);
+        CanReveal = value is not null;
+        ResetSelectedText(value);
         UpdateEditState();
     }
 
     partial void OnEditTextChanged(string value)
     {
         UpdateEditState();
+    }
+
+    [RelayCommand]
+    private void Reveal()
+    {
+        if (RevealSelectedEntry())
+        {
+            StatusMessage = _localization["History.Revealed"];
+            IsStatusError = false;
+        }
     }
 
     [RelayCommand]
@@ -229,10 +235,18 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
         string selectedId = SelectedEntry.Id;
         try
         {
+            if (!IsTextRevealed)
+            {
+                StatusMessage = _localization["History.RevealFirst"];
+                IsStatusError = true;
+                return;
+            }
+
             bool persisted = await _library.UpdateAsync(selectedId, EditText).ConfigureAwait(true);
             Reload();
             SelectedEntry = Entries.FirstOrDefault(entry => string.Equals(entry.Id, selectedId, StringComparison.Ordinal))
                 ?? SelectedEntry;
+            RevealSelectedEntry(showFailure: false);
             if (!persisted)
             {
                 ShowSaveFailure();
@@ -298,12 +312,14 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
         HasEntries = Entries.Count > 0;
         IsEmpty = !HasEntries;
         CanCopy = SelectedEntry is not null;
-        UpdateSelectedText(SelectedEntry);
+        CanReveal = SelectedEntry is not null;
+        ResetSelectedText(SelectedEntry);
         UpdateEditState();
     }
 
-    private void UpdateSelectedText(HistoryPaletteListItem? entry)
+    private void ResetSelectedText(HistoryPaletteListItem? entry)
     {
+        IsTextRevealed = false;
         if (entry is null)
         {
             SelectedPreview = string.Empty;
@@ -311,23 +327,58 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
             return;
         }
 
+        SelectedPreview = entry.Preview;
+        EditText = string.Empty;
+    }
+
+    private bool RevealSelectedEntry(bool showFailure = true)
+    {
+        if (SelectedEntry is null)
+        {
+            return false;
+        }
+
         try
         {
-            string text = _library.RevealText(entry.Id) ?? entry.Preview;
+            string? text = _library.RevealText(SelectedEntry.Id);
+            if (string.IsNullOrEmpty(text))
+            {
+                if (showFailure)
+                {
+                    StatusMessage = _localization["History.Missing"];
+                    IsStatusError = true;
+                }
+
+                FileLogger.Warn("Capture history reveal requested for a missing or empty entry.");
+                return false;
+            }
+
             SelectedPreview = text;
             EditText = text;
+            IsTextRevealed = true;
+            UpdateEditState();
+            return true;
         }
         catch (Exception exception)
         {
-            SelectedPreview = entry.Preview;
-            EditText = entry.Preview;
-            FileLogger.Error($"Failed to reveal capture history preview for '{entry.Id}'.", exception);
+            SelectedPreview = SelectedEntry.Preview;
+            EditText = string.Empty;
+            IsTextRevealed = false;
+            if (showFailure)
+            {
+                StatusMessage = _localization["History.RevealFailed"];
+                IsStatusError = true;
+            }
+
+            FileLogger.Error($"Failed to reveal capture history entry '{SelectedEntry.Id}'.", exception);
+            UpdateEditState();
+            return false;
         }
     }
 
     private void UpdateEditState()
     {
-        CanSaveEdit = SelectedEntry is not null && !string.IsNullOrWhiteSpace(EditText);
+        CanSaveEdit = SelectedEntry is not null && IsTextRevealed && !string.IsNullOrWhiteSpace(EditText);
         SaveEditCommand.NotifyCanExecuteChanged();
     }
 
