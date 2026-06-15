@@ -25,21 +25,34 @@ namespace Scrybe.App.ViewModels;
 /// <param name="Preview">Single-line metadata preview that does not expose protected plaintext.</param>
 /// <param name="Timestamp">Localized capture timestamp.</param>
 /// <param name="CharCount">Plaintext character count.</param>
-public sealed record HistoryPaletteListItem(string Id, string Preview, string Timestamp, int CharCount)
+/// <param name="CharCountText">Localized character-count display text.</param>
+public sealed record HistoryPaletteListItem(string Id, string Preview, string Timestamp, int CharCount, string CharCountText)
 {
+    /// <summary>Initializes an item with an invariant numeric count label.</summary>
+    public HistoryPaletteListItem(string Id, string Preview, string Timestamp, int CharCount)
+        : this(Id, Preview, Timestamp, CharCount, CharCount.ToString(CultureInfo.CurrentCulture))
+    {
+    }
+
     /// <summary>Builds a display item from metadata only, without revealing protected text.</summary>
     /// <param name="entry">The protected history entry.</param>
     /// <param name="protectedPreview">The localized metadata placeholder shown until the user reveals or copies text.</param>
-    public static HistoryPaletteListItem FromMetadata(CaptureHistoryEntry entry, string protectedPreview)
+    /// <param name="charCountFormat">The localized character-count format.</param>
+    public static HistoryPaletteListItem FromMetadata(
+        CaptureHistoryEntry entry,
+        string protectedPreview,
+        string charCountFormat)
     {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(protectedPreview);
+        ArgumentNullException.ThrowIfNull(charCountFormat);
 
         string timestamp = entry.CapturedAtUtc
             .ToLocalTime()
             .ToString(AppConstants.CaptureHistoryTimestampFormat, CultureInfo.CurrentCulture);
         string preview = string.Format(CultureInfo.CurrentCulture, protectedPreview, entry.CharCount);
+        string charCountText = string.Format(CultureInfo.CurrentCulture, charCountFormat, entry.CharCount);
 
-        return new HistoryPaletteListItem(entry.Id, preview, timestamp, entry.CharCount);
+        return new HistoryPaletteListItem(entry.Id, preview, timestamp, entry.CharCount, charCountText);
     }
 }
