@@ -40,6 +40,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly INotificationService _notification;
     private readonly HotkeyRegistrar _registrar;
     private readonly IStartupRegistration _startupRegistration;
+    private readonly IClipboardService _clipboard;
     private readonly bool _initialized;
 
     [ObservableProperty]
@@ -79,6 +80,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private int _injectionKeyDelayMs;
 
     [ObservableProperty]
+    private int _selectedInjectionReferenceLength;
+
+    [ObservableProperty]
     private string _capturesDirectory;
 
     [ObservableProperty]
@@ -86,6 +90,12 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isStatusError;
+
+    [ObservableProperty]
+    private string _injectionIntegrityStatusMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _isInjectionIntegrityStatusError;
 
     /// <summary>Initializes the view model from the current settings.</summary>
     /// <param name="settings">The live settings instance.</param>
@@ -100,7 +110,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         ILocalizationManager localization,
         INotificationService notification,
         HotkeyRegistrar registrar,
-        IStartupRegistration startupRegistration)
+        IStartupRegistration startupRegistration,
+        IClipboardService? clipboard = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(store);
@@ -115,6 +126,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _notification = notification;
         _registrar = registrar;
         _startupRegistration = startupRegistration;
+        _clipboard = clipboard ?? NoopClipboardService.Instance;
 
         _enableLogging = settings.EnableLogging;
         _prewarmOnStartup = settings.PrewarmOnStartup;
@@ -128,6 +140,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _injectionMode = settings.InjectionMode;
         _clearClipboardAfterInjection = settings.ClearClipboardAfterInjection;
         _injectionKeyDelayMs = settings.InjectionKeyDelayMs;
+        _selectedInjectionReferenceLength = AppConstants.InjectionReferenceShortLength;
         _capturesDirectory = settings.CapturesDirectory ?? string.Empty;
 
         LocaleChoices =
@@ -146,6 +159,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         [
             new SettingsChoice<InjectionMode>(InjectionMode.Unicode, localization["Settings.InjectUnicode"]),
             new SettingsChoice<InjectionMode>(InjectionMode.Scancode, localization["Settings.InjectScancode"]),
+        ];
+        InjectionReferenceLengthChoices =
+        [
+            new SettingsChoice<int>(AppConstants.InjectionReferenceShortLength, localization["Settings.InjectionReferenceShort"]),
+            new SettingsChoice<int>(AppConstants.InjectionReferenceMediumLength, localization["Settings.InjectionReferenceMedium"]),
+            new SettingsChoice<int>(AppConstants.InjectionReferenceLongLength, localization["Settings.InjectionReferenceLong"]),
         ];
 
         CaptureRecorder = new HotkeyRecorderViewModel(
@@ -184,6 +203,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>The available injection modes.</summary>
     public IReadOnlyList<SettingsChoice<InjectionMode>> InjectionModeChoices { get; }
 
+    /// <summary>The available integrity-test reference lengths.</summary>
+    public IReadOnlyList<SettingsChoice<int>> InjectionReferenceLengthChoices { get; }
+
     /// <summary>Recorder for the capture hotkey.</summary>
     public HotkeyRecorderViewModel CaptureRecorder { get; }
 
@@ -207,6 +229,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>Raised after settings are successfully saved.</summary>
     public event EventHandler? Saved;
+
+    /// <summary>Raised when the user asks the host to inject the selected reference string.</summary>
+    public event EventHandler<int>? InjectionReferenceRequested;
 
     partial void OnLocaleCodeChanged(string value)
     {
@@ -310,6 +335,30 @@ public sealed partial class SettingsViewModel : ObservableObject
         Saved?.Invoke(this, EventArgs.Empty);
     }
 
+    [RelayCommand]
+    private async Task CopyInjectionReference()
+    {
+        string reference = ReferenceText.OfLength(SelectedInjectionReferenceLength);
+        await _clipboard.SetTextAsync(reference).ConfigureAwait(true);
+        InjectionIntegrityStatusMessage = string.Format(
+            CultureInfo.CurrentCulture,
+            _localization["Settings.InjectionReferenceCopied"],
+            reference.Length);
+        IsInjectionIntegrityStatusError = false;
+    }
+
+    [RelayCommand]
+    private void InjectReference()
+    {
+        InjectionReferenceRequested?.Invoke(this, SelectedInjectionReferenceLength);
+        InjectionIntegrityStatusMessage = string.Format(
+            CultureInfo.CurrentCulture,
+            _localization["Settings.InjectionReferenceQueued"],
+            SelectedInjectionReferenceLength,
+            InjectionMode);
+        IsInjectionIntegrityStatusError = false;
+    }
+
     private bool TryApplyStartupRegistration()
     {
         try
@@ -361,4 +410,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         HotkeyBindingError.MissingModifier => _localization["Settings.HotkeyReasonNoModifier"],
         _ => _localization["Settings.HotkeyReasonUnparseable"],
     };
+
+    private sealed class NoopClipboardService : IClipboardService
+    {
+        public static NoopClipboardService Instance { get; } = new();
+
+        public Task<string?> GetTextAsync(CancellationToken cancellationToken = default) => Task.FromResult<string?>(null);
+
+        public Task SetTextAsync(string text, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
 }

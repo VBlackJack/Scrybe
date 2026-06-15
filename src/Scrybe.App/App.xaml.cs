@@ -151,6 +151,7 @@ public partial class App : System.Windows.Application
             _mainViewModel.CaptureRequested -= OnCaptureRequested;
             _mainViewModel.CleanupModeChanged -= OnCleanupModeChanged;
             _mainViewModel.Settings.Saved -= OnSettingsSaved;
+            _mainViewModel.Settings.InjectionReferenceRequested -= OnInjectionReferenceRequested;
         }
 
         if (_historyLibrary is not null)
@@ -182,6 +183,7 @@ public partial class App : System.Windows.Application
         services.AddSingleton<ILocalizationManager>(_ => new LocalizationManager(localesDirectory));
         services.AddSingleton<AboutInfoProvider>();
         services.AddSingleton<DiagnosticsInfoProvider>();
+        services.AddSingleton<ISystemShell, SystemShell>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
         services.AddSingleton<AboutViewModel>();
@@ -263,6 +265,7 @@ public partial class App : System.Windows.Application
         _mainViewModel.CaptureRequested += OnCaptureRequested;
         _mainViewModel.CleanupModeChanged += OnCleanupModeChanged;
         _mainViewModel.Settings.Saved += OnSettingsSaved;
+        _mainViewModel.Settings.InjectionReferenceRequested += OnInjectionReferenceRequested;
 
         _trayIconService = provider.GetRequiredService<TrayIconService>();
         _trayIconService.CaptureRequested += OnCaptureRequested;
@@ -372,6 +375,16 @@ public partial class App : System.Windows.Application
         }
 
         await _captureCoordinator!.CaptureAsync().ConfigureAwait(true);
+    }
+
+    private void OnInjectionReferenceRequested(object? sender, int length) => _ = InjectReferenceFromRequestAsync(length);
+
+    private async Task InjectReferenceFromRequestAsync(int length)
+    {
+        HideHubWindow();
+        await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        await Task.Delay(AppConstants.InjectionStartDelayMs).ConfigureAwait(true);
+        await _injectionCoordinator!.InjectReferenceAsync(length).ConfigureAwait(true);
     }
 
     private void HideHubWindow()

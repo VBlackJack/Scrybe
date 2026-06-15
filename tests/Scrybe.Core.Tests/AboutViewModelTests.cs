@@ -39,7 +39,9 @@ public sealed class AboutViewModelTests
         AboutViewModel viewModel = new(
             localization,
             new AboutInfoProvider(),
-            new DiagnosticsInfoProvider(settings));
+            new DiagnosticsInfoProvider(settings),
+            new RecordingClipboardService(),
+            new RecordingSystemShell());
 
         viewModel.DiagnosticsTitle.Should().Be("Runtime diagnostics");
         viewModel.DiagnosticRows.Should().Contain(row =>
@@ -53,6 +55,47 @@ public sealed class AboutViewModelTests
         localization.RaiseLocaleChanged();
 
         viewModel.DiagnosticsTitle.Should().Be("Diagnostics runtime");
+    }
+
+    [Fact]
+    public async Task CopyDiagnosticReportCommand_CopiesLocalizedReportAndSetsStatus()
+    {
+        TestLocalizationManager localization = new();
+        RecordingClipboardService clipboard = new();
+        AboutViewModel viewModel = new(
+            localization,
+            new AboutInfoProvider(),
+            new DiagnosticsInfoProvider(new AppSettings()),
+            clipboard,
+            new RecordingSystemShell());
+
+        await viewModel.CopyDiagnosticReportCommand.ExecuteAsync(null);
+
+        clipboard.Text.Should().Contain("Scrybe - Runtime diagnostics");
+        clipboard.Text.Should().Contain("Settings file:");
+        viewModel.StatusMessage.Should().Be("Report copied");
+        viewModel.IsStatusError.Should().BeFalse();
+    }
+
+    [Fact]
+    public void OpenLogsDirectoryCommand_UsesShellAndReportsFailure()
+    {
+        RecordingSystemShell shell = new()
+        {
+            ShouldOpen = false,
+        };
+        AboutViewModel viewModel = new(
+            new TestLocalizationManager(),
+            new AboutInfoProvider(),
+            new DiagnosticsInfoProvider(new AppSettings()),
+            new RecordingClipboardService(),
+            shell);
+
+        viewModel.OpenLogsDirectoryCommand.Execute(null);
+
+        shell.Directory.Should().EndWith(Path.Combine(AppConstants.AppName, AppConstants.LogSubDirName));
+        viewModel.IsStatusError.Should().BeTrue();
+        viewModel.StatusMessage.Should().Contain("Could not open");
     }
 
     private sealed class TestLocalizationManager : ILocalizationManager
@@ -85,6 +128,10 @@ public sealed class AboutViewModelTests
             ["Diagnostics.TesseractManagedAssembly"] = "Tesseract .NET",
             ["Diagnostics.TesseractNativeAssembly"] = "Tesseract native",
             ["Diagnostics.LeptonicaNativeAssembly"] = "Leptonica native",
+            ["Diagnostics.ReportCopied"] = "Report copied",
+            ["Diagnostics.LogsOpened"] = "Logs opened",
+            ["Diagnostics.AppDataOpened"] = "App data opened",
+            ["Diagnostics.OpenFailed"] = "Could not open {0}",
         };
 
         public string this[string key] => _values.GetValueOrDefault(key, key);
@@ -98,5 +145,31 @@ public sealed class AboutViewModelTests
         public void Set(string key, string value) => _values[key] = value;
 
         public void RaiseLocaleChanged() => LocaleChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private sealed class RecordingClipboardService : IClipboardService
+    {
+        public string Text { get; private set; } = string.Empty;
+
+        public Task<string?> GetTextAsync(CancellationToken cancellationToken = default) => Task.FromResult<string?>(Text);
+
+        public Task SetTextAsync(string text, CancellationToken cancellationToken = default)
+        {
+            Text = text;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingSystemShell : ISystemShell
+    {
+        public bool ShouldOpen { get; init; } = true;
+
+        public string Directory { get; private set; } = string.Empty;
+
+        public bool TryOpenDirectory(string directory)
+        {
+            Directory = directory;
+            return ShouldOpen;
+        }
     }
 }

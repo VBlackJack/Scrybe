@@ -103,6 +103,49 @@ public sealed class SettingsViewModelTests
         savedEvents.Should().Be(0);
     }
 
+    [Fact]
+    public async Task CopyInjectionReference_CopiesSelectedReferenceText()
+    {
+        TestClipboardService clipboard = new();
+        SettingsViewModel viewModel = new(
+            new AppSettings(),
+            new InMemorySettingsStore(),
+            new TestLocalizationManager(),
+            new TestNotificationService(),
+            new HotkeyRegistrar(new FakeHotkeyService()),
+            new NoopStartupRegistration(),
+            clipboard);
+
+        viewModel.SelectedInjectionReferenceLength = AppConstants.InjectionReferenceMediumLength;
+
+        await viewModel.CopyInjectionReferenceCommand.ExecuteAsync(null);
+
+        clipboard.Text.Should().Be(ReferenceText.OfLength(AppConstants.InjectionReferenceMediumLength));
+        viewModel.InjectionIntegrityStatusMessage.Should().Be("500 reference characters copied");
+        viewModel.IsInjectionIntegrityStatusError.Should().BeFalse();
+    }
+
+    [Fact]
+    public void InjectReference_RaisesSelectedReferenceLength()
+    {
+        SettingsViewModel viewModel = new(
+            new AppSettings(),
+            new InMemorySettingsStore(),
+            new TestLocalizationManager(),
+            new TestNotificationService(),
+            new HotkeyRegistrar(new FakeHotkeyService()),
+            new NoopStartupRegistration());
+        int requestedLength = 0;
+        viewModel.InjectionReferenceRequested += (_, length) => requestedLength = length;
+
+        viewModel.SelectedInjectionReferenceLength = AppConstants.InjectionReferenceLongLength;
+        viewModel.InjectReferenceCommand.Execute(null);
+
+        requestedLength.Should().Be(AppConstants.InjectionReferenceLongLength);
+        viewModel.InjectionIntegrityStatusMessage.Should().Be("1000-character Unicode test queued");
+        viewModel.IsInjectionIntegrityStatusError.Should().BeFalse();
+    }
+
     private sealed class InMemorySettingsStore : ISettingsStore
     {
         public int SaveCount { get; private set; }
@@ -152,6 +195,11 @@ public sealed class SettingsViewModelTests
             "Settings.HotkeyReasonNoModifier" => "missing modifier",
             "Settings.HotkeyReasonUnparseable" => "unparseable",
             "Settings.Saved" => "Saved",
+            "Settings.InjectionReferenceShort" => "100 chars",
+            "Settings.InjectionReferenceMedium" => "500 chars",
+            "Settings.InjectionReferenceLong" => "1000 chars",
+            "Settings.InjectionReferenceCopied" => "{0} reference characters copied",
+            "Settings.InjectionReferenceQueued" => "{0}-character {1} test queued",
             "Persist.SaveFailed" => "Couldn't save changes",
             "AppTitle" => "Scrybe",
             _ => key,
@@ -195,6 +243,19 @@ public sealed class SettingsViewModelTests
 
         public void Notify(string title, string message)
             => Messages.Add(message);
+    }
+
+    private sealed class TestClipboardService : IClipboardService
+    {
+        public string Text { get; private set; } = string.Empty;
+
+        public Task<string?> GetTextAsync(CancellationToken cancellationToken = default) => Task.FromResult<string?>(Text);
+
+        public Task SetTextAsync(string text, CancellationToken cancellationToken = default)
+        {
+            Text = text;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class NoopStartupRegistration : IStartupRegistration

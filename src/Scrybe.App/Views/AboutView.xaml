@@ -1,6 +1,7 @@
 <UserControl x:Class="Scrybe.App.Views.AboutView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Scrybe.App.Localization"
              Background="{StaticResource BackgroundBrush}"
              TextOptions.TextFormattingMode="Ideal"
              UseLayoutRounding="True">
@@ -37,6 +38,7 @@
               MaxWidth="620"
               HorizontalAlignment="Center">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -98,11 +100,45 @@
                 </ItemsControl>
             </Border>
 
-            <TextBlock Grid.Row="2"
-                       Text="{Binding DiagnosticsTitle}"
-                       Style="{StaticResource AboutSectionHeaderStyle}"
-                       Margin="0,20,0,10"
-                       AutomationProperties.Name="{Binding DiagnosticsTitle}" />
+            <Grid Grid.Row="2"
+                  Margin="0,20,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="{Binding DiagnosticsTitle}"
+                           Style="{StaticResource AboutSectionHeaderStyle}"
+                           VerticalAlignment="Center"
+                           AutomationProperties.Name="{Binding DiagnosticsTitle}" />
+
+                <WrapPanel Grid.Column="1"
+                           HorizontalAlignment="Right">
+                    <Button Command="{Binding CopyDiagnosticReportCommand}"
+                            Margin="0,0,8,0"
+                            AutomationProperties.Name="{loc:Translate Diagnostics.CopyReport}">
+                        <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                            <TextBlock Text="{StaticResource IconActionCopy}" Style="{StaticResource AppIconGlyphStyle}" />
+                            <TextBlock Text="{loc:Translate Diagnostics.CopyReport}" Style="{StaticResource AppIconTextStyle}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding OpenLogsDirectoryCommand}"
+                            Margin="0,0,8,0"
+                            AutomationProperties.Name="{loc:Translate Diagnostics.OpenLogs}">
+                        <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                            <TextBlock Text="{StaticResource IconActionOpenFolder}" Style="{StaticResource AppIconGlyphStyle}" />
+                            <TextBlock Text="{loc:Translate Diagnostics.OpenLogs}" Style="{StaticResource AppIconTextStyle}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding OpenAppDataDirectoryCommand}"
+                            AutomationProperties.Name="{loc:Translate Diagnostics.OpenAppData}">
+                        <StackPanel Style="{StaticResource AppIconTextContentStyle}">
+                            <TextBlock Text="{StaticResource IconActionOpenFolder}" Style="{StaticResource AppIconGlyphStyle}" />
+                            <TextBlock Text="{loc:Translate Diagnostics.OpenAppData}" Style="{StaticResource AppIconTextStyle}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </Grid>
 
             <Border Grid.Row="3"
                     Style="{StaticResource AboutCardStyle}">
@@ -121,13 +157,39 @@
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding Value}"
                                            ToolTip="{Binding Value}"
-                                           Style="{StaticResource AboutValueStyle}"
-                                           Margin="16,0,0,0" />
+                                           Margin="16,0,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="{x:Type TextBlock}" BasedOn="{StaticResource AboutValueStyle}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Border>
+
+            <TextBlock Grid.Row="4"
+                       Text="{Binding StatusMessage}"
+                       Margin="0,10,0,0"
+                       TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
         </Grid>
     </ScrollViewer>
 </UserControl>

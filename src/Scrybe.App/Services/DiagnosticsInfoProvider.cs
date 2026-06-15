@@ -42,8 +42,7 @@ public sealed class DiagnosticsInfoProvider
     /// <summary>Gets local paths and runtime asset checks useful when troubleshooting a deployment.</summary>
     public IReadOnlyList<DiagnosticInfoRow> GetDiagnosticsInfo()
     {
-        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        string appDataDirectory = Path.Combine(localAppData, AppConstants.AppName);
+        string appDataDirectory = GetAppDataDirectory();
         string appBaseDirectory = AppContext.BaseDirectory;
         string localesDirectory = Path.Combine(appBaseDirectory, AppConstants.LocalesDirName);
         string tessdataDirectory = Path.Combine(appBaseDirectory, AppConstants.TessdataDirName);
@@ -56,7 +55,7 @@ public sealed class DiagnosticsInfoProvider
         [
             new("Diagnostics.AppDataDirectory", appDataDirectory),
             new("Diagnostics.SettingsFile", Path.Combine(appDataDirectory, AppConstants.SettingsFileName)),
-            new("Diagnostics.LogsDirectory", Path.Combine(appDataDirectory, AppConstants.LogSubDirName)),
+            new("Diagnostics.LogsDirectory", GetLogsDirectory()),
             new("Diagnostics.CapturesDirectory", CapturePathResolver.ResolveDirectory(_settings.CapturesDirectory)),
             new("Diagnostics.SnippetsFile", Path.Combine(appDataDirectory, AppConstants.SnippetsFileName)),
             new("Diagnostics.SecretsFile", Path.Combine(appDataDirectory, AppConstants.SecretsFileName)),
@@ -71,4 +70,14 @@ public sealed class DiagnosticsInfoProvider
             new("Diagnostics.LeptonicaNativeAssembly", leptonicaNativePath, File.Exists(leptonicaNativePath)),
         ];
     }
+
+    /// <summary>Gets the local application data directory used by Scrybe.</summary>
+    public string GetAppDataDirectory()
+    {
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return Path.Combine(localAppData, AppConstants.AppName);
+    }
+
+    /// <summary>Gets the directory where Scrybe writes local logs.</summary>
+    public string GetLogsDirectory() => Path.Combine(GetAppDataDirectory(), AppConstants.LogSubDirName);
 }

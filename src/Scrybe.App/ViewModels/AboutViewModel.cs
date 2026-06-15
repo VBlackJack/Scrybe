@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
+using System.Globalization;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Scrybe.App.Services;
 using Scrybe.Core.Interfaces;
 
 namespace Scrybe.App.ViewModels;
 
 /// <summary>View model for the About tab.</summary>
-public sealed class AboutViewModel : ObservableObject
+public sealed partial class AboutViewModel : ObservableObject
 {
     private const string UnknownValue = "-";
 
     private readonly ILocalizationManager _localization;
     private readonly AboutInfoProvider _aboutInfoProvider;
     private readonly DiagnosticsInfoProvider _diagnosticsInfoProvider;
+    private readonly IClipboardService _clipboard;
+    private readonly ISystemShell _systemShell;
     private string _title = string.Empty;
     private string _appName = string.Empty;
     private string _tagline = string.Empty;
@@ -36,19 +41,31 @@ public sealed class AboutViewModel : ObservableObject
     private IReadOnlyList<AboutDetailRow> _rows = [];
     private IReadOnlyList<AboutDetailRow> _diagnosticRows = [];
 
+    [ObservableProperty]
+    private string _statusMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _isStatusError;
+
     /// <summary>Initializes the About view model from localization and assembly metadata.</summary>
     public AboutViewModel(
         ILocalizationManager localization,
         AboutInfoProvider aboutInfoProvider,
-        DiagnosticsInfoProvider diagnosticsInfoProvider)
+        DiagnosticsInfoProvider diagnosticsInfoProvider,
+        IClipboardService clipboard,
+        ISystemShell systemShell)
     {
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(aboutInfoProvider);
         ArgumentNullException.ThrowIfNull(diagnosticsInfoProvider);
+        ArgumentNullException.ThrowIfNull(clipboard);
+        ArgumentNullException.ThrowIfNull(systemShell);
 
         _localization = localization;
         _aboutInfoProvider = aboutInfoProvider;
         _diagnosticsInfoProvider = diagnosticsInfoProvider;
+        _clipboard = clipboard;
+        _systemShell = systemShell;
 
         Refresh();
         localization.LocaleChanged += OnLocaleChanged;
@@ -128,9 +145,25 @@ public sealed class AboutViewModel : ObservableObject
 
         DiagnosticRows = _diagnosticsInfoProvider
             .GetDiagnosticsInfo()
-            .Select(row => new AboutDetailRow(_localization[row.LabelKey], FormatDiagnosticValue(row)))
+            .Select(row => new AboutDetailRow(_localization[row.LabelKey], FormatDiagnosticValue(row), row.Exists == false))
             .ToList();
     }
+
+    [RelayCommand]
+    private async Task CopyDiagnosticReport()
+    {
+        await _clipboard.SetTextAsync(BuildDiagnosticReport()).ConfigureAwait(true);
+        StatusMessage = _localization["Diagnostics.ReportCopied"];
+        IsStatusError = false;
+    }
+
+    [RelayCommand]
+    private void OpenLogsDirectory()
+        => OpenDirectory(_diagnosticsInfoProvider.GetLogsDirectory(), _localization["Diagnostics.LogsOpened"]);
+
+    [RelayCommand]
+    private void OpenAppDataDirectory()
+        => OpenDirectory(_diagnosticsInfoProvider.GetAppDataDirectory(), _localization["Diagnostics.AppDataOpened"]);
 
     private static void AddRow(List<AboutDetailRow> rows, string label, string value, bool includeUnknown = false)
     {
@@ -155,5 +188,44 @@ public sealed class AboutViewModel : ObservableObject
             ? _localization["Diagnostics.Present"]
             : _localization["Diagnostics.Missing"];
         return $"{state}: {row.Value}";
+    }
+
+    private void OpenDirectory(string directory, string successMessage)
+    {
+        if (_systemShell.TryOpenDirectory(directory))
+        {
+            StatusMessage = successMessage;
+            IsStatusError = false;
+            return;
+        }
+
+        StatusMessage = string.Format(
+            CultureInfo.CurrentCulture,
+            _localization["Diagnostics.OpenFailed"],
+            directory);
+        IsStatusError = true;
+    }
+
+    private string BuildDiagnosticReport()
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"{_localization["AppTitle"]} - {_localization["Diagnostics.Title"]}");
+        builder.AppendLine($"{_localization["About.Version"]}: {Version}");
+        builder.AppendLine();
+
+        builder.AppendLine(_localization["About.Title"]);
+        foreach (AboutDetailRow row in Rows)
+        {
+            builder.AppendLine($"{row.Label}: {row.Value}");
+        }
+
+        builder.AppendLine();
+        builder.AppendLine(_localization["Diagnostics.Title"]);
+        foreach (AboutDetailRow row in DiagnosticRows)
+        {
+            builder.AppendLine($"{row.Label}: {row.Value}");
+        }
+
+        return builder.ToString();
     }
 }
