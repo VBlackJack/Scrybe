@@ -33,6 +33,9 @@ Changes after `v2026.060901` in the local hardening branch.
 - Added NuGet lock files and pinned language/analyzer levels.
 - Added the `dotnet format --verify-no-changes` gate.
 - Made Release test runs actually test the requested configuration.
+- Added CodeQL and Dependency Review workflows for security scanning on GitHub.
+- Added Authenticode release-signing support, SPDX SBOM generation and SHA256
+  checksum files to the release pipeline.
 
 ### UI And Documentation
 

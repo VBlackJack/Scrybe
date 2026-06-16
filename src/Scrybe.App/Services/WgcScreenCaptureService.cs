@@ -90,9 +90,9 @@ public sealed class WgcScreenCaptureService : IScreenCaptureService, IDisposable
             handler = (pool, _) =>
             {
                 Direct3D11CaptureFrame? arrived = pool.TryGetNextFrame();
-                if (arrived is not null)
+                if (arrived is not null && !frameSource.TrySetResult(arrived))
                 {
-                    frameSource.TrySetResult(arrived);
+                    arrived.Dispose();
                 }
             };
             framePool.FrameArrived += handler;

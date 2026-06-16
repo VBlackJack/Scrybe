@@ -8,6 +8,9 @@
     <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- xUnit v3 recommends TestContext.Current.CancellationToken for every cancellable call.
+         These unit tests intentionally exercise the default-token paths, so keep that analyzer advisory. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
   </PropertyGroup>
 
   <!-- The WindowsDesktop implicit-usings set (enabled by UseWPF) drops System.IO; restore it. -->
@@ -16,16 +19,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
     <!-- FluentAssertions pinned to 7.x: version 8+ moved to a commercial Xceed license,
          which is incompatible with the project's Apache 2.0 mandate. -->
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Scrybe.App\Scrybe.App.csproj" />
+    <ProjectReference Include="..\..\src\Scrybe.App\Scrybe.App.csproj" AdditionalProperties="ScrybeReferencedByTests=true" />
     <ProjectReference Include="..\..\src\Scrybe.Core\Scrybe.Core.csproj" />
     <ProjectReference Include="..\..\src\Scrybe.Ocr\Scrybe.Ocr.csproj" />
   </ItemGroup>

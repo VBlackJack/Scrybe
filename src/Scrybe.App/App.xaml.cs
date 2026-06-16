@@ -81,11 +81,12 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        string logDirectory = Path.Combine(
+        string appDataDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            AppConstants.AppName,
-            AppConstants.LogSubDirName);
+            AppConstants.AppName);
+        string logDirectory = Path.Combine(appDataDirectory, AppConstants.LogSubDirName);
         FileLogger.Initialize(logDirectory);
+        AppDataSecurity.EnsurePrivateDirectory(appDataDirectory);
         FileLogger.Info($"{AppConstants.AppName} starting.");
 
         RegisterExceptionHandlers();

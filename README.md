@@ -79,7 +79,8 @@ Convenience scripts are available for terminal or double-click use:
 - `Release.bat` runs the local release pipeline.
 
 The release pipeline verifies formatting, runs the Release tests, builds,
-publishes, checks the published layout, then creates a zip under `Dist/`.
+publishes, checks the published layout, generates an SPDX SBOM, writes SHA256
+checksums, then creates a zip under `Dist/`.
 
 The formatting gate is:
 
@@ -91,6 +92,17 @@ For a dry run of the release process:
 
 ```powershell
 .\Build.ps1 -Mode Release -DryRun
+```
+
+Release signing is optional. Unsigned releases are allowed, but Windows
+SmartScreen may warn users; publish the generated `.sha256` and `.spdx.json`
+files with the zip. To sign a release with Authenticode, provide either
+`SCRYBE_SIGNING_CERT_THUMBPRINT` for a certificate in the Windows certificate
+store, or `SCRYBE_SIGNING_CERT_PATH` plus `SCRYBE_SIGNING_CERT_PASSWORD` for a
+PFX file, then add `-Sign`:
+
+```powershell
+.\Build.ps1 -Mode Release -Publish -Sign
 ```
 
 ## Project Status

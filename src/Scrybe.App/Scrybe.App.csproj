@@ -15,10 +15,10 @@
     <Product>Scrybe</Product>
     <Company>Julien Bombled</Company>
     <Description>Local-first OCR clipboard extraction and keystroke injection utility for constrained consoles.</Description>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
-    <PublishSingleFile>true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <RuntimeIdentifier Condition="'$(ScrybeReferencedByTests)' != 'true'">win-x64</RuntimeIdentifier>
+    <SelfContained Condition="'$(ScrybeReferencedByTests)' != 'true'">true</SelfContained>
+    <PublishSingleFile Condition="'$(ScrybeReferencedByTests)' != 'true'">true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract Condition="'$(ScrybeReferencedByTests)' != 'true'">true</IncludeNativeLibrariesForSelfExtract>
     <!-- Do not enable trimming: WPF, Tesseract and Vortice/native interop are reflection/native-load sensitive. -->
     <PublishTrimmed>false</PublishTrimmed>
     <!-- This is a WPF host that merely references WinForms for the tray NotifyIcon.
@@ -30,12 +30,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
     <!-- Direct runtime reference so Tesseract.dll can be kept loose and $(PkgTesseract) can locate native DLLs. -->
     <PackageReference Include="Tesseract" Version="5.2.0" GeneratePathProperty="true" />
     <!-- Direct3D11 interop for WGC frame readback (MIT licensed). -->
-    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -73,9 +73,7 @@
   -->
   <Target Name="KeepTesseractManagedAssemblyPublishable" BeforeTargets="ComputeResolvedFilesToPublishList">
     <ItemGroup>
-      <ReferenceCopyLocalPaths
-        Update="@(ReferenceCopyLocalPaths)"
-        Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'Tesseract'">
+      <ReferenceCopyLocalPaths Update="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' == 'Tesseract'">
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       </ReferenceCopyLocalPaths>
@@ -84,15 +82,11 @@
 
   <Target Name="KeepTesseractProbeAssetsLoose" BeforeTargets="_ComputeFilesToBundle">
     <ItemGroup>
-      <ResolvedFileToPublish
-        Update="@(ResolvedFileToPublish)"
-        Condition="'%(ResolvedFileToPublish.RelativePath)' == 'Tesseract.dll' Or $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('x64\'))">
+      <ResolvedFileToPublish Update="@(ResolvedFileToPublish)" Condition="'%(ResolvedFileToPublish.RelativePath)' == 'Tesseract.dll' Or $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('x64\'))">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </ResolvedFileToPublish>
-      <ResolvedFileToPublish
-        Remove="@(ResolvedFileToPublish)"
-        Condition="$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('x86\'))" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').StartsWith('x86\'))" />
     </ItemGroup>
   </Target>
 
@@ -101,10 +95,7 @@
       <TesseractNativeDll Include="$(PkgTesseract)\x64\*.dll" />
     </ItemGroup>
     <MakeDir Directories="$(PublishDir)x64" />
-    <Copy
-      SourceFiles="@(TesseractNativeDll)"
-      DestinationFolder="$(PublishDir)x64"
-      SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(TesseractNativeDll)" DestinationFolder="$(PublishDir)x64" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

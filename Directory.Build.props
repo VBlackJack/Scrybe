@@ -18,8 +18,6 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
-  <!-- Follow-up: NuGet flags xUnit v2 as legacy; evaluate xUnit v3 separately. -->
-
   <PropertyGroup>
     <Authors>Julien Bombled</Authors>
     <Company>Julien Bombled</Company>

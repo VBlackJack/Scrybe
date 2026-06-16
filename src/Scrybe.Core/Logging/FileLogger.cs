@@ -116,7 +116,7 @@ public static class FileLogger
     /// <param name="message">The message to record.</param>
     /// <param name="exception">The exception whose details are appended to the entry.</param>
     public static void Error(string message, Exception exception)
-        => Enqueue(LogLevel.Error, $"{message} | {exception.GetType().Name}: {exception.Message}");
+        => Enqueue(LogLevel.Error, $"{message}{Environment.NewLine}{exception}");
 
     /// <summary>Forces an immediate, synchronous write of all queued entries.</summary>
     public static void Flush() => DrainQueue();

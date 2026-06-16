@@ -100,11 +100,65 @@ public sealed class InjectionTargetConfirmerTests
     }
 
     [Fact]
+    public void TryConfirmAndRestore_TargetChangesAfterConfirmation_ReturnsFalseAndDoesNotRestore()
+    {
+        FakeTargetWindowGateway gateway = new();
+        gateway.EnqueueInfo(CreateTargetInfo());
+        gateway.EnqueueInfo(CreateTargetInfo(hwnd: new IntPtr(0x5678), processId: 84));
+        FakeTargetConfirmationPrompt prompt = new()
+        {
+            ConfirmResult = true,
+        };
+        InjectionTargetConfirmer confirmer = new(gateway, prompt);
+
+        bool result = confirmer.TryConfirmAndRestore(
+            Target,
+            ConfirmTitle,
+            ConfirmTemplate,
+            TargetUnavailable,
+            Untitled);
+
+        result.Should().BeFalse();
+        gateway.RestoreCallCount.Should().Be(0);
+        prompt.ConfirmCallCount.Should().Be(1);
+        prompt.UnavailableCallCount.Should().Be(1);
+    }
+
+    [Fact]
     public void TryConfirmAndRestore_RestoreFails_ReturnsFalse()
     {
         FakeTargetWindowGateway gateway = new()
         {
             RestoreResult = false,
+        };
+        gateway.EnqueueInfo(CreateTargetInfo());
+        gateway.EnqueueInfo(CreateTargetInfo());
+        FakeTargetConfirmationPrompt prompt = new()
+        {
+            ConfirmResult = true,
+        };
+        InjectionTargetConfirmer confirmer = new(gateway, prompt);
+
+        bool result = confirmer.TryConfirmAndRestore(
+            Target,
+            ConfirmTitle,
+            ConfirmTemplate,
+            TargetUnavailable,
+            Untitled);
+
+        result.Should().BeFalse();
+        gateway.RestoreCallCount.Should().Be(1);
+        prompt.ConfirmCallCount.Should().Be(1);
+        prompt.UnavailableCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void TryConfirmAndRestore_RestoreAcceptedButForegroundDiffers_ReturnsFalse()
+    {
+        FakeTargetWindowGateway gateway = new()
+        {
+            RestoreResult = true,
+            ForegroundWindow = new IntPtr(0x5678),
         };
         gateway.EnqueueInfo(CreateTargetInfo());
         gateway.EnqueueInfo(CreateTargetInfo());
@@ -157,8 +211,12 @@ public sealed class InjectionTargetConfirmerTests
         prompt.LastConfirmMessage.Should().Contain("0x1234");
     }
 
-    private static TargetWindowInfo CreateTargetInfo()
-        => new(Target, "Console", "WindowsTerminal", 42);
+    private static TargetWindowInfo CreateTargetInfo(
+        IntPtr? hwnd = null,
+        string title = "Console",
+        string processName = "WindowsTerminal",
+        int processId = 42)
+        => new(hwnd ?? Target, title, processName, processId);
 
     private sealed class FakeTargetWindowGateway : ITargetWindowGateway
     {
@@ -168,7 +226,9 @@ public sealed class InjectionTargetConfirmerTests
 
         public int RestoreCallCount { get; private set; }
 
-        public IntPtr GetForegroundWindow() => Target;
+        public IntPtr ForegroundWindow { get; init; } = Target;
+
+        public IntPtr GetForegroundWindow() => ForegroundWindow;
 
         public void EnqueueInfo(TargetWindowInfo info) => _infos.Enqueue(info);
 

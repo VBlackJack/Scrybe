@@ -101,6 +101,41 @@ public sealed class FileLoggerTests
         act.Should().NotThrow("logging failures must be swallowed and never crash the caller");
     }
 
+    [Fact]
+    public void Error_WithException_WritesStackTrace()
+    {
+        string directory = CreateUniqueTempDirectory();
+
+        try
+        {
+            FileLogger.SetEnabled(true);
+            FileLogger.Initialize(directory);
+            FileLogger.Error("failure", CreateLoggedException());
+            FileLogger.Flush();
+
+            string expectedPath = Path.Combine(directory, ExpectedLogFileName());
+            string content = File.ReadAllText(expectedPath);
+            content.Should().Contain("System.InvalidOperationException: boom");
+            content.Should().Contain(nameof(CreateLoggedException));
+        }
+        finally
+        {
+            TryDelete(directory);
+        }
+    }
+
+    private static Exception CreateLoggedException()
+    {
+        try
+        {
+            throw new InvalidOperationException("boom");
+        }
+        catch (Exception exception)
+        {
+            return exception;
+        }
+    }
+
     private static void TryDelete(string directory)
     {
         try

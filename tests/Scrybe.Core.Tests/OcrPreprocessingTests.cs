@@ -31,11 +31,11 @@ namespace Scrybe.Core.Tests;
 /// </summary>
 public sealed class OcrPreprocessingTests
 {
-    private readonly Xunit.Abstractions.ITestOutputHelper _output;
+    private readonly ITestOutputHelper _output;
 
     /// <summary>Initializes the test with the xUnit output sink used to report the measured CER gain.</summary>
     /// <param name="output">The xUnit test output helper.</param>
-    public OcrPreprocessingTests(Xunit.Abstractions.ITestOutputHelper output) => _output = output;
+    public OcrPreprocessingTests(ITestOutputHelper output) => _output = output;
 
     private const string ExpectedText =
         "Active: failed (Result: exit-code) "

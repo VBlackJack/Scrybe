@@ -1,4 +1,4 @@
-name: CI
+name: CodeQL
 
 on:
   push:
@@ -8,9 +8,13 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    - cron: '24 4 * * 2'
 
 permissions:
+  actions: read
   contents: read
+  security-events: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,10 +28,10 @@ env:
   SOLUTION_FILE: Scrybe.slnx
 
 jobs:
-  build-test-format:
-    name: Build, test, and format
+  analyze:
+    name: Analyze C#
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Check out repository
@@ -41,25 +45,18 @@ jobs:
           cache-dependency-path: |
             **/packages.lock.json
 
-      - name: Verify .NET SDK version
-        run: |
-          $expected = (Get-Content global.json -Raw | ConvertFrom-Json).sdk.version
-          $actual = dotnet --version
-          if ($actual -ne $expected) {
-            throw "Expected .NET SDK $expected, but dotnet selected $actual."
-          }
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: csharp
+          build-mode: manual
+          queries: security-extended
 
       - name: Restore packages
         run: dotnet restore $env:SOLUTION_FILE --locked-mode
 
-      - name: Verify formatting
-        run: dotnet format $env:SOLUTION_FILE --verify-no-changes --no-restore
-
       - name: Build
         run: dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore
 
-      - name: Test
-        run: dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --verbosity normal
-
-      - name: Verify release package
-        run: .\Build.ps1 -Mode Release -DryRun
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4

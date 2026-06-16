@@ -70,6 +70,13 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
             return false;
         }
 
+        if (!IsSameTarget(targetInfo, currentTarget))
+        {
+            FileLogger.Warn("Injection target changed after confirmation; injection aborted.");
+            _prompt.ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
+            return false;
+        }
+
         if (!_targetGateway.TryRestore(target))
         {
             FileLogger.Warn("Injection target restore failed; injection aborted.");
@@ -77,8 +84,21 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
             return false;
         }
 
+        IntPtr foreground = _targetGateway.GetForegroundWindow();
+        if (foreground != targetInfo.Hwnd)
+        {
+            FileLogger.Warn("Injection target restore did not regain foreground focus; injection aborted.");
+            _prompt.ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
+            return false;
+        }
+
         return true;
     }
+
+    private static bool IsSameTarget(TargetWindowInfo confirmed, TargetWindowInfo current)
+        => confirmed.Hwnd == current.Hwnd
+        && confirmed.ProcessId == current.ProcessId
+        && string.Equals(confirmed.ProcessName, current.ProcessName, StringComparison.Ordinal);
 
     private bool ConfirmTarget(
         TargetWindowInfo targetInfo,
