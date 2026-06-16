@@ -34,6 +34,8 @@ Changes after `v2026.060901` in the local hardening branch.
 - Added the `dotnet format --verify-no-changes` gate.
 - Made Release test runs actually test the requested configuration.
 - Added CodeQL and Dependency Review workflows for security scanning on GitHub.
+- Made CodeQL opt-in on private repositories so code scanning settings do not
+  block private releases.
 - Added Authenticode release-signing support, SPDX SBOM generation and SHA256
   checksum files to the release pipeline.
 

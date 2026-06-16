@@ -105,6 +105,11 @@ PFX file, then add `-Sign`:
 .\Build.ps1 -Mode Release -Publish -Sign
 ```
 
+CodeQL runs automatically for public repositories. For a private repository,
+enable GitHub code scanning and set the repository variable
+`SCRYBE_ENABLE_CODEQL=true`; otherwise the CodeQL workflow is skipped so private
+builds and releases are not blocked by an external repository setting.
+
 ## Project Status
 
 Scrybe is in dogfooding. The main workflow is in place: OCR capture, text

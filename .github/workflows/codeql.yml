@@ -30,6 +30,10 @@ env:
 jobs:
   analyze:
     name: Analyze C#
+    # Private repositories need GitHub code scanning enabled before CodeQL can
+    # upload results. Keep private hobby builds unblocked unless explicitly
+    # opted in with the repository variable below.
+    if: ${{ !github.event.repository.private || vars.SCRYBE_ENABLE_CODEQL == 'true' }}
     runs-on: windows-latest
     timeout-minutes: 45
 
