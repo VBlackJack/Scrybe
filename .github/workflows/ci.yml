@@ -61,5 +61,16 @@ jobs:
       - name: Test
         run: dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --verbosity normal
 
+      - name: Measure OCR corpus and verify overlay accessibility
+        shell: pwsh
+        run: |
+          dotnet run --project tools/Scrybe.Validation --configuration $env:BUILD_CONFIGURATION --no-build -- ocr artifacts/ci-ocr
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tools/Scrybe.Validation --configuration $env:BUILD_CONFIGURATION --no-build -- overlay artifacts/ci-overlay
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Verify release package
-        run: .\Build.ps1 -Mode Release -DryRun
+        run: |
+          [xml] $props = Get-Content Directory.Build.props -Raw
+          $version = ($props.Project.PropertyGroup | Where-Object InformationalVersion).InformationalVersion
+          .\Build.ps1 -Mode Release -DryRun -Version $version

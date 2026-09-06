@@ -32,6 +32,9 @@ param(
 
     [switch] $NoRestore,
 
+    [ValidateRange(1, 300)]
+    [int] $SelfTestTimeoutSeconds = 60,
+
     [switch] $Sign,
 
     [string] $SigningCertificateThumbprint = $env:SCRYBE_SIGNING_CERT_THUMBPRINT,
@@ -576,6 +579,47 @@ function New-ReleaseChecksumFile {
     return $checksumPath
 }
 
+function New-ReleaseNotesFile {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $SourceRoot,
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $OutputRoot,
+        [Parameter(Mandatory = $true)]
+        [ValidatePattern('^\d{4}\.\d{6}$')]
+        [string] $BuildNumber,
+        [switch] $Materialize
+    )
+
+    [string[]] $sources = @('docs/release-notes.md', 'docs/fr/release-notes.md')
+    [string[]] $languages = @('en', 'fr')
+    [string[]] $paths = @()
+    for ([int] $index = 0; $index -lt $languages.Length; $index++) {
+        [string] $source = Join-Path $SourceRoot $sources[$index]
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+            throw "Missing release notes: $source"
+        }
+        [string] $fileName = "Scrybe_v$BuildNumber.notes.$($languages[$index]).md"
+        [string] $destination = Join-Path $OutputRoot $fileName
+        [string] $body = [System.IO.File]::ReadAllText($source, [System.Text.Encoding]::UTF8)
+        if ([string]::IsNullOrWhiteSpace($body)) { throw "Empty release notes: $source" }
+        $body = [regex]::Replace($body, '\A#[^\r\n]+', "# Scrybe v$BuildNumber")
+        [string] $otherLanguage = $languages[1 - $index]
+        [string] $otherLabel = if ($otherLanguage -eq 'fr') { 'French' } else { 'English' }
+        [string] $otherUrl = "https://github.com/$Repository/releases/download/v$BuildNumber/Scrybe_v$BuildNumber.notes.$otherLanguage.md"
+        $body = [regex]::Replace($body, '(?m)^\[[^\r\n]+\]\([^\r\n]+\)', "[$otherLabel]($otherUrl)")
+        if (($Materialize -or -not $DryRun) -and $PSCmdlet.ShouldProcess($destination, 'Write release notes')) {
+            if (Test-Path -LiteralPath $destination) { throw "Release notes already exist: $destination" }
+            [System.IO.File]::WriteAllText($destination, $body, [System.Text.UTF8Encoding]::new($false))
+        }
+        $paths += $destination
+    }
+    return $paths
+}
+
 function Publish-GitHubRelease {
     param(
         [Parameter(Mandatory = $true)]
@@ -588,12 +632,9 @@ function Publish-GitHubRelease {
     )
 
     [string] $tag = "v$BuildNumber"
-    [string[]] $assetLines = foreach ($artifactPath in $ArtifactPaths) {
-        [System.IO.FileInfo] $artifact = Get-Item -LiteralPath $artifactPath
-        [string] $sizeMiB = "{0:N2}" -f ($artifact.Length / 1MB)
-        "- $($artifact.Name) ($sizeMiB MiB)"
-    }
-    [string] $notes = "Scrybe v$BuildNumber`n`nAssets:`n$($assetLines -join "`n")"
+    [string[]] $englishNotes = @($ArtifactPaths | Where-Object { $_.EndsWith('.notes.en.md', [System.StringComparison]::Ordinal) })
+    if ($englishNotes.Count -ne 1) { throw 'Exactly one English release notes file is required.' }
+    Assert-PublishArtifact -Path $englishNotes[0] -Description 'English release notes'
 
     Invoke-Tool -FilePath 'git' -Arguments @('tag', $tag)
     Invoke-Tool -FilePath 'git' -Arguments @('push', 'origin', 'main')
@@ -607,8 +648,8 @@ function Publish-GitHubRelease {
         $Repository,
         '--title',
         $tag,
-        '--notes',
-        $notes
+        '--notes-file',
+        $englishNotes[0]
     )
     Invoke-Tool -FilePath 'gh' -Arguments $releaseArguments
 
@@ -747,6 +788,22 @@ try {
     }
 
     Assert-PublishLayout -PublishDirectory $publishDirectory -ExecutableFileName "$assemblyName.exe"
+    [string] $selfTestReport = Join-Path $outputRoot ("self-test-" + [guid]::NewGuid().ToString('N') + '.json')
+    [System.Diagnostics.Process] $selfTestProcess = Start-Process -FilePath $exePath `
+        -ArgumentList @('--self-test', "`"$selfTestReport`"") -PassThru -WindowStyle Hidden
+    try {
+        if (-not $selfTestProcess.WaitForExit($SelfTestTimeoutSeconds * 1000)) {
+            $selfTestProcess.Kill()
+            throw 'Packaged self-test exceeded its timeout.'
+        }
+        if ($selfTestProcess.ExitCode -ne 0) {
+            throw "Packaged self-test exited with code $($selfTestProcess.ExitCode)."
+        }
+    }
+    finally { $selfTestProcess.Dispose() }
+    if (-not (Test-Path -LiteralPath $selfTestReport)) { throw 'Packaged self-test did not produce a report.' }
+    [object] $selfTestResult = Get-Content -LiteralPath $selfTestReport -Raw | ConvertFrom-Json
+    if (-not $selfTestResult.passed) { throw 'Packaged self-test failed.' }
     Write-Output "Publish layout verified."
 
     if ($Sign) {
@@ -772,8 +829,9 @@ try {
     Write-Output ("Archive: {0}" -f $zip.FullName)
     Write-Output ("Archive size: {0:N2} MiB ({1:N0} bytes)" -f ($zip.Length / 1MB), $zip.Length)
 
+    [string[]] $notesPaths = New-ReleaseNotesFile -SourceRoot $repoRoot -OutputRoot $outputRoot -BuildNumber $versionInfo.BuildNumber -Materialize
     [string] $checksumPath = New-ReleaseChecksumFile `
-        -ArtifactPaths @($zipPath, $sbomPath) `
+        -ArtifactPaths (@($zipPath, $sbomPath) + $notesPaths) `
         -OutputRoot $outputRoot `
         -BuildNumber $versionInfo.BuildNumber `
         -RuntimeIdentifier $RuntimeIdentifier
@@ -782,7 +840,7 @@ try {
 
     if (($Publish -or $DryRun) -and $Mode -eq 'Release') {
         [string] $tag = "v$($versionInfo.BuildNumber)"
-        [string[]] $releaseArtifactPaths = @($zipPath, $checksumPath, $sbomPath)
+        [string[]] $releaseArtifactPaths = @($zipPath, $checksumPath, $sbomPath) + $notesPaths
         Write-Output "Release tag: $tag"
         if ($DryRun) {
             Write-Output "Would run: git add Directory.Build.props"
@@ -791,7 +849,7 @@ try {
             Write-Output "Would run: git push origin main"
             Write-Output "Would run: git push origin $tag"
             [string] $quotedReleaseArtifacts = ($releaseArtifactPaths | ForEach-Object { "`"$_`"" }) -join ' '
-            Write-Output "Would run: gh release create $tag $quotedReleaseArtifacts --repo $Repository --title `"$tag`" --notes <notes>"
+            Write-Output "Would run: gh release create $tag $quotedReleaseArtifacts --repo $Repository --title `"$tag`" --notes-file `"$($notesPaths[0])`""
         }
         elseif ($Publish) {
             $releaseCommitShouldRollback = $false
