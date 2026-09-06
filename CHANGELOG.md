@@ -1,11 +1,39 @@
 # Changelog
 
-All notable changes to Scrybe are summarized here from the conventional commit
-history. Dates use the project CalVer tags.
+[Français](CHANGELOG.fr.md)
 
-## Unreleased
+## v2026.090601
 
-Changes after `v2026.060901` in the local hardening branch.
+Released on 2026-09-06. Changes since `v2026.061601`.
+
+### Features
+
+- Add optional OCR correction beside the original crop, preserving previous outputs on cancellation.
+- Add confirmed process profiles for injection mode and pacing.
+- Retain 20 local store versions with preview, revision checks and DPAPI validation before restoration.
+- Add strict versioned snippet import/export with template preview and explicit conflict policies.
+- Provide separate English and French README, documentation and release notes.
+
+### Reliability and accessibility
+
+- Recheck foreground identity and keyboard layout throughout injection; release Shift before special keys.
+- Preserve newer clipboard content and OCR boundary whitespace.
+- Reject failed-read and stale-write saves, quarantine invalid records and serialize library mutations.
+- Preserve editor drafts during reload and publish library changes only after persistence succeeds.
+- Add injection progress, visible cancellation and precise failure statuses.
+- Add keyboard region selection, accessible coordinate announcements and bounded high-DPI layouts.
+
+### Validation and delivery
+
+- Add OCR corpus measurements, native/remote receivers and 22 EN/FR interface renders.
+- Add packaged OCR self-tests and Windows Sandbox configuration generation.
+- Unify build/test project configuration and refresh versioned project-reference locks.
+- Produce separate EN/FR release-note assets with checksums; verify the committed version in CI.
+
+
+## v2026.061601
+
+Previously documented hardening delivered since `v2026.060901`.
 
 ### Security And Correctness
 

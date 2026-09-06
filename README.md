@@ -1,5 +1,7 @@
 # Scrybe
 
+[Français](README.fr.md)
+
 > **scry** (read a remote screen) + **scribe** (write by typing)
 
 Scrybe is a small Windows tray app for the awkward consoles where normal
@@ -29,13 +31,31 @@ Scrybe is meant to make those moments less painful:
 - Runs as a Windows-native WPF tray application.
 - Captures the monitor under the cursor with per-monitor DPI handling.
 - Cleans OCR output with modes for plain text, code and logs.
+- Offers optional side-by-side OCR correction before copying.
 - Types text back through Unicode or scancode injection strategies.
+- Applies process-specific injection modes and pacing after target confirmation.
 - Stores snippets and secrets for repeated remote-console work.
+- Imports and exports versioned snippet files with explicit conflict policies.
+- Retains 20 local versions per store with previewed, revision-checked restoration.
 - Protects secrets and capture history text with Windows DPAPI.
 - Provides a Control Hub, configurable hotkeys, diagnostics and EN/FR
   localization.
 - Packages as a self-contained Windows release with the OCR runtime beside the
   executable.
+
+The capture overlay supports keyboard selection: press **K** to create a centered
+region, use **arrow keys** to move it, **Shift+arrows** to resize it and **Ctrl**
+for ten-pixel steps. **Enter** confirms; **Escape** cancels. Coordinates are in
+physical pixels. Raw and code cleanup preserve boundary whitespace, including
+indentation and trailing line breaks.
+
+Injection rechecks the confirmed foreground window, process and keyboard layout
+before each keystroke batch and stops when an observed change occurs. Scancode
+mapping uses the target window's layout. Windows `SendInput` cannot atomically
+bind input to a window; this guard reduces focus-change exposure but cannot
+eliminate the race between checking the foreground and sending a batch.
+Clipboard injection clears only the clipboard version it originally read, so
+content copied during typing is retained.
 
 ## Local Data
 
@@ -51,6 +71,20 @@ The app keeps its data local by design:
 - malformed JSON stores are moved aside as `*.corrupt.<timestamp>.json`;
 - diagnostics show runtime paths, app-data locations and required OCR assets;
 - logs and diagnostic reports are available from the About tab.
+
+Stores reject saves after a failed read or when the file changed since loading.
+A persistent sibling `.lock` file coordinates cooperating Scrybe processes; its
+presence alone does not mean the store is locked. After a save conflict, use
+**Reload and keep draft**, review the editor, then explicitly Save again.
+Conflicting changes are not automatically merged. Invalid records, including
+null list entries, are quarantined with the original payload preserved; if
+quarantine fails, writes stay blocked.
+
+Injection has a non-activating progress window with Stop and explicit interruption
+reasons. See [Reliability and validation](docs/validation.md) for draft recovery,
+OCR measurements, native/remote receivers, accessibility and clean-Windows checks.
+See [Capture review, profiles and data exchange](docs/features.md) for the new
+workflows, backup retention and import limits.
 
 ## Requirements
 
@@ -136,3 +170,5 @@ Scrybe/
 For a module map and runtime-flow overview, see
 [`docs/architecture.md`](docs/architecture.md). Release history is summarized in
 [`CHANGELOG.md`](CHANGELOG.md).
+The release has separate [English notes](docs/release-notes.md) and
+[French notes](docs/fr/release-notes.md).
