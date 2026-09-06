@@ -99,13 +99,13 @@ public sealed class SnippetCoordinator
             _localization["Palette.ConfirmTitle"],
             _localization["Palette.ConfirmTarget"],
             _localization["Palette.TargetUnavailable"],
-            _localization["Palette.UntitledTarget"]))
+            _localization["Palette.UntitledTarget"], out IInjectionContext? context))
         {
             return false;
         }
 
         FileLogger.Info("Snippet injection requested after target confirmation.");
-        await _injection.InjectTextAsync(text).ConfigureAwait(false);
+        await _injection.InjectTextAsync(text, context).ConfigureAwait(false);
         return true;
     }
 }

@@ -59,12 +59,12 @@ internal static class InjectionInterop
     /// <param name="scanCode">The resolved scancode when successful.</param>
     /// <param name="requiresShift">Whether Shift must be held.</param>
     /// <returns><see langword="true"/> if the character maps to a simple (no-AltGr) key on the active layout.</returns>
-    public static bool TryResolveScanCode(char character, out ushort scanCode, out bool requiresShift)
+    public static bool TryResolveScanCode(char character, IntPtr layout, out ushort scanCode, out bool requiresShift)
     {
         scanCode = 0;
         requiresShift = false;
 
-        IntPtr layout = GetKeyboardLayout(0);
+        if (layout == IntPtr.Zero) { return false; }
         short result = VkKeyScanEx(character, layout);
         if (result == VkKeyScanFailure)
         {
@@ -204,6 +204,14 @@ internal static class InjectionInterop
 
     /// <summary>Returns the handle of the current foreground window (the intended injection target).</summary>
     public static IntPtr GetForegroundWindowHandle() => GetForegroundWindow();
+
+    /// <summary>Gets the input layout of the target window thread.</summary>
+    /// <param name="window">Confirmed target window.</param>
+    public static IntPtr GetTargetKeyboardLayout(IntPtr window)
+    {
+        uint threadId = GetWindowThreadProcessId(window, out _);
+        return threadId == 0 ? IntPtr.Zero : GetKeyboardLayout(threadId);
+    }
 
     /// <summary>Resolves metadata for <paramref name="window"/> when the target is still alive.</summary>
     /// <param name="window">The captured target window.</param>

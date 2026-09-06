@@ -25,6 +25,9 @@ public sealed class InteropTargetWindowGateway : ITargetWindowGateway
     public IntPtr GetForegroundWindow() => InjectionInterop.GetForegroundWindowHandle();
 
     /// <inheritdoc />
+    public IntPtr GetKeyboardLayout(IntPtr window) => InjectionInterop.GetTargetKeyboardLayout(window);
+
+    /// <inheritdoc />
     public bool TryGetInfo(IntPtr window, out TargetWindowInfo? target)
     {
         target = null;

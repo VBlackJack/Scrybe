@@ -23,262 +23,174 @@ using Scrybe.Core.Models;
 
 namespace Scrybe.App.Services;
 
-/// <summary>
-/// Shared injection loop for both strategies: the UIPI guard, the start-of-injection modifier release
-/// and settle delay, the paced per-stroke send, the emergency-abort handling, and the result. Strategy
-/// subclasses only implement how a single keystroke becomes Win32 events.
-/// </summary>
+/// <summary>Guards and paces typing into a confirmed target, always releasing strategy state.</summary>
 public abstract class KeystrokeInjectorBase : IKeystrokeInjector
 {
     private readonly AppSettings _settings;
 
-    /// <summary>Initializes the base injector with the settings that control pacing.</summary>
-    /// <param name="settings">Application settings holding the keystroke delays.</param>
+    /// <summary>Initializes pacing settings.</summary>
+    /// <param name="settings">Live pacing settings.</param>
     protected KeystrokeInjectorBase(AppSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
     }
 
-    /// <summary>The outcome of sending a single keystroke's events.</summary>
-    /// <param name="EventsSent">Number of Win32 events injected.</param>
-    /// <param name="Unresolved">Whether the character could not be represented and was skipped.</param>
-    /// <param name="Failed">Whether the underlying <c>SendInput</c> call failed.</param>
+    /// <summary>Result of a single native batch.</summary>
+    /// <param name="EventsSent">Successfully sent events.</param>
+    /// <param name="Unresolved">Whether mapping was unavailable.</param>
+    /// <param name="Failed">Whether native sending failed.</param>
     protected readonly record struct StrokeResult(int EventsSent, bool Unresolved, bool Failed)
     {
-        /// <summary>A successful send of <paramref name="count"/> events.</summary>
-        /// <param name="count">The number of events sent.</param>
-        public static StrokeResult Sent(int count) => new(count, Unresolved: false, Failed: false);
-
-        /// <summary>A character that could not be represented and was skipped.</summary>
-        public static StrokeResult Skipped { get; } = new(0, Unresolved: true, Failed: false);
-
-        /// <summary>A failed injection.</summary>
-        public static StrokeResult Failure { get; } = new(0, Unresolved: false, Failed: true);
+        /// <summary>Creates a successful result.</summary>
+        /// <param name="count">Sent event count.</param>
+        public static StrokeResult Sent(int count) => new(count, false, false);
+        /// <summary>An unavailable character mapping.</summary>
+        public static StrokeResult Skipped { get; } = new(0, true, false);
+        /// <summary>A native sending failure.</summary>
+        public static StrokeResult Failure { get; } = new(0, false, true);
     }
 
     /// <inheritdoc />
-    public async Task<InjectionResult> InjectAsync(KeystrokeSequence sequence, CancellationToken cancellationToken = default)
+    public Task<InjectionResult> InjectAsync(KeystrokeSequence sequence, CancellationToken cancellationToken = default, IInjectionContext? context = null)
     {
         ArgumentNullException.ThrowIfNull(sequence);
-
-        if (InjectionInterop.IsForegroundHigherIntegrity())
-        {
-            FileLogger.Warn("Injection blocked by UIPI: the focused window runs at a higher integrity level than Scrybe.");
-            return new InjectionResult(Success: false, KeystrokesSent: 0, UipiBlocked: true, Aborted: false);
-        }
-
-        InjectionInterop.ReleaseModifiers();
-        try
-        {
-            await Task.Delay(AppConstants.InjectionStartDelayMs, cancellationToken).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            return new InjectionResult(Success: false, KeystrokesSent: 0, UipiBlocked: false, Aborted: true);
-        }
-
-        BeginInjection();
-
-        int sent = 0;
-        int unresolved = 0;
-        bool failed = false;
-
-        try
-        {
-            foreach (KeyStroke stroke in sequence.Strokes)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                StrokeResult result = SendStroke(stroke);
-                if (result.Failed)
-                {
-                    failed = true;
-                    break;
-                }
-
-                if (result.Unresolved)
-                {
-                    unresolved++;
-                    continue;
-                }
-
-                sent += result.EventsSent;
-
-                int delay = _settings.InjectionKeyDelayMs
-                    + (stroke.Special == SpecialKey.Enter ? _settings.InjectionEnterExtraDelayMs : 0);
-                if (delay > 0)
-                {
-                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            EndInjection();
-            InjectionInterop.ReleaseModifiers();
-            FileLogger.Info($"Injection aborted after {sent} key events; modifiers released.");
-            return new InjectionResult(Success: false, KeystrokesSent: sent, UipiBlocked: false, Aborted: true);
-        }
-
-        EndInjection();
-
-        if (failed)
-        {
-            InjectionInterop.ReleaseModifiers();
-            FileLogger.Error("SendInput injected no events; aborting injection.");
-            return new InjectionResult(Success: false, KeystrokesSent: sent, UipiBlocked: false, Aborted: false);
-        }
-
-        if (unresolved > 0)
-        {
-            FileLogger.Warn($"{unresolved} characters could not be represented in {GetType().Name} and were skipped.");
-        }
-
-        return new InjectionResult(Success: true, KeystrokesSent: sent, UipiBlocked: false, Aborted: false);
+        return RunAsync(sequence, default, context, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<InjectionResult> InjectAsync(ReadOnlyMemory<char> text, CancellationToken cancellationToken = default)
+    public Task<InjectionResult> InjectAsync(ReadOnlyMemory<char> text, CancellationToken cancellationToken = default, IInjectionContext? context = null)
+        => RunAsync(null, text, context, cancellationToken);
+
+    private async Task<InjectionResult> RunAsync(KeystrokeSequence? sequence, ReadOnlyMemory<char> text, IInjectionContext? context, CancellationToken token)
     {
-        int unrepresentableBeforeTyping = CountUnrepresentableVerbatimCharacters(text.Span);
-        if (unrepresentableBeforeTyping > 0)
-        {
-            FileLogger.Error(
-                $"{unrepresentableBeforeTyping} characters cannot be represented in {GetType().Name}; verbatim injection blocked before typing.");
-            return new InjectionResult(Success: false, KeystrokesSent: 0, UipiBlocked: false, Aborted: false);
-        }
-
-        if (InjectionInterop.IsForegroundHigherIntegrity())
-        {
-            FileLogger.Warn("Injection blocked by UIPI: the focused window runs at a higher integrity level than Scrybe.");
-            return new InjectionResult(Success: false, KeystrokesSent: 0, UipiBlocked: true, Aborted: false);
-        }
-
-        InjectionInterop.ReleaseModifiers();
-        try
-        {
-            await Task.Delay(AppConstants.InjectionStartDelayMs, cancellationToken).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            return new InjectionResult(Success: false, KeystrokesSent: 0, UipiBlocked: false, Aborted: true);
-        }
-
-        BeginInjection();
-
         int sent = 0;
-        int unresolved = 0;
-        bool failed = false;
-
+        bool started = false;
+        bool verbatim = sequence is null;
         try
         {
-            for (int index = 0; index < text.Length; index++)
+            token.ThrowIfCancellationRequested();
+            if (context is null || !context.IsCurrent)
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                return TargetChanged(sent);
+            }
 
-                char character = text.Span[index];
-                if (!KeystrokeBuilder.TryBuildStroke(character, out KeyStroke? stroke, out bool skipped))
+            if (IsHigherIntegrity())
+            {
+                return new InjectionResult(false, 0, true, false, InjectionFailureReason.HigherIntegrity);
+            }
+
+            started = true;
+            BeginInjection(context);
+            if (verbatim && !CanRepresentText(text.Span))
+            {
+                FileLogger.Error("Verbatim injection blocked before typing: unmappable characters.");
+                return new InjectionResult(false, 0, false, false, InjectionFailureReason.Unmappable);
+            }
+
+            ReleaseModifiers();
+            await DelayAsync(AppConstants.InjectionStartDelayMs, token).ConfigureAwait(false);
+            if (!context.IsCurrent)
+            {
+                return TargetChanged(sent);
+            }
+
+            int count = sequence?.Strokes.Count ?? text.Length;
+            context.ReportProgress(0, count);
+            for (int index = 0; index < count; index++)
+            {
+                token.ThrowIfCancellationRequested();
+                KeyStroke? stroke;
+                if (sequence is not null)
                 {
-                    if (skipped)
-                    {
-                        unresolved++;
-                    }
-
+                    stroke = sequence.Strokes[index];
+                }
+                else if (!KeystrokeBuilder.TryBuildStroke(text.Span[index], out stroke, out _))
+                {
                     continue;
+                }
+
+                if (!context.IsCurrent)
+                {
+                    return TargetChanged(sent);
                 }
 
                 StrokeResult result = SendStroke(stroke!);
-                if (result.Failed)
+                sent += result.EventsSent;
+                context.ReportProgress(index + (result.Failed ? 0 : 1), count);
+                if (result.Failed || (verbatim && result.Unresolved))
                 {
-                    failed = true;
-                    break;
+                    return new InjectionResult(false, sent, false, false, result.Unresolved ? InjectionFailureReason.Unmappable : InjectionFailureReason.NativeFailure);
                 }
 
                 if (result.Unresolved)
                 {
-                    unresolved++;
+                    FileLogger.Warn("Unrepresentable character skipped during best-effort injection.");
                     continue;
                 }
 
-                sent += result.EventsSent;
-
-                int delay = _settings.InjectionKeyDelayMs
-                    + (stroke!.Special == SpecialKey.Enter ? _settings.InjectionEnterExtraDelayMs : 0);
-                if (delay > 0)
+                int delay = (context.Profile?.KeyDelayMs ?? _settings.InjectionKeyDelayMs)
+                    + (stroke!.Special == SpecialKey.Enter ? (context.Profile?.EnterExtraDelayMs ?? _settings.InjectionEnterExtraDelayMs) : 0);
+                await DelayAsync(delay, token).ConfigureAwait(false);
+                // Includes focus changes caused by Tab/Enter and the last batch of the sequence.
+                if (!context.IsCurrent)
                 {
-                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                    return TargetChanged(sent);
                 }
             }
+
+            return new InjectionResult(true, sent, false, false);
         }
         catch (OperationCanceledException)
         {
-            EndInjection();
-            InjectionInterop.ReleaseModifiers();
-            FileLogger.Info($"Injection aborted after {sent} key events; modifiers released.");
-            return new InjectionResult(Success: false, KeystrokesSent: sent, UipiBlocked: false, Aborted: true);
+            return new InjectionResult(false, sent, false, true, InjectionFailureReason.Cancelled);
         }
-
-        EndInjection();
-
-        if (failed)
+        finally
         {
-            InjectionInterop.ReleaseModifiers();
-            FileLogger.Error("SendInput injected no events; aborting injection.");
-            return new InjectionResult(Success: false, KeystrokesSent: sent, UipiBlocked: false, Aborted: false);
+            if (started)
+            {
+                try { EndInjection(); }
+                finally { ReleaseModifiers(); }
+            }
         }
-
-        if (unresolved > 0)
-        {
-            FileLogger.Error($"{unresolved} characters could not be represented in {GetType().Name}; verbatim injection failed.");
-            return new InjectionResult(Success: false, KeystrokesSent: sent, UipiBlocked: false, Aborted: false);
-        }
-
-        return new InjectionResult(Success: true, KeystrokesSent: sent, UipiBlocked: false, Aborted: false);
     }
 
-    private int CountUnrepresentableVerbatimCharacters(ReadOnlySpan<char> text)
+    private bool CanRepresentText(ReadOnlySpan<char> text)
     {
-        int unrepresentable = 0;
         foreach (char character in text)
         {
             if (!KeystrokeBuilder.TryBuildStroke(character, out KeyStroke? stroke, out bool skipped))
             {
-                if (skipped)
-                {
-                    unrepresentable++;
-                }
-
-                continue;
+                if (skipped) { return false; }
             }
-
-            if (!CanRepresentStroke(stroke!))
-            {
-                unrepresentable++;
-            }
+            else if (!CanRepresentStroke(stroke!)) { return false; }
         }
-
-        return unrepresentable;
+        return true;
     }
 
-    /// <summary>Resets per-injection state before the first keystroke. Default: no-op.</summary>
-    protected virtual void BeginInjection()
+    private static InjectionResult TargetChanged(int sent)
     {
+        FileLogger.Warn("Injection aborted: the confirmed target or its layout changed.");
+        return new InjectionResult(false, sent, false, true, InjectionFailureReason.TargetChanged);
     }
 
-    /// <summary>Releases any state held across keystrokes (for example a held Shift). Default: no-op.</summary>
-    protected virtual void EndInjection()
-    {
-    }
-
-    /// <summary>
-    /// Returns whether <paramref name="stroke"/> can be represented before a verbatim secret or
-    /// clipboard injection starts. Sequence injection keeps the existing best-effort behavior.
-    /// </summary>
-    /// <param name="stroke">The keystroke to inspect.</param>
+    /// <summary>Checks elevation without changing the target.</summary>
+    protected virtual bool IsHigherIntegrity() => InjectionInterop.IsForegroundHigherIntegrity();
+    /// <summary>Releases modifier keys at entry and during guaranteed cleanup.</summary>
+    protected virtual void ReleaseModifiers() => InjectionInterop.ReleaseModifiers();
+    /// <summary>Waits between batches; overridden by deterministic tests.</summary>
+    /// <param name="milliseconds">Delay duration.</param>
+    /// <param name="token">Emergency abort token.</param>
+    protected virtual Task DelayAsync(int milliseconds, CancellationToken token) => Task.Delay(milliseconds, token);
+    /// <summary>Initializes strategy state before preflight.</summary>
+    /// <param name="context">Confirmed target and layout snapshot.</param>
+    protected virtual void BeginInjection(IInjectionContext context) { }
+    /// <summary>Releases retained strategy state on all exit paths.</summary>
+    protected virtual void EndInjection() { }
+    /// <summary>Preflights a character using the same mapping as sending.</summary>
+    /// <param name="stroke">Stroke to validate.</param>
     protected virtual bool CanRepresentStroke(KeyStroke stroke) => true;
-
-    /// <summary>Sends the Win32 events for a single keystroke.</summary>
-    /// <param name="stroke">The keystroke to send.</param>
+    /// <summary>Sends one adjacent batch of native events.</summary>
+    /// <param name="stroke">Stroke to send.</param>
     protected abstract StrokeResult SendStroke(KeyStroke stroke);
 }

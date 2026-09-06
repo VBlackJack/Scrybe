@@ -106,7 +106,7 @@ public sealed class CaptureHistoryCoordinator
         if (!persisted)
         {
             NotifySaveFailure();
-            FileLogger.Warn("Capture history clear-all completed in memory but was not persisted.");
+            FileLogger.Warn("Capture history clear-all was not persisted; the current library was retained.");
             return false;
         }
 
@@ -146,7 +146,7 @@ public sealed class CaptureHistoryCoordinator
         if (!persisted)
         {
             NotifySaveFailure();
-            FileLogger.Warn("Capture history entry delete completed in memory but was not persisted.");
+            FileLogger.Warn("Capture history entry delete was not persisted; the current library was retained.");
         }
 
         return true;

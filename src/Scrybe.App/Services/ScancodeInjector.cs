@@ -17,82 +17,51 @@
 using Scrybe.App.Interop;
 using Scrybe.Core;
 using Scrybe.Core.Input;
+using Scrybe.Core.Interfaces;
 using Scrybe.Core.Models;
 
 namespace Scrybe.App.Services;
 
-/// <summary>
-/// Scancode injection strategy: resolves each character to a hardware scancode against the active
-/// keyboard layout and sends it via <c>SendInput</c>. Shift is driven by a state machine (held across
-/// consecutive shifted characters, released before an unshifted one) and every character's events -
-/// including any Shift transition - are sent in one atomic batch to avoid dropped/bled keystrokes.
-/// </summary>
+/// <summary>Maps against the confirmed target layout and sends atomic scancode batches.</summary>
 public sealed class ScancodeInjector : KeystrokeInjectorBase
 {
-    private readonly List<InjectionInterop.KeyEvent> _events = new(4);
-    private bool _shiftHeld;
+    private readonly ScancodeEventBuilder _builder = new();
+    private IntPtr _layout;
 
-    /// <summary>Initializes the scancode injector.</summary>
-    /// <param name="settings">Application settings holding the keystroke delays.</param>
-    public ScancodeInjector(AppSettings settings)
-        : base(settings)
-    {
-    }
+    /// <summary>Initializes pacing settings.</summary>
+    /// <param name="settings">Live pacing settings.</param>
+    public ScancodeInjector(AppSettings settings) : base(settings) { }
 
     /// <inheritdoc />
-    protected override void BeginInjection() => _shiftHeld = false;
+    protected override void BeginInjection(IInjectionContext context)
+    {
+        _builder.Reset();
+        _layout = context.KeyboardLayout;
+    }
 
     /// <inheritdoc />
     protected override void EndInjection()
     {
-        if (_shiftHeld)
-        {
-            InjectionInterop.SendScanCode(AppConstants.LeftShiftScanCode, keyUp: true);
-            _shiftHeld = false;
-        }
+        if (_builder.ShiftHeld) { InjectionInterop.SendScanCode(AppConstants.LeftShiftScanCode, keyUp: true); }
+        _builder.Reset();
+        _layout = IntPtr.Zero;
     }
 
     /// <inheritdoc />
     protected override bool CanRepresentStroke(KeyStroke stroke)
-        => stroke.IsSpecial || InjectionInterop.TryResolveScanCode(stroke.Character, out _, out _);
+        => stroke.IsSpecial || InjectionInterop.TryResolveScanCode(stroke.Character, _layout, out _, out _);
 
     /// <inheritdoc />
     protected override StrokeResult SendStroke(KeyStroke stroke)
     {
-        _events.Clear();
-
-        if (stroke.IsSpecial)
+        ushort scanCode = 0;
+        bool requiresShift = false;
+        if (!stroke.IsSpecial && !InjectionInterop.TryResolveScanCode(stroke.Character, _layout, out scanCode, out requiresShift))
         {
-            ushort scanCode = stroke.Special == SpecialKey.Enter ? AppConstants.EnterScanCode : AppConstants.TabScanCode;
-            _events.Add(new InjectionInterop.KeyEvent(scanCode, KeyUp: false));
-            _events.Add(new InjectionInterop.KeyEvent(scanCode, KeyUp: true));
+            return StrokeResult.Skipped;
         }
-        else
-        {
-            if (!InjectionInterop.TryResolveScanCode(stroke.Character, out ushort scanCode, out bool requiresShift))
-            {
-                return StrokeResult.Skipped;
-            }
-
-            ShiftTransition transition = ShiftStateMachine.Next(_shiftHeld, requiresShift);
-            if (transition.EmitShiftDown)
-            {
-                _events.Add(new InjectionInterop.KeyEvent(AppConstants.LeftShiftScanCode, KeyUp: false));
-            }
-
-            if (transition.EmitShiftUp)
-            {
-                _events.Add(new InjectionInterop.KeyEvent(AppConstants.LeftShiftScanCode, KeyUp: true));
-            }
-
-            _shiftHeld = transition.ShiftHeld;
-
-            _events.Add(new InjectionInterop.KeyEvent(scanCode, KeyUp: false));
-            _events.Add(new InjectionInterop.KeyEvent(scanCode, KeyUp: true));
-        }
-
-        return InjectionInterop.SendScanCodes(_events) == (uint)_events.Count
-            ? StrokeResult.Sent(_events.Count)
-            : StrokeResult.Failure;
+        IReadOnlyList<ScancodeKeyEvent> events = _builder.Build(stroke, scanCode, requiresShift);
+        InjectionInterop.KeyEvent[] nativeEvents = events.Select(item => new InjectionInterop.KeyEvent(item.ScanCode, item.KeyUp)).ToArray();
+        return InjectionInterop.SendScanCodes(nativeEvents) == (uint)events.Count ? StrokeResult.Sent(events.Count) : StrokeResult.Failure;
     }
 }

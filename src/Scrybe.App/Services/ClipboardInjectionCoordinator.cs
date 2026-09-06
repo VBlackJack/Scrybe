@@ -69,7 +69,8 @@ public sealed class ClipboardInjectionCoordinator
 
         try
         {
-            string? text = await _clipboard.GetTextAsync().ConfigureAwait(true);
+            ClipboardSnapshot? snapshot = await _clipboard.GetSnapshotAsync().ConfigureAwait(true);
+            string? text = snapshot?.Text;
             if (string.IsNullOrWhiteSpace(text))
             {
                 FileLogger.Info("Clipboard injection requested but clipboard text is empty or unavailable.");
@@ -82,7 +83,7 @@ public sealed class ClipboardInjectionCoordinator
                 _localization["Inject.ConfirmTitle"],
                 _localization["Inject.ConfirmClipboardTarget"],
                 _localization["Inject.TargetUnavailable"],
-                _localization["Inject.UntitledTarget"]))
+                _localization["Inject.UntitledTarget"], out IInjectionContext? context))
             {
                 return;
             }
@@ -92,7 +93,7 @@ public sealed class ClipboardInjectionCoordinator
             try
             {
                 FileLogger.Info("Clipboard injection requested after target confirmation.");
-                result = await _injection.InjectSecretAsync(chars, notifySuccess: false).ConfigureAwait(false);
+                result = await _injection.InjectSecretAsync(chars, notifySuccess: false, context: context).ConfigureAwait(false);
             }
             finally
             {
@@ -107,8 +108,8 @@ public sealed class ClipboardInjectionCoordinator
 
             if (_settings.ClearClipboardAfterInjection)
             {
-                await _clipboard.SetTextAsync(string.Empty).ConfigureAwait(true);
-                FileLogger.Info("Clipboard cleared after clipboard injection.");
+                bool cleared = await _clipboard.TryClearAsync(snapshot!.Version).ConfigureAwait(true);
+                FileLogger.Info(cleared ? "Clipboard cleared after injection." : "Clipboard retained because its version changed or clearing was unavailable.");
             }
 
             _notification.Notify(_localization["AppTitle"], _localization["Notify.ClipboardInjected"]);

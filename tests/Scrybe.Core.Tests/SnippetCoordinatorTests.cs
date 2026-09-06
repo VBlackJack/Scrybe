@@ -19,6 +19,7 @@ using Scrybe.App.Services;
 using Scrybe.Core.Input;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Models;
+using Scrybe.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Scrybe.Core.Tests;
@@ -89,6 +90,7 @@ public sealed class SnippetCoordinatorTests
     private sealed class FakeTargetWindowGateway : ITargetWindowGateway
     {
         public IntPtr GetForegroundWindow() => Target;
+        public IntPtr GetKeyboardLayout(IntPtr window) => new(1);
 
         public bool TryGetInfo(IntPtr window, out TargetWindowInfo? target)
         {
@@ -113,8 +115,9 @@ public sealed class SnippetCoordinatorTests
             string confirmTitle,
             string confirmMessageTemplate,
             string targetUnavailableMessage,
-            string untitledTargetText)
+            string untitledTargetText, out IInjectionContext? context)
         {
+            context = new TestInjectionContext();
             CallCount++;
             target.Should().Be(Target);
             confirmTitle.Should().Be("Confirm snippet");
@@ -131,7 +134,7 @@ public sealed class SnippetCoordinatorTests
 
         public Task<InjectionResult> InjectAsync(
             KeystrokeSequence sequence,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, IInjectionContext? context = null)
         {
             SequenceInjectionCallCount++;
             return Task.FromResult(new InjectionResult(
@@ -143,7 +146,7 @@ public sealed class SnippetCoordinatorTests
 
         public Task<InjectionResult> InjectAsync(
             ReadOnlyMemory<char> text,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, IInjectionContext? context = null)
             => Task.FromResult(new InjectionResult(
                 Success: true,
                 KeystrokesSent: text.Length,

@@ -17,6 +17,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Scrybe.Core.Models;
 
 namespace Scrybe.Core.Text;
 
@@ -124,6 +125,16 @@ public static class TextPostProcessor
         return new TextPostProcessingResult(text, mergedLines, strippedPrompts, correctedTokens, strippedLogDecorations);
     }
 
+    /// <summary>Applies the capture mode, retaining boundary whitespace in Raw and Code Formatter.</summary>
+    /// <param name="input">Verbatim engine output.</param>
+    /// <param name="mode">User-selected capture mode.</param>
+    public static TextPostProcessingResult ProcessCapture(string input, OcrCleanupMode mode)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        bool preserveWhitespace = mode is OcrCleanupMode.Raw or OcrCleanupMode.CodeFormatter;
+        TextPostProcessingResult result = Process(preserveWhitespace ? input : input.Trim(), TextPostProcessingOptions.ForMode(mode));
+        return preserveWhitespace ? result : result with { Text = result.Text.Trim() };
+    }
     private static List<string> RepairWraps(List<string> lines, out int mergedLines)
     {
         mergedLines = 0;

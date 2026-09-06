@@ -20,8 +20,9 @@ using Scrybe.Core.Models;
 namespace Scrybe.App.Services;
 
 /// <summary>In-memory snippet library that persists every change through the snippet store.</summary>
-public sealed class SnippetLibrary
+public sealed partial class SnippetLibrary
 {
+    private readonly SemaphoreSlim _operationGate = new(1, 1);
     private readonly ISnippetStore _store;
     private readonly List<Snippet> _snippets = [];
 
@@ -37,11 +38,18 @@ public sealed class SnippetLibrary
     public IReadOnlyList<Snippet> Snippets => _snippets;
 
     /// <summary>Loads the snippets from the store.</summary>
-    public async Task LoadAsync()
+    public async Task<bool> LoadAsync()
     {
-        IReadOnlyList<Snippet> loaded = await _store.LoadAsync().ConfigureAwait(false);
-        _snippets.Clear();
-        _snippets.AddRange(loaded);
+        await _operationGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            IReadOnlyList<Snippet> loaded = await _store.LoadAsync().ConfigureAwait(false);
+            if (_store is IStoreReadState { CanSave: false }) { return false; }
+            _snippets.Clear();
+            _snippets.AddRange(loaded);
+            return true;
+        }
+        finally { _operationGate.Release(); }
     }
 
     /// <summary>Adds or replaces a snippet (matched by id) and persists.</summary>
@@ -49,19 +57,27 @@ public sealed class SnippetLibrary
     /// <returns><see langword="true"/> when the snippet library was persisted; otherwise <see langword="false"/>.</returns>
     public async Task<bool> SaveAsync(Snippet snippet)
     {
-        ArgumentNullException.ThrowIfNull(snippet);
-
-        int index = _snippets.FindIndex(existing => string.Equals(existing.Id, snippet.Id, StringComparison.Ordinal));
-        if (index >= 0)
+        await _operationGate.WaitAsync().ConfigureAwait(false);
+        try
         {
-            _snippets[index] = snippet;
-        }
-        else
-        {
-            _snippets.Add(snippet);
-        }
+            ArgumentNullException.ThrowIfNull(snippet);
 
-        return await _store.SaveAsync(_snippets).ConfigureAwait(false);
+            List<Snippet> pending = new(_snippets);
+            int index = pending.FindIndex(existing => string.Equals(existing.Id, snippet.Id, StringComparison.Ordinal));
+            if (index >= 0)
+            {
+                pending[index] = snippet;
+            }
+            else
+            {
+                pending.Add(snippet);
+            }
+
+            bool persisted = await _store.SaveAsync(pending).ConfigureAwait(false);
+            if (persisted) { _snippets.Clear(); _snippets.AddRange(pending); }
+            return persisted;
+        }
+        finally { _operationGate.Release(); }
     }
 
     /// <summary>Deletes the snippet with the given id and persists.</summary>
@@ -69,7 +85,15 @@ public sealed class SnippetLibrary
     /// <returns><see langword="true"/> when the deletion was persisted; otherwise <see langword="false"/>.</returns>
     public async Task<bool> DeleteAsync(string id)
     {
-        _snippets.RemoveAll(snippet => string.Equals(snippet.Id, id, StringComparison.Ordinal));
-        return await _store.SaveAsync(_snippets).ConfigureAwait(false);
+        await _operationGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            List<Snippet> pending = new(_snippets);
+            pending.RemoveAll(snippet => string.Equals(snippet.Id, id, StringComparison.Ordinal));
+            bool persisted = await _store.SaveAsync(pending).ConfigureAwait(false);
+            if (persisted) { _snippets.Clear(); _snippets.AddRange(pending); }
+            return persisted;
+        }
+        finally { _operationGate.Release(); }
     }
 }

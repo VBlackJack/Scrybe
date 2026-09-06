@@ -173,6 +173,7 @@ public sealed partial class SecretManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task Save()
     {
+        if (ReloadFromDiskCommand.IsRunning) { return; }
         if (string.IsNullOrWhiteSpace(Name))
         {
             StatusMessage = _localization["Secrets.NameRequired"];
@@ -190,6 +191,11 @@ public sealed partial class SecretManagerViewModel : ObservableObject
         SecretSaveResult result = await _library
             .SaveAsync(SelectedSecret?.Id, Name, UserName, SecretValue)
             .ConfigureAwait(true);
+        if (!result.Persisted)
+        {
+            ShowSaveFailure();
+            return;
+        }
         SecretValue = string.Empty;
         SecretPasswordResetRequested?.Invoke(this, EventArgs.Empty);
         _suppressDiscardPrompt = true;
@@ -201,12 +207,6 @@ public sealed partial class SecretManagerViewModel : ObservableObject
         finally
         {
             _suppressDiscardPrompt = false;
-        }
-
-        if (!result.Persisted)
-        {
-            ShowSaveFailure();
-            return;
         }
 
         StatusMessage = _localization["Secrets.Saved"];

@@ -22,6 +22,10 @@ public interface ITargetWindowGateway
     /// <summary>Returns the current foreground window handle.</summary>
     IntPtr GetForegroundWindow();
 
+    /// <summary>Gets the input layout of the thread owning a target window.</summary>
+    /// <param name="window">Target window.</param>
+    IntPtr GetKeyboardLayout(IntPtr window);
+
     /// <summary>Resolves metadata for <paramref name="window"/> when it is still available.</summary>
     /// <param name="window">Captured target window handle.</param>
     /// <param name="target">Resolved target metadata.</param>

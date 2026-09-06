@@ -15,12 +15,11 @@
     <Product>Scrybe</Product>
     <Company>Julien Bombled</Company>
     <Description>Local-first OCR clipboard extraction and keystroke injection utility for constrained consoles.</Description>
-    <RuntimeIdentifier Condition="'$(ScrybeReferencedByTests)' != 'true'">win-x64</RuntimeIdentifier>
-    <SelfContained Condition="'$(ScrybeReferencedByTests)' != 'true'">true</SelfContained>
-    <PublishSingleFile Condition="'$(ScrybeReferencedByTests)' != 'true'">true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract Condition="'$(ScrybeReferencedByTests)' != 'true'">true</IncludeNativeLibrariesForSelfExtract>
     <!-- Do not enable trimming: WPF, Tesseract and Vortice/native interop are reflection/native-load sensitive. -->
     <PublishTrimmed>false</PublishTrimmed>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <!-- This is a WPF host that merely references WinForms for the tray NotifyIcon.
          Process DPI awareness is declared in app.manifest (Per-Monitor v2), which is the
          authoritative mechanism for the WPF host and applies process-wide. The WinForms
@@ -41,6 +40,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Scrybe.Core\Scrybe.Core.csproj" />
     <ProjectReference Include="..\Scrybe.Ocr\Scrybe.Ocr.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../tests/Scrybe.Core.Tests/fixtures/console-sample.png" Link="selftest/console-sample.png"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
   <!-- Make the executable icon available to WPF views. -->

@@ -69,7 +69,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                    <TextBlock Text="{Binding StatusMessage}" AutomationProperties.LiveSetting="Polite" TextWrapping="Wrap">
                         <TextBlock.Style>
                             <Style TargetType="{x:Type TextBlock}">
                                 <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
@@ -96,7 +96,11 @@
                         </TextBlock.Style>
                     </TextBlock>
                 </StackPanel>
-                <Button Command="{Binding SaveCommand}"
+                <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+<Button Command="{Binding ReloadFromDiskCommand}" Foreground="{DynamicResource TextPrimaryBrush}" Background="{DynamicResource CardBrush}" Padding="{StaticResource PaddingButtonPrimary}" Content="{loc:Translate Persist.Reload}"
+                                AutomationProperties.Name="{loc:Translate Persist.Reload}"
+                                ToolTip="{loc:Translate Persist.ReloadHelp}" />
+                        <Button Command="{Binding SaveCommand}"
                         Grid.Column="1"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
@@ -111,6 +115,7 @@
                         <TextBlock Text="{loc:Translate Settings.Save}" Style="{StaticResource AppIconTextStyle}" />
                     </StackPanel>
                 </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -118,6 +123,37 @@
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,0,0,72">
+                <Border Style="{StaticResource SectionCardStyle}">
+                    <StackPanel>
+                        <CheckBox Content="{loc:Translate Review.Enable}" IsChecked="{Binding ReviewOcrBeforeCopy}"
+                                  Style="{StaticResource SettingCheckBoxStyle}" AutomationProperties.Name="{loc:Translate Review.Enable}"/>
+                        <TextBlock Text="{loc:Translate Profiles.Title}" Style="{StaticResource SectionHeaderStyle}"/>
+                        <TextBlock Text="{loc:Translate Profiles.Hint}" Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                        <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
+                                 Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+                                 DisplayMemberPath="ProcessName" MaxHeight="{StaticResource ProfileListHeight}"
+                                 AutomationProperties.Name="{loc:Translate Profiles.Title}"/>
+                        <StackPanel DataContext="{Binding SelectedProfile}">
+                            <TextBlock Text="{loc:Translate Profiles.Process}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBox Text="{Binding ProcessName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingTextBoxStyle}"
+                                     AutomationProperties.Name="{loc:Translate Profiles.Process}"/>
+                            <ComboBox ItemsSource="{Binding DataContext.InjectionModeChoices, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                      SelectedValue="{Binding Mode}" SelectedValuePath="Value" Style="{StaticResource SettingComboStyle}"
+                                      AutomationProperties.Name="{loc:Translate Profiles.Mode}"/>
+                            <TextBlock Text="{loc:Translate Profiles.KeyDelay}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBox Text="{Binding KeyDelayMs, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" Style="{StaticResource SettingTextBoxStyle}"
+                                     AutomationProperties.Name="{loc:Translate Profiles.KeyDelay}"/>
+                            <TextBlock Text="{loc:Translate Profiles.EnterDelay}" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBox Text="{Binding EnterExtraDelayMs, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" Style="{StaticResource SettingTextBoxStyle}"
+                                     AutomationProperties.Name="{loc:Translate Profiles.EnterDelay}"/>
+                        </StackPanel>
+                        <WrapPanel>
+                            <Button Command="{Binding AddProfileCommand}" Content="{loc:Translate Profiles.Add}" Style="{StaticResource FeatureButtonStyle}" AutomationProperties.Name="{loc:Translate Profiles.Add}"/>
+                            <Button Command="{Binding RemoveProfileCommand}" Content="{loc:Translate Profiles.Remove}" Style="{StaticResource FeatureButtonStyle}" AutomationProperties.Name="{loc:Translate Profiles.Remove}"/>
+                            <Button Command="{Binding OpenBackupsCommand}" Content="{loc:Translate Backup.Title}" Style="{StaticResource FeatureButtonStyle}" AutomationProperties.Name="{loc:Translate Backup.Title}"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
 
                 <Border Style="{StaticResource SectionCardStyle}">
                     <StackPanel>

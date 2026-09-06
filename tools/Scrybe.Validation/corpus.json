@@ -1,0 +1,101 @@
+[
+  {
+    "Id": "console-12-96-light",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 12,
+    "Dpi": 96,
+    "Foreground": "#111111",
+    "Background": "#FFFFFF",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "console-12-96-dark",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 12,
+    "Dpi": 96,
+    "Foreground": "#F8F8F2",
+    "Background": "#282A36",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "console-16-96-light",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 16,
+    "Dpi": 96,
+    "Foreground": "#111111",
+    "Background": "#FFFFFF",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "console-16-96-dark",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 16,
+    "Dpi": 96,
+    "Foreground": "#F8F8F2",
+    "Background": "#282A36",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "console-16-144-light",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 16,
+    "Dpi": 144,
+    "Foreground": "#111111",
+    "Background": "#FFFFFF",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "console-16-144-dark",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 16,
+    "Dpi": 144,
+    "Foreground": "#F8F8F2",
+    "Background": "#282A36",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "console-16-192-light",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 16,
+    "Dpi": 192,
+    "Foreground": "#111111",
+    "Background": "#FFFFFF",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "console-16-192-dark",
+    "Text": "ERROR connection refused 10.0.0.5:5432\npath /etc/scrybe/agent.conf not found",
+    "FontSize": 16,
+    "Dpi": 192,
+    "Foreground": "#F8F8F2",
+    "Background": "#282A36",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "code-96",
+    "Text": "if (ready) {\n    return value + 1;\n}\n",
+    "FontSize": 16,
+    "Dpi": 96,
+    "Foreground": "#F8F8F2",
+    "Background": "#282A36",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "code-144",
+    "Text": "if (ready) {\n    return value + 1;\n}\n",
+    "FontSize": 16,
+    "Dpi": 144,
+    "Foreground": "#F8F8F2",
+    "Background": "#282A36",
+    "MaxNormalizedCer": 0.05
+  },
+  {
+    "Id": "code-192",
+    "Text": "if (ready) {\n    return value + 1;\n}\n",
+    "FontSize": 16,
+    "Dpi": 192,
+    "Foreground": "#F8F8F2",
+    "Background": "#282A36",
+    "MaxNormalizedCer": 0.05
+  }
+]

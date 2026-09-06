@@ -14,83 +14,32 @@
  * limitations under the License.
  */
 
-using System.Text.Json;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.IO;
-using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 
 namespace Scrybe.Core.Settings;
 
-/// <summary>
-/// JSON-file settings store. Loading tolerates a missing or corrupt file (logs and returns validated
-/// defaults) and missing fields (kept at their defaults); every loaded value is validated and clamped.
-/// </summary>
-public sealed class JsonSettingsStore : ISettingsStore
+/// <summary>Validated settings with quarantine and stale-write/failed-read protection.</summary>
+public sealed class JsonSettingsStore : ISettingsStore, IStoreReadState
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-    };
+    private readonly JsonStoreFile<AppSettings> _file;
 
-    private readonly string _filePath;
+    /// <summary>Initializes the settings store.</summary>
+    /// <param name="filePath">Path to settings JSON.</param>
+    public JsonSettingsStore(string filePath) => _file = new(filePath);
 
-    /// <summary>Initializes the store backed by <paramref name="filePath"/>.</summary>
-    /// <param name="filePath">Absolute path to the settings JSON file.</param>
-    public JsonSettingsStore(string filePath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-        _filePath = filePath;
-    }
+    /// <inheritdoc />
+    public bool CanSave => _file.CanSave;
 
     /// <inheritdoc />
     public async Task<SettingsLoadResult> LoadAsync(CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(_filePath))
-        {
-            return new SettingsLoadResult(SettingsValidator.Validate(new AppSettings()), Existed: false);
-        }
-
-        try
-        {
-            await using FileStream stream = File.OpenRead(_filePath);
-            AppSettings? settings = await JsonSerializer
-                .DeserializeAsync<AppSettings>(stream, SerializerOptions, cancellationToken)
-                .ConfigureAwait(false);
-            return new SettingsLoadResult(SettingsValidator.Validate(settings ?? new AppSettings()), Existed: true);
-        }
-        catch (JsonException exception)
-        {
-            FileLogger.Error($"Failed to read settings from {_filePath}; falling back to defaults.", exception);
-            CorruptJsonQuarantine.TryMoveAside(_filePath, "settings");
-            return new SettingsLoadResult(SettingsValidator.Validate(new AppSettings()), Existed: false);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to read settings from {_filePath}; falling back to defaults.", exception);
-            return new SettingsLoadResult(SettingsValidator.Validate(new AppSettings()), Existed: false);
-        }
+        (AppSettings? settings, bool existed) = await _file.LoadAsync(_ => true, cancellationToken).ConfigureAwait(false);
+        return new SettingsLoadResult(SettingsValidator.Validate(settings ?? new AppSettings()), existed);
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(settings);
-
-        try
-        {
-            await AtomicFileWriter
-                .WriteAsync(
-                    _filePath,
-                    (stream, token) => JsonSerializer.SerializeAsync(stream, settings, SerializerOptions, token),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            return true;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to save settings to {_filePath}.", exception);
-            return false;
-        }
-    }
+    public Task<bool> SaveAsync(AppSettings settings, CancellationToken cancellationToken = default)
+        => _file.SaveAsync(settings, cancellationToken);
 }

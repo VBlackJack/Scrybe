@@ -17,11 +17,16 @@
 namespace Scrybe.Core.Models;
 
 /// <summary>
-/// User-configurable application settings. In this increment the values are
-/// in-memory defaults; persistence is introduced in a later increment.
+/// User-configurable settings persisted in the local JSON store.
 /// </summary>
 public sealed class AppSettings
 {
+    /// <summary>Offers an editable crop review before publishing OCR text.</summary>
+    public bool ReviewOcrBeforeCopy { get; set; }
+
+    /// <summary>Exact process-name overrides; global settings remain the fallback.</summary>
+    public List<InjectionProfile> InjectionProfiles { get; set; } = [];
+
     /// <summary>Whether file logging is enabled. Default: <see langword="true"/>.</summary>
     public bool EnableLogging { get; set; } = true;
 

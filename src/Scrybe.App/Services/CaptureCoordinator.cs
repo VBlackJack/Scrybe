@@ -19,11 +19,13 @@ using System.Globalization;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Scrybe.App.Imaging;
+using Scrybe.App.ViewModels;
 using Scrybe.App.Views;
 using Scrybe.Core.Imaging;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
+using Scrybe.Core.Services;
 using Scrybe.Core.Text;
 
 namespace Scrybe.App.Services;
@@ -141,17 +143,29 @@ public sealed class CaptureCoordinator
             OcrResult recognized = await _ocrEngine.RecognizeAsync(pngBytes).ConfigureAwait(false);
             double ocrMs = Stopwatch.GetElapsedTime(ocrStart).TotalMilliseconds;
 
-            string text = recognized.Text.Trim();
-            TextPostProcessingResult postProcessed = TextPostProcessor.Process(
-                text, TextPostProcessingOptions.ForMode(_settings.CleanupMode));
-            text = postProcessed.Text.Trim();
+            TextPostProcessingResult postProcessed = TextPostProcessor.ProcessCapture(recognized.Text, _settings.CleanupMode);
+            string text = postProcessed.Text;
             FileLogger.Info(
                 $"Cleanup ({_settings.CleanupMode}): merged {postProcessed.MergedLines}, "
                 + $"prompts {postProcessed.StrippedPrompts}, logs {postProcessed.StrippedLogDecorations}, "
                 + $"corrected {postProcessed.CorrectedTokens}.");
 
-            _textStore.Set(text);
-            await _clipboard.SetTextAsync(text).ConfigureAwait(false);
+            Func<string, Task<string?>>? reviewText = null;
+            if (_settings.ReviewOcrBeforeCopy)
+            {
+                reviewText = draftText => _dispatcher.InvokeAsync(() =>
+                {
+                    OcrReviewViewModel draft = new(draftText);
+                    BitmapSource original = new CroppedBitmap(outcome.Frozen,
+                        new System.Windows.Int32Rect(outcome.Selection.X, outcome.Selection.Y,
+                            outcome.Selection.Width, outcome.Selection.Height));
+                    OcrReviewWindow review = new(original, draft);
+                    return review.ShowDialog() == true ? draft.Text : null;
+                }).Task;
+            }
+            string? published = await CapturePublication.PublishAsync(text, _textStore, _clipboard, reviewText).ConfigureAwait(false);
+            if (published is null) { return; }
+            text = published;
 
             if (_settings.EnableCaptureHistory && !string.IsNullOrWhiteSpace(text))
             {

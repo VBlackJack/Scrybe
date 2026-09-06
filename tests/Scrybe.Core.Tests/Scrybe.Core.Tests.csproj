@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Scrybe.App\Scrybe.App.csproj" AdditionalProperties="ScrybeReferencedByTests=true" />
+    <ProjectReference Include="..\..\src\Scrybe.App\Scrybe.App.csproj" />
     <ProjectReference Include="..\..\src\Scrybe.Core\Scrybe.Core.csproj" />
     <ProjectReference Include="..\..\src\Scrybe.Ocr\Scrybe.Ocr.csproj" />
   </ItemGroup>

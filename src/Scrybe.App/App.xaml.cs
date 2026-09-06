@@ -80,6 +80,18 @@ public partial class App : System.Windows.Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Length > 0 && e.Args[0] == PackageSelfTest.Switch)
+        {
+            int exitCode = 2;
+            try
+            {
+                if (e.Args.Length == 2) { exitCode = await PackageSelfTest.RunAsync(e.Args[1]); }
+            }
+            catch (Exception exception) { FileLogger.Error("Could not create self-test report.", exception); }
+            _isShutdownRequested = true;
+            Shutdown(exitCode);
+            return;
+        }
 
         string appDataDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -107,7 +119,7 @@ public partial class App : System.Windows.Application
         FileLogger.SetEnabled(settings.EnableLogging);
 
         ServiceCollection services = new();
-        ConfigureServices(services, settings);
+        ConfigureServices(services, settings, settingsStore);
         _serviceProvider = services.BuildServiceProvider();
 
         ILocalizationManager localization = _serviceProvider.GetRequiredService<ILocalizationManager>();
@@ -116,15 +128,16 @@ public partial class App : System.Windows.Application
 
         ApplyTheme(settings.DefaultThemeId);
 
+        await _serviceProvider.GetRequiredService<SnippetLibrary>().LoadAsync().ConfigureAwait(true);
+        await _serviceProvider.GetRequiredService<SecretLibrary>().LoadAsync().ConfigureAwait(true);
+        await _serviceProvider.GetRequiredService<CaptureHistoryLibrary>().LoadAsync().ConfigureAwait(true);
+
         MainWindow mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();
 
         InitializeServices(settings);
 
-        await _serviceProvider.GetRequiredService<SnippetLibrary>().LoadAsync().ConfigureAwait(true);
-        await _serviceProvider.GetRequiredService<SecretLibrary>().LoadAsync().ConfigureAwait(true);
-        await _serviceProvider.GetRequiredService<CaptureHistoryLibrary>().LoadAsync().ConfigureAwait(true);
         _serviceProvider.GetRequiredService<SnippetManagerViewModel>().Reload();
         _serviceProvider.GetRequiredService<SecretManagerViewModel>().Reload();
         _serviceProvider.GetRequiredService<HistoryManagerViewModel>().Reload();
@@ -157,6 +170,7 @@ public partial class App : System.Windows.Application
             _mainViewModel.ClipboardInjectRequested -= OnClipboardInjectRequested;
             _mainViewModel.CleanupModeChanged -= OnCleanupModeChanged;
             _mainViewModel.Settings.Saved -= OnSettingsSaved;
+            _mainViewModel.Settings.BackupsRequested -= OnBackupsRequested;
             _mainViewModel.Settings.InjectionReferenceRequested -= OnInjectionReferenceRequested;
         }
 
@@ -179,13 +193,13 @@ public partial class App : System.Windows.Application
     }
 
     /// <summary>Registers the dependency-injection graph for the application.</summary>
-    private static void ConfigureServices(IServiceCollection services, AppSettings settings)
+    private static void ConfigureServices(IServiceCollection services, AppSettings settings, ISettingsStore settingsStore)
     {
         string localesDirectory = Path.Combine(AppContext.BaseDirectory, AppConstants.LocalesDirName);
         string tessdataDirectory = Path.Combine(AppContext.BaseDirectory, AppConstants.TessdataDirName);
 
         services.AddSingleton(settings);
-        services.AddSingleton<ISettingsStore>(_ => BuildSettingsStore());
+        services.AddSingleton(settingsStore);
         services.AddSingleton<ILocalizationManager>(_ => new LocalizationManager(localesDirectory));
         services.AddSingleton<AboutInfoProvider>();
         services.AddSingleton<DiagnosticsInfoProvider>();
@@ -218,6 +232,8 @@ public partial class App : System.Windows.Application
             AppConstants.SnippetsFileName);
         services.AddSingleton<ISnippetStore>(_ => new JsonSnippetStore(snippetsPath));
         services.AddSingleton<SnippetLibrary>();
+        services.AddSingleton<SnippetExchangeService>();
+        services.AddSingleton<BackupReviewService>();
         services.AddSingleton<SnippetCoordinator>();
 
         string secretsPath = Path.Combine(
@@ -261,6 +277,7 @@ public partial class App : System.Windows.Application
 
         _captureCoordinator = provider.GetRequiredService<CaptureCoordinator>();
         _injectionCoordinator = provider.GetRequiredService<InjectionCoordinator>();
+        _injectionCoordinator.ProgressChanged += OnInjectionProgressChanged;
         _clipboardInjectionCoordinator = provider.GetRequiredService<ClipboardInjectionCoordinator>();
         _snippetCoordinator = provider.GetRequiredService<SnippetCoordinator>();
         _secretCoordinator = provider.GetRequiredService<SecretCoordinator>();
@@ -277,6 +294,7 @@ public partial class App : System.Windows.Application
         _mainViewModel.ClipboardInjectRequested += OnClipboardInjectRequested;
         _mainViewModel.CleanupModeChanged += OnCleanupModeChanged;
         _mainViewModel.Settings.Saved += OnSettingsSaved;
+        _mainViewModel.Settings.BackupsRequested += OnBackupsRequested;
         _mainViewModel.Settings.InjectionReferenceRequested += OnInjectionReferenceRequested;
 
         _trayIconService = provider.GetRequiredService<TrayIconService>();
@@ -433,12 +451,12 @@ public partial class App : System.Windows.Application
             localization["Inject.ConfirmLastTextTitle"],
             localization["Inject.ConfirmLastTextTarget"],
             localization["Inject.TargetUnavailable"],
-            localization["Inject.UntitledTarget"]))
+            localization["Inject.UntitledTarget"], out IInjectionContext? context))
         {
             return;
         }
 
-        await _injectionCoordinator.InjectLastTextAsync().ConfigureAwait(true);
+        await _injectionCoordinator.InjectLastTextAsync(context).ConfigureAwait(true);
     }
 
     private async Task ConfirmAndInjectReferenceAsync(IntPtr target, int length)
@@ -449,12 +467,12 @@ public partial class App : System.Windows.Application
             localization["Inject.ConfirmReferenceTitle"],
             localization["Inject.ConfirmReferenceTarget"],
             localization["Inject.TargetUnavailable"],
-            localization["Inject.UntitledTarget"]))
+            localization["Inject.UntitledTarget"], out IInjectionContext? context))
         {
             return;
         }
 
-        await _injectionCoordinator!.InjectReferenceAsync(length).ConfigureAwait(true);
+        await _injectionCoordinator!.InjectReferenceAsync(length, context).ConfigureAwait(true);
     }
 
     private void HideHubWindow()

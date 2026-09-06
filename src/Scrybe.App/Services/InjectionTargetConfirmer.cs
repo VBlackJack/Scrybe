@@ -15,7 +15,9 @@
  */
 
 using System.Globalization;
+using Scrybe.Core.Interfaces;
 using Scrybe.Core.Logging;
+using Scrybe.Core.Models;
 
 namespace Scrybe.App.Services;
 
@@ -24,17 +26,22 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
 {
     private readonly ITargetWindowGateway _targetGateway;
     private readonly ITargetConfirmationPrompt _prompt;
+    private readonly AppSettings? _settings;
+    private readonly ILocalizationManager? _localization;
 
     /// <summary>Initializes the target confirmer with testable OS-bound seams.</summary>
     /// <param name="targetGateway">Gateway for target-window metadata and foreground restore.</param>
     /// <param name="prompt">Native confirmation prompt abstraction.</param>
-    public InjectionTargetConfirmer(ITargetWindowGateway targetGateway, ITargetConfirmationPrompt prompt)
+    public InjectionTargetConfirmer(ITargetWindowGateway targetGateway, ITargetConfirmationPrompt prompt,
+        AppSettings? settings = null, ILocalizationManager? localization = null)
     {
         ArgumentNullException.ThrowIfNull(targetGateway);
         ArgumentNullException.ThrowIfNull(prompt);
 
         _targetGateway = targetGateway;
         _prompt = prompt;
+        _settings = settings;
+        _localization = localization;
     }
 
     /// <summary>
@@ -51,15 +58,17 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
         string confirmTitle,
         string confirmMessageTemplate,
         string targetUnavailableMessage,
-        string untitledTargetText)
+        string untitledTargetText, out IInjectionContext? context)
     {
+        context = null;
         if (!_targetGateway.TryGetInfo(target, out TargetWindowInfo? targetInfo) || targetInfo is null)
         {
             _prompt.ShowTargetUnavailable(confirmTitle, targetUnavailableMessage);
             return false;
         }
 
-        if (!ConfirmTarget(targetInfo, confirmTitle, confirmMessageTemplate, untitledTargetText))
+        InjectionProfile? profile = _settings is null ? null : InjectionProfile.Resolve(_settings, targetInfo.ProcessName);
+        if (!ConfirmTarget(targetInfo, confirmTitle, confirmMessageTemplate, untitledTargetText, profile))
         {
             return false;
         }
@@ -92,6 +101,7 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
             return false;
         }
 
+        context = new ConfirmedInjectionContext(_targetGateway, targetInfo, profile);
         return true;
     }
 
@@ -104,7 +114,7 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
         TargetWindowInfo targetInfo,
         string confirmTitle,
         string confirmMessageTemplate,
-        string untitledTargetText)
+        string untitledTargetText, InjectionProfile? profile)
     {
         string title = string.IsNullOrWhiteSpace(targetInfo.Title)
             ? untitledTargetText
@@ -118,6 +128,11 @@ public sealed class InjectionTargetConfirmer : IInjectionTargetConfirmer
             targetInfo.ProcessId,
             handle);
 
+        if (profile is not null && _localization is not null)
+        {
+            message += Environment.NewLine + string.Format(CultureInfo.CurrentCulture,
+                _localization["Profiles.Confirmation"], profile.Mode, profile.KeyDelayMs, profile.EnterExtraDelayMs);
+        }
         if (!_prompt.Confirm(confirmTitle, message))
         {
             FileLogger.Info("Injection target confirmation cancelled.");

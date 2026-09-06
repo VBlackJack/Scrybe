@@ -29,7 +29,7 @@ public interface IKeystrokeInjector
     /// <param name="sequence">The key sequence to send.</param>
     /// <param name="cancellationToken">Token used by the emergency abort to cancel injection.</param>
     /// <returns>The outcome, including whether UIPI blocked it or it was aborted.</returns>
-    Task<InjectionResult> InjectAsync(KeystrokeSequence sequence, CancellationToken cancellationToken = default);
+    Task<InjectionResult> InjectAsync(KeystrokeSequence sequence, CancellationToken cancellationToken = default, IInjectionContext? context = null);
 
     /// <summary>
     /// Injects plaintext characters without first materializing a full keystroke sequence. Intended for
@@ -38,5 +38,5 @@ public interface IKeystrokeInjector
     /// <param name="text">The character buffer to type.</param>
     /// <param name="cancellationToken">Token used by the emergency abort to cancel injection.</param>
     /// <returns>The outcome, including whether UIPI blocked it or it was aborted.</returns>
-    Task<InjectionResult> InjectAsync(ReadOnlyMemory<char> text, CancellationToken cancellationToken = default);
+    Task<InjectionResult> InjectAsync(ReadOnlyMemory<char> text, CancellationToken cancellationToken = default, IInjectionContext? context = null);
 }

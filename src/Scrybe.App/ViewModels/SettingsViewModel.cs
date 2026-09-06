@@ -208,6 +208,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             recorder.PropertyChanged += OnRecorderPropertyChanged;
         }
 
+        InitializeFeatures();
         _initialized = true;
     }
 
@@ -302,6 +303,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task Save()
     {
+        if (ReloadFromDiskCommand.IsRunning) { return; }
+        if (!ValidateProfiles()) { return; }
         List<HotkeyBinding> bindings =
         [
             new HotkeyBinding(CaptureRecorder.ActionId, CaptureRecorder.Modifiers, CaptureRecorder.Key),
@@ -353,6 +356,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settings.HistoryPaletteHotkeyKey = HistoryPaletteRecorder.Key;
 
         _settings.EnableLogging = EnableLogging;
+        _settings.ReviewOcrBeforeCopy = ReviewOcrBeforeCopy;
+        _settings.InjectionProfiles = Profiles.Select(row => row.Snapshot()).ToList();
         _settings.PrewarmOnStartup = PrewarmOnStartup;
         _settings.EnablePreprocessing = EnablePreprocessing;
         _settings.SaveCaptureCrop = SaveCaptureCrop;

@@ -14,83 +14,36 @@
  * limitations under the License.
  */
 
-using System.Text.Json;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.IO;
-using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 
 namespace Scrybe.Core.Snippets;
 
-/// <summary>
-/// JSON-file snippet store. Snippets are non-secret, so they are stored as plain JSON. Loading is robust
-/// to a missing or corrupt file: it logs and returns an empty library rather than crashing.
-/// </summary>
-public sealed class JsonSnippetStore : ISnippetStore
+/// <summary>JSON collection store with quarantine, failed-read admission and stale-write protection.</summary>
+public sealed class JsonSnippetStore : ISnippetStore, IStoreReadState
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-    };
+    private readonly JsonStoreFile<List<Snippet>> _file;
 
-    private readonly string _filePath;
+    /// <summary>Initializes the store at the supplied path.</summary>
+    /// <param name="filePath">Path to the JSON store.</param>
+    public JsonSnippetStore(string filePath) => _file = new(filePath);
 
-    /// <summary>Initializes the store backed by <paramref name="filePath"/>.</summary>
-    /// <param name="filePath">Absolute path to the snippets JSON file.</param>
-    public JsonSnippetStore(string filePath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-        _filePath = filePath;
-    }
+    /// <inheritdoc />
+    public bool CanSave => _file.CanSave;
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<Snippet>> LoadAsync(CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(_filePath))
-        {
-            return [];
-        }
-
-        try
-        {
-            await using FileStream stream = File.OpenRead(_filePath);
-            List<Snippet>? snippets = await JsonSerializer
-                .DeserializeAsync<List<Snippet>>(stream, SerializerOptions, cancellationToken)
-                .ConfigureAwait(false);
-            return snippets ?? [];
-        }
-        catch (JsonException exception)
-        {
-            FileLogger.Error($"Failed to read snippets from {_filePath}; starting with an empty library.", exception);
-            CorruptJsonQuarantine.TryMoveAside(_filePath, "snippets");
-            return [];
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to read snippets from {_filePath}; starting with an empty library.", exception);
-            return [];
-        }
+        (List<Snippet>? entries, _) = await _file.LoadAsync(
+            entries => entries.All(entry => entry is not null && !string.IsNullOrWhiteSpace(entry.Id) && !string.IsNullOrWhiteSpace(entry.Name) && entry.Template is not null && entry.Parameters is not null && entry.Parameters.All(parameter => parameter is not null && !string.IsNullOrWhiteSpace(parameter.Name) && parameter.Label is not null)), cancellationToken).ConfigureAwait(false);
+        return entries ?? [];
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveAsync(IReadOnlyList<Snippet> snippets, CancellationToken cancellationToken = default)
+    public Task<bool> SaveAsync(IReadOnlyList<Snippet> entries, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(snippets);
-
-        try
-        {
-            await AtomicFileWriter
-                .WriteAsync(
-                    _filePath,
-                    (stream, token) => JsonSerializer.SerializeAsync(stream, snippets, SerializerOptions, token),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            return true;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to save snippets to {_filePath}.", exception);
-            return false;
-        }
+        ArgumentNullException.ThrowIfNull(entries);
+        return _file.SaveAsync(entries.ToList(), cancellationToken);
     }
 }

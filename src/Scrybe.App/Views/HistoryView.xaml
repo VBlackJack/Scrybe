@@ -100,7 +100,7 @@
                                         <TextBlock Text="{Binding Timestamp}"
                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                    FontSize="{StaticResource FontSizeCaption}" />
-                                        <TextBlock Text=" · "
+                                        <TextBlock Text=" Ã‚Â· "
                                                    Foreground="{StaticResource TextSecondaryBrush}"
                                                    FontSize="{StaticResource FontSizeCaption}" />
                                         <TextBlock Text="{Binding CharCountText}"
@@ -169,7 +169,7 @@
                              AutomationProperties.Name="{loc:Translate History.Edit}" />
 
                     <TextBlock Grid.Row="3"
-                               Text="{Binding StatusMessage}"
+                               Text="{Binding StatusMessage}" AutomationProperties.LiveSetting="Polite"
                                VerticalAlignment="Bottom"
                                TextWrapping="Wrap">
                         <TextBlock.Style>
@@ -214,6 +214,9 @@
                                 <TextBlock Text="{loc:Translate History.RevealForEdit}" Style="{StaticResource AppIconTextStyle}" />
                             </StackPanel>
                         </Button>
+                        <Button Command="{Binding ReloadFromDiskCommand}" Foreground="{DynamicResource TextPrimaryBrush}" Background="{DynamicResource CardBrush}" Padding="{StaticResource PaddingButtonPrimary}" Content="{loc:Translate Persist.Reload}"
+                                AutomationProperties.Name="{loc:Translate Persist.Reload}"
+                                ToolTip="{loc:Translate Persist.ReloadHelp}" />
                         <Button Command="{Binding SaveEditCommand}"
                                 IsEnabled="{Binding CanSaveEdit}"
                                 Margin="0,8,0,0"

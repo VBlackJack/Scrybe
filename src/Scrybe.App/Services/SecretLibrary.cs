@@ -23,6 +23,7 @@ namespace Scrybe.App.Services;
 /// <summary>In-memory secret library backed by a DPAPI-protected store.</summary>
 public sealed class SecretLibrary
 {
+    private readonly SemaphoreSlim _operationGate = new(1, 1);
     private readonly ISecretStore _store;
     private readonly ISecretProtector _protector;
     private readonly List<SecretEntry> _secrets = [];
@@ -42,12 +43,19 @@ public sealed class SecretLibrary
     public IReadOnlyList<SecretEntry> Secrets => _secrets;
 
     /// <summary>Loads the protected secrets from the store.</summary>
-    public async Task LoadAsync()
+    public async Task<bool> LoadAsync()
     {
-        IReadOnlyList<SecretEntry> loaded = await _store.LoadAsync().ConfigureAwait(false);
-        IReadOnlyList<SecretEntry> current = await MigrateIfNeededAsync(loaded).ConfigureAwait(false);
-        _secrets.Clear();
-        _secrets.AddRange(current);
+        await _operationGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            IReadOnlyList<SecretEntry> loaded = await _store.LoadAsync().ConfigureAwait(false);
+            if (_store is IStoreReadState { CanSave: false }) { return false; }
+            IReadOnlyList<SecretEntry> current = await MigrateIfNeededAsync(loaded).ConfigureAwait(false);
+            _secrets.Clear();
+            _secrets.AddRange(current);
+            return true;
+        }
+        finally { _operationGate.Release(); }
     }
 
     /// <summary>Adds or replaces a secret, protecting new plaintext immediately before persistence.</summary>
@@ -58,42 +66,49 @@ public sealed class SecretLibrary
     /// <returns>The saved entry and whether it was persisted.</returns>
     public async Task<SecretSaveResult> SaveAsync(string? id, string name, string? userName, string secretValue)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentNullException.ThrowIfNull(secretValue);
-
-        SecretEntry? existing = id is null
-            ? null
-            : _secrets.FirstOrDefault(secret => string.Equals(secret.Id, id, StringComparison.Ordinal));
-
-        if (existing is null && string.IsNullOrEmpty(secretValue))
+        await _operationGate.WaitAsync().ConfigureAwait(false);
+        try
         {
-            throw new InvalidOperationException("A new secret requires a value.");
-        }
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            ArgumentNullException.ThrowIfNull(secretValue);
 
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        string protectedSecret = string.IsNullOrEmpty(secretValue)
-            ? existing!.ProtectedSecret
-            : _protector.Protect(secretValue);
-        SecretEntry saved = new(
-            existing?.Id ?? Guid.NewGuid().ToString("N"),
-            name.Trim(),
-            string.IsNullOrWhiteSpace(userName) ? null : userName.Trim(),
-            protectedSecret,
-            existing?.CreatedAtUtc ?? now,
-            now);
+            SecretEntry? existing = id is null
+                ? null
+                : _secrets.FirstOrDefault(secret => string.Equals(secret.Id, id, StringComparison.Ordinal));
 
-        int index = _secrets.FindIndex(secret => string.Equals(secret.Id, saved.Id, StringComparison.Ordinal));
-        if (index >= 0)
-        {
-            _secrets[index] = saved;
-        }
-        else
-        {
-            _secrets.Add(saved);
-        }
+            if (existing is null && string.IsNullOrEmpty(secretValue))
+            {
+                throw new InvalidOperationException("A new secret requires a value.");
+            }
 
-        bool persisted = await _store.SaveAsync(_secrets).ConfigureAwait(false);
-        return new SecretSaveResult(saved, persisted);
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            string protectedSecret = string.IsNullOrEmpty(secretValue)
+                ? existing!.ProtectedSecret
+                : _protector.Protect(secretValue);
+            SecretEntry saved = new(
+                existing?.Id ?? Guid.NewGuid().ToString("N"),
+                name.Trim(),
+                string.IsNullOrWhiteSpace(userName) ? null : userName.Trim(),
+                protectedSecret,
+                existing?.CreatedAtUtc ?? now,
+                now);
+
+            List<SecretEntry> pending = new(_secrets);
+            int index = pending.FindIndex(secret => string.Equals(secret.Id, saved.Id, StringComparison.Ordinal));
+            if (index >= 0)
+            {
+                pending[index] = saved;
+            }
+            else
+            {
+                pending.Add(saved);
+            }
+
+            bool persisted = await _store.SaveAsync(pending).ConfigureAwait(false);
+            if (persisted) { _secrets.Clear(); _secrets.AddRange(pending); }
+            return new SecretSaveResult(saved, persisted);
+        }
+        finally { _operationGate.Release(); }
     }
 
     /// <summary>Deletes a secret by id and persists the vault.</summary>
@@ -101,8 +116,16 @@ public sealed class SecretLibrary
     /// <returns><see langword="true"/> when the deletion was persisted; otherwise <see langword="false"/>.</returns>
     public async Task<bool> DeleteAsync(string id)
     {
-        _secrets.RemoveAll(secret => string.Equals(secret.Id, id, StringComparison.Ordinal));
-        return await _store.SaveAsync(_secrets).ConfigureAwait(false);
+        await _operationGate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            List<SecretEntry> pending = new(_secrets);
+            pending.RemoveAll(secret => string.Equals(secret.Id, id, StringComparison.Ordinal));
+            bool persisted = await _store.SaveAsync(pending).ConfigureAwait(false);
+            if (persisted) { _secrets.Clear(); _secrets.AddRange(pending); }
+            return persisted;
+        }
+        finally { _operationGate.Release(); }
     }
 
     /// <summary>Returns plaintext secret characters for immediate injection, or <see langword="null"/> when absent.</summary>
@@ -158,6 +181,6 @@ public sealed class SecretLibrary
 }
 
 /// <summary>The result of a secret save operation.</summary>
-/// <param name="Entry">The saved secret entry kept in the in-memory library.</param>
+/// <param name="Entry">The attempted secret entry, published to the library only when persisted.</param>
 /// <param name="Persisted">Whether the entry was written to the protected store.</param>
 public sealed record SecretSaveResult(SecretEntry Entry, bool Persisted);

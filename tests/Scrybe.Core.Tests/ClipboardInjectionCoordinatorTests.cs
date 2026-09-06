@@ -19,6 +19,7 @@ using Scrybe.App.Services;
 using Scrybe.Core.Input;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Models;
+using Scrybe.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Scrybe.Core.Tests;
@@ -129,13 +130,35 @@ public sealed class ClipboardInjectionCoordinatorTests
     {
         GuardedTestInjector injector = new();
 
-        InjectionResult result = await injector.InjectAsync("déjà-secret".AsMemory());
+        InjectionResult result = await injector.InjectAsync("déjà-secret".AsMemory(), context: new TestInjectionContext());
 
         result.Success.Should().BeFalse();
         result.KeystrokesSent.Should().Be(0);
         injector.SentCharacters.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task InjectClipboardAsync_PreservesNewContentCopiedDuringInjection()
+    {
+        TestClipboardService clipboard = new(ClipboardText);
+        TestNotificationService notification = new();
+        TaskCompletionSource<object?> started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<object?> release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        FakeKeystrokeInjector injector = new(new InjectionResult(true, 1, false, false))
+        {
+            Started = started,
+            Release = release,
+        };
+        ClipboardInjectionCoordinator coordinator = new(
+            clipboard, CreateInjectionCoordinator(injector, notification), new AllowingTargetConfirmer(),
+            notification, new TestLocalizationManager(), new AppSettings { ClearClipboardAfterInjection = true });
+        Task pending = coordinator.InjectClipboardAsync();
+        await started.Task;
+        await clipboard.SetTextAsync("new-unrelated-content");
+        release.SetResult(null);
+        await pending;
+        clipboard.Text.Should().Be("new-unrelated-content");
+    }
     private static ClipboardInjectionCoordinator CreateClipboardCoordinator(
         InjectionResult injectionResult,
         TestClipboardService clipboard,
@@ -185,12 +208,12 @@ public sealed class ClipboardInjectionCoordinatorTests
 
         public Task<InjectionResult> InjectAsync(
             KeystrokeSequence sequence,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, IInjectionContext? context = null)
             => Task.FromResult(_result);
 
         public async Task<InjectionResult> InjectAsync(
             ReadOnlyMemory<char> text,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, IInjectionContext? context = null)
         {
             Started?.TrySetResult(null);
 
@@ -218,6 +241,9 @@ public sealed class ClipboardInjectionCoordinatorTests
         {
         }
 
+        protected override bool IsHigherIntegrity() => false;
+        protected override void ReleaseModifiers() { }
+
         protected override bool CanRepresentStroke(KeyStroke stroke)
             => stroke.IsSpecial || stroke.Character < 0x80;
 
@@ -239,12 +265,22 @@ public sealed class ClipboardInjectionCoordinatorTests
         public string? Text { get; private set; }
 
         public int SetCallCount { get; private set; }
+        private uint _version = 1;
+        public Task<ClipboardSnapshot?> GetSnapshotAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(Text is null ? null : new ClipboardSnapshot(Text, _version));
+        public async Task<bool> TryClearAsync(uint version, CancellationToken cancellationToken = default)
+        {
+            if (version == 0 || version != _version) { return false; }
+            await SetTextAsync(string.Empty, cancellationToken);
+            return true;
+        }
 
         public Task<string?> GetTextAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(Text);
 
         public Task SetTextAsync(string text, CancellationToken cancellationToken = default)
         {
+            _version++;
             SetCallCount++;
             Text = text;
             return Task.CompletedTask;
@@ -265,8 +301,8 @@ public sealed class ClipboardInjectionCoordinatorTests
             string confirmTitle,
             string confirmMessageTemplate,
             string targetUnavailableMessage,
-            string untitledTargetText)
-            => true;
+            string untitledTargetText, out IInjectionContext? context)
+        { context = new TestInjectionContext(); return true; }
     }
 
     private sealed class TestLocalizationManager : ILocalizationManager

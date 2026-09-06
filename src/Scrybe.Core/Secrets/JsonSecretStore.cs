@@ -14,88 +14,36 @@
  * limitations under the License.
  */
 
-using System.Text.Json;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.IO;
-using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 
 namespace Scrybe.Core.Secrets;
 
-/// <summary>
-/// JSON store for DPAPI-protected secrets. Only ciphertext and non-secret metadata are written; missing
-/// or corrupt files load as an empty vault so Scrybe keeps starting.
-/// </summary>
-public sealed class JsonSecretStore : ISecretStore
+/// <summary>JSON collection store with quarantine, failed-read admission and stale-write protection.</summary>
+public sealed class JsonSecretStore : ISecretStore, IStoreReadState
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-    };
+    private readonly JsonStoreFile<List<SecretEntry>> _file;
 
-    private readonly string _filePath;
+    /// <summary>Initializes the store at the supplied path.</summary>
+    /// <param name="filePath">Path to the JSON store.</param>
+    public JsonSecretStore(string filePath) => _file = new(filePath);
 
-    /// <summary>Initializes the store backed by <paramref name="filePath"/>.</summary>
-    /// <param name="filePath">Absolute path to the protected secrets JSON file.</param>
-    public JsonSecretStore(string filePath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-        _filePath = filePath;
-    }
+    /// <inheritdoc />
+    public bool CanSave => _file.CanSave;
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<SecretEntry>> LoadAsync(CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(_filePath))
-        {
-            return [];
-        }
-
-        try
-        {
-            await using FileStream stream = File.OpenRead(_filePath);
-            List<SecretEntry>? secrets = await JsonSerializer
-                .DeserializeAsync<List<SecretEntry>>(stream, SerializerOptions, cancellationToken)
-                .ConfigureAwait(false);
-            return secrets?.Where(IsValid).ToList() ?? [];
-        }
-        catch (JsonException exception)
-        {
-            FileLogger.Error($"Failed to read secrets from {_filePath}; starting with an empty vault.", exception);
-            CorruptJsonQuarantine.TryMoveAside(_filePath, "secrets");
-            return [];
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to read secrets from {_filePath}; starting with an empty vault.", exception);
-            return [];
-        }
+        (List<SecretEntry>? entries, _) = await _file.LoadAsync(
+            entries => entries.All(entry => entry is not null && !string.IsNullOrWhiteSpace(entry.Id) && !string.IsNullOrWhiteSpace(entry.Name) && !string.IsNullOrWhiteSpace(entry.ProtectedSecret)), cancellationToken).ConfigureAwait(false);
+        return entries ?? [];
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveAsync(IReadOnlyList<SecretEntry> secrets, CancellationToken cancellationToken = default)
+    public Task<bool> SaveAsync(IReadOnlyList<SecretEntry> entries, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(secrets);
-
-        try
-        {
-            await AtomicFileWriter
-                .WriteAsync(
-                    _filePath,
-                    (stream, token) => JsonSerializer.SerializeAsync(stream, secrets, SerializerOptions, token),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            return true;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to save secrets to {_filePath}.", exception);
-            return false;
-        }
+        ArgumentNullException.ThrowIfNull(entries);
+        return _file.SaveAsync(entries.ToList(), cancellationToken);
     }
-
-    private static bool IsValid(SecretEntry secret)
-        => !string.IsNullOrWhiteSpace(secret.Id)
-        && !string.IsNullOrWhiteSpace(secret.Name)
-        && !string.IsNullOrWhiteSpace(secret.ProtectedSecret);
 }

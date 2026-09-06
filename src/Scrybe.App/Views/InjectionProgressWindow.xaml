@@ -1,0 +1,16 @@
+<Window x:Class="Scrybe.App.Views.InjectionProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:Scrybe.App.Localization"
+        Title="{loc:Translate Inject.ProgressTitle}" ShowActivated="False" ShowInTaskbar="False"
+        WindowStyle="ToolWindow" Width="{StaticResource ConfirmationDialogWidth}" SizeToContent="Height" ResizeMode="NoResize"
+        Topmost="True" Background="{DynamicResource BackgroundBrush}">
+    <StackPanel Margin="{StaticResource PaddingSectionCard}">
+        <TextBlock TextWrapping="Wrap" Text="{Binding Target}" Foreground="{DynamicResource TextPrimaryBrush}" />
+        <TextBlock TextWrapping="Wrap" Text="{Binding Status}" Foreground="{DynamicResource TextPrimaryBrush}" AutomationProperties.LiveSetting="Polite" />
+        <ProgressBar Minimum="0" Maximum="{Binding Total}" Value="{Binding Completed}" AutomationProperties.Name="{loc:Translate Inject.ProgressTitle}" />
+        <TextBlock TextWrapping="Wrap" Text="{Binding Counts}" Foreground="{DynamicResource TextSecondaryBrush}" />
+        <Button Command="{Binding StopCommand}" Content="{loc:Translate Inject.Stop}" AutomationProperties.Name="{loc:Translate Inject.Stop}" />
+        <TextBlock TextWrapping="Wrap" Text="{loc:Translate Inject.NoAutoResume}" Foreground="{DynamicResource TextSecondaryBrush}" />
+    </StackPanel>
+</Window>

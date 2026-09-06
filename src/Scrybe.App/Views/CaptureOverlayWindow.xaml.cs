@@ -16,6 +16,8 @@
 
 using System.Globalization;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -53,6 +55,8 @@ public sealed partial class CaptureOverlayWindow : Window
     private Point _currentPoint;
     private bool _isDragging;
     private bool _completed;
+    private PixelRect? _keyboardSelection;
+    private readonly string _selectionDescription;
 
     /// <summary>Initializes the overlay for a captured frame.</summary>
     /// <param name="frozen">The frozen full-frame bitmap to display.</param>
@@ -74,6 +78,9 @@ public sealed partial class CaptureOverlayWindow : Window
         FrozenImage.Source = frozen;
         LoupeBrush.ImageSource = frozen;
         HintText.Text = localization["Overlay.Hint"];
+        _selectionDescription = localization["Overlay.KeyboardSelection"];
+        AutomationProperties.SetName(this, localization["Overlay.Title"]);
+        AutomationProperties.SetHelpText(this, HintText.Text);
 
         LoupeBorder.Width = LoupeSizeDip;
         LoupeBorder.Height = LoupeSizeDip;
@@ -106,14 +113,17 @@ public sealed partial class CaptureOverlayWindow : Window
         Activate();
         Focus();
 
-        ScrimPath.Data = new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight));
+        ScrimPath.Data = new RectangleGeometry(new Rect(0, 0, RootGrid.ActualWidth, RootGrid.ActualHeight));
 
-        Canvas.SetLeft(HintBorder, (ActualWidth - HintBorder.ActualWidth) / 2.0);
+        HintBorder.MaxWidth = RootGrid.ActualWidth;
+        HintBorder.UpdateLayout();
+        Canvas.SetLeft(HintBorder, Math.Max(0, (RootGrid.ActualWidth - HintBorder.ActualWidth) / 2.0));
         Canvas.SetTop(HintBorder, HintTopMarginDip);
     }
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        _keyboardSelection = null;
         _startPoint = e.GetPosition(this);
         _currentPoint = _startPoint;
         _isDragging = true;
@@ -123,6 +133,7 @@ public sealed partial class CaptureOverlayWindow : Window
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
+        if (_keyboardSelection is not null) { return; }
         _currentPoint = e.GetPosition(this);
         UpdateLoupe(_currentPoint);
 
@@ -146,16 +157,48 @@ public sealed partial class CaptureOverlayWindow : Window
 
     private void OnKeyDown(object sender, KeyEventArgs e)
     {
-        switch (e.Key)
+        e.Handled = HandleSelectionKey(e.Key, Keyboard.Modifiers);
+    }
+
+    /// <summary>Handles the same selection keys for routed input and controlled accessibility validation.</summary>
+    public bool HandleSelectionKey(Key key, ModifierKeys modifiers)
+    {
+        if (key is Key.K or Key.Left or Key.Right or Key.Up or Key.Down)
+        {
+            _isDragging = false;
+            ReleaseMouseCapture();
+            HintBorder.Visibility = Visibility.Visible;
+            _keyboardSelection ??= KeyboardSelection.Create(_frame.Width, _frame.Height);
+            int step = modifiers.HasFlag(ModifierKeys.Control) ? AppConstants.KeyboardSelectionFastStep : 1;
+            int dx = key == Key.Left ? -step : key == Key.Right ? step : 0;
+            int dy = key == Key.Up ? -step : key == Key.Down ? step : 0;
+            _keyboardSelection = KeyboardSelection.Adjust(_keyboardSelection, dx, dy,
+                modifiers.HasFlag(ModifierKeys.Shift), _frame.Width, _frame.Height);
+            _startPoint = new Point(_keyboardSelection.X / _scale, _keyboardSelection.Y / _scale);
+            _currentPoint = new Point((_keyboardSelection.X + _keyboardSelection.Width) / _scale,
+                (_keyboardSelection.Y + _keyboardSelection.Height) / _scale);
+            UpdateSelectionVisuals();
+            UpdateLoupe(_currentPoint);
+            string description = string.Format(CultureInfo.CurrentCulture, _selectionDescription,
+                _keyboardSelection.X, _keyboardSelection.Y, _keyboardSelection.Width, _keyboardSelection.Height);
+            ReadoutText.Text = description;
+            PositionReadout(_startPoint.X, _startPoint.Y,
+                _currentPoint.X - _startPoint.X, _currentPoint.Y - _startPoint.Y);
+            AutomationProperties.SetName(ReadoutText, description);
+            UIElementAutomationPeer.CreatePeerForElement(ReadoutText)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+            return true;
+        }
+
+        switch (key)
         {
             case Key.Escape:
                 Complete(null);
-                break;
+                return true;
             case Key.Enter:
-                Complete(BuildSelection());
-                break;
+                Complete(_keyboardSelection ?? BuildSelection());
+                return true;
             default:
-                break;
+                return false;
         }
     }
 
@@ -182,7 +225,7 @@ public sealed partial class CaptureOverlayWindow : Window
         double width = Math.Abs(_currentPoint.X - _startPoint.X);
         double height = Math.Abs(_currentPoint.Y - _startPoint.Y);
 
-        RectangleGeometry outer = new(new Rect(0, 0, ActualWidth, ActualHeight));
+        RectangleGeometry outer = new(new Rect(0, 0, RootGrid.ActualWidth, RootGrid.ActualHeight));
         RectangleGeometry inner = new(new Rect(left, top, width, height));
         ScrimPath.Data = new CombinedGeometry(GeometryCombineMode.Exclude, outer, inner);
 
@@ -207,12 +250,12 @@ public sealed partial class CaptureOverlayWindow : Window
         double readoutX = left;
         double readoutY = top + height + ReadoutOffsetDip;
 
-        if (readoutY + ReadoutBorder.ActualHeight > ActualHeight)
+        if (readoutY + ReadoutBorder.ActualHeight > RootGrid.ActualHeight)
         {
             readoutY = top - ReadoutBorder.ActualHeight - ReadoutOffsetDip;
         }
 
-        double maxX = ActualWidth - ReadoutBorder.ActualWidth;
+        double maxX = RootGrid.ActualWidth - ReadoutBorder.ActualWidth;
         Canvas.SetLeft(ReadoutBorder, Math.Clamp(readoutX, 0, Math.Max(0, maxX)));
         Canvas.SetTop(ReadoutBorder, Math.Max(0, readoutY));
     }
@@ -232,13 +275,13 @@ public sealed partial class CaptureOverlayWindow : Window
             samplePhysical / _frame.Height);
 
         double loupeX = cursor.X + LoupeOffsetDip;
-        if (loupeX + LoupeSizeDip > ActualWidth)
+        if (loupeX + LoupeSizeDip > RootGrid.ActualWidth)
         {
             loupeX = cursor.X - LoupeSizeDip - LoupeOffsetDip;
         }
 
         double loupeY = cursor.Y + LoupeOffsetDip;
-        if (loupeY + LoupeSizeDip > ActualHeight)
+        if (loupeY + LoupeSizeDip > RootGrid.ActualHeight)
         {
             loupeY = cursor.Y - LoupeSizeDip - LoupeOffsetDip;
         }

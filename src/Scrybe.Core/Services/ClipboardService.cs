@@ -16,6 +16,7 @@
 
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.Logging;
+using Scrybe.Core.Models;
 
 namespace Scrybe.Core.Services;
 
@@ -83,5 +84,30 @@ public sealed class ClipboardService : IClipboardService
                 return;
             }
         }
+    }
+    /// <inheritdoc />
+    public Task<ClipboardSnapshot?> GetSnapshotAsync(CancellationToken cancellationToken = default)
+        => RetrySnapshotOperationAsync(_writer.GetSnapshot, default(ClipboardSnapshot), cancellationToken);
+
+    /// <inheritdoc />
+    public Task<bool> TryClearAsync(uint version, CancellationToken cancellationToken = default)
+        => version == 0 ? Task.FromResult(false) : RetrySnapshotOperationAsync(() => _writer.TryClear(version), false, cancellationToken);
+
+    private static async Task<T> RetrySnapshotOperationAsync<T>(Func<T> operation, T unavailable, CancellationToken token)
+    {
+        for (int attempt = 1; attempt <= AppConstants.ClipboardRetryCount; attempt++)
+        {
+            token.ThrowIfCancellationRequested();
+            try { return operation(); }
+            catch (Exception exception)
+            {
+                FileLogger.Warn($"Clipboard snapshot operation failed ({attempt}/{AppConstants.ClipboardRetryCount}): {exception.GetType().Name}.");
+                if (attempt < AppConstants.ClipboardRetryCount)
+                {
+                    await Task.Delay(AppConstants.ClipboardRetryDelayMs, token).ConfigureAwait(false);
+                }
+            }
+        }
+        return unavailable;
     }
 }

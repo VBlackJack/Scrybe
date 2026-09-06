@@ -243,8 +243,8 @@
         "dependencies": {
           "CommunityToolkit.Mvvm": "[8.4.2, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.9, )",
-          "Scrybe.Core": "[1.0.615.2, )",
-          "Scrybe.Ocr": "[1.0.615.2, )",
+          "Scrybe.Core": "[1.0.906.1, )",
+          "Scrybe.Ocr": "[1.0.906.1, )",
           "Tesseract": "[5.2.0, )",
           "Vortice.Direct3D11": "[3.8.3, )"
         }
@@ -255,7 +255,7 @@
       "scrybe.ocr": {
         "type": "Project",
         "dependencies": {
-          "Scrybe.Core": "[1.0.615.2, )",
+          "Scrybe.Core": "[1.0.906.1, )",
           "Tesseract": "[5.2.0, )"
         }
       }

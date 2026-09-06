@@ -359,4 +359,8 @@ public static class AppConstants
 
     /// <summary>Locale codes shipped with the application.</summary>
     public static readonly string[] SupportedLocaleCodes = { "en", "fr" };
+    /// <summary>Initial keyboard selection occupies one quarter of each monitor dimension.</summary>
+    public const int KeyboardSelectionInitialDivisor = 4;
+    /// <summary>Fast keyboard selection step, in physical pixels.</summary>
+    public const int KeyboardSelectionFastStep = 10;
 }

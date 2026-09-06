@@ -203,7 +203,7 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
             if (!persisted)
             {
                 ShowSaveFailure();
-                FileLogger.Warn("Capture history entry delete updated memory but was not persisted.");
+                FileLogger.Warn("Capture history entry delete was not persisted; the current library was retained.");
                 return;
             }
 
@@ -222,6 +222,7 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanSaveEdit))]
     private async Task SaveEdit()
     {
+        if (ReloadFromDiskCommand.IsRunning) { return; }
         if (SelectedEntry is null)
         {
             return;
@@ -246,6 +247,7 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
             }
 
             bool persisted = await _library.UpdateAsync(selectedId, EditText).ConfigureAwait(true);
+            if (!persisted) { ShowSaveFailure(); return; }
             Reload();
             SelectedEntry = Entries.FirstOrDefault(entry => string.Equals(entry.Id, selectedId, StringComparison.Ordinal))
                 ?? SelectedEntry;
@@ -253,7 +255,7 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
             if (!persisted)
             {
                 ShowSaveFailure();
-                FileLogger.Warn("Capture history entry update completed in memory but was not persisted.");
+                FileLogger.Warn("Capture history entry update was not persisted; the current library was retained.");
                 return;
             }
 
@@ -295,7 +297,7 @@ public sealed partial class HistoryManagerViewModel : ObservableObject
             if (!persisted)
             {
                 ShowSaveFailure();
-                FileLogger.Warn("Capture history clear-all completed in memory but was not persisted.");
+                FileLogger.Warn("Capture history clear-all was not persisted; the current library was retained.");
                 return;
             }
 

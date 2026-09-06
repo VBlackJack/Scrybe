@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Scrybe.Core.Interfaces;
+using Scrybe.Core.Models;
 
 namespace Scrybe.App.Services;
 
@@ -38,4 +41,45 @@ public sealed class WpfClipboardWriter : IClipboardWriter
         System.Windows.Application.Current.Dispatcher.Invoke(
             () => System.Windows.Clipboard.SetText(text, System.Windows.TextDataFormat.UnicodeText));
     }
+    /// <inheritdoc />
+    public ClipboardSnapshot? GetSnapshot()
+        => System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            uint before = GetClipboardSequenceNumber();
+            string? text = GetText();
+            uint after = GetClipboardSequenceNumber();
+            if (before == 0 || before != after)
+            {
+                throw new InvalidOperationException("Clipboard changed while reading.");
+            }
+            return text is null ? null : new ClipboardSnapshot(text, after);
+        });
+
+    /// <inheritdoc />
+    public bool TryClear(uint version)
+        => System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (version == 0) { return false; }
+            if (!OpenClipboard(IntPtr.Zero)) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+            try
+            {
+                // The open clipboard excludes competing writers during comparison and clearing.
+                if (GetClipboardSequenceNumber() != version) { return false; }
+                if (!EmptyClipboard()) { throw new Win32Exception(Marshal.GetLastPInvokeError()); }
+                return true;
+            }
+            finally { CloseClipboard(); }
+        });
+
+    [DllImport("user32.dll")]
+    private static extern uint GetClipboardSequenceNumber();
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool OpenClipboard(IntPtr owner);
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EmptyClipboard();
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CloseClipboard();
 }

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using Scrybe.Core.Models;
+
 namespace Scrybe.Core.Interfaces;
 
 /// <summary>
@@ -26,6 +28,13 @@ public interface IClipboardWriter
     /// <summary>Reads Unicode text from the system clipboard. May throw if the clipboard is busy.</summary>
     /// <returns>The clipboard text, or <see langword="null"/> when the clipboard contains no text.</returns>
     string? GetText();
+
+    /// <summary>Reads text and a stable version. Unsupported writers cannot authorize clearing.</summary>
+    ClipboardSnapshot? GetSnapshot() => null;
+
+    /// <summary>Atomically clears only the specified nonzero clipboard version.</summary>
+    /// <param name="version">Version captured before injection.</param>
+    bool TryClear(uint version) => false;
 
     /// <summary>Writes <paramref name="text"/> to the system clipboard. May throw if the clipboard is busy.</summary>
     /// <param name="text">The Unicode text to place on the clipboard.</param>

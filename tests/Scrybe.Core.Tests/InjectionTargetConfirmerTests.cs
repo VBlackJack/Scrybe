@@ -16,6 +16,8 @@
 
 using FluentAssertions;
 using Scrybe.App.Services;
+using Scrybe.Core.Interfaces;
+using Scrybe.Core.Models;
 using Xunit;
 
 namespace Scrybe.Core.Tests;
@@ -45,7 +47,7 @@ public sealed class InjectionTargetConfirmerTests
             ConfirmTitle,
             ConfirmTemplate,
             TargetUnavailable,
-            Untitled);
+            Untitled, out _);
 
         result.Should().BeFalse();
         gateway.RestoreCallCount.Should().Be(0);
@@ -66,7 +68,7 @@ public sealed class InjectionTargetConfirmerTests
             ConfirmTitle,
             ConfirmTemplate,
             TargetUnavailable,
-            Untitled);
+            Untitled, out _);
 
         result.Should().BeFalse();
         gateway.RestoreCallCount.Should().Be(0);
@@ -91,7 +93,7 @@ public sealed class InjectionTargetConfirmerTests
             ConfirmTitle,
             ConfirmTemplate,
             TargetUnavailable,
-            Untitled);
+            Untitled, out _);
 
         result.Should().BeFalse();
         gateway.RestoreCallCount.Should().Be(0);
@@ -116,7 +118,7 @@ public sealed class InjectionTargetConfirmerTests
             ConfirmTitle,
             ConfirmTemplate,
             TargetUnavailable,
-            Untitled);
+            Untitled, out _);
 
         result.Should().BeFalse();
         gateway.RestoreCallCount.Should().Be(0);
@@ -144,7 +146,7 @@ public sealed class InjectionTargetConfirmerTests
             ConfirmTitle,
             ConfirmTemplate,
             TargetUnavailable,
-            Untitled);
+            Untitled, out _);
 
         result.Should().BeFalse();
         gateway.RestoreCallCount.Should().Be(1);
@@ -173,7 +175,7 @@ public sealed class InjectionTargetConfirmerTests
             ConfirmTitle,
             ConfirmTemplate,
             TargetUnavailable,
-            Untitled);
+            Untitled, out _);
 
         result.Should().BeFalse();
         gateway.RestoreCallCount.Should().Be(1);
@@ -201,7 +203,7 @@ public sealed class InjectionTargetConfirmerTests
             ConfirmTitle,
             ConfirmTemplate,
             TargetUnavailable,
-            Untitled);
+            Untitled, out _);
 
         result.Should().BeTrue();
         gateway.RestoreCallCount.Should().Be(1);
@@ -209,6 +211,32 @@ public sealed class InjectionTargetConfirmerTests
         prompt.UnavailableCallCount.Should().Be(0);
         prompt.LastConfirmMessage.Should().Contain("Console");
         prompt.LastConfirmMessage.Should().Contain("0x1234");
+    }
+
+    [Fact]
+    public void ConfirmationFreezesProfileBeforeShowingPrompt()
+    {
+        InjectionProfile expected = new("WindowsTerminal", InjectionMode.Scancode, 75, 200);
+        AppSettings settings = new() { InjectionProfiles = [expected] };
+        FakeTargetWindowGateway gateway = new();
+        gateway.EnqueueInfo(CreateTargetInfo());
+        gateway.EnqueueInfo(CreateTargetInfo());
+        FakeTargetConfirmationPrompt prompt = new()
+        {
+            OnConfirm = () => settings.InjectionProfiles = [expected with { Mode = InjectionMode.Unicode, KeyDelayMs = 5 }]
+        };
+        InjectionTargetConfirmer confirmer = new(gateway, prompt, settings, new ProfileLocale());
+        Assert.True(confirmer.TryConfirmAndRestore(Target, ConfirmTitle, ConfirmTemplate, TargetUnavailable, Untitled, out IInjectionContext? context));
+        Assert.Equal(expected, context!.Profile);
+        Assert.Contains("Scancode/75/200", prompt.LastConfirmMessage, StringComparison.Ordinal);
+    }
+
+    private sealed class ProfileLocale : ILocalizationManager
+    {
+        public string this[string key] => key == "Profiles.Confirmation" ? "{0}/{1}/{2}" : key;
+        public string Current => "en";
+        public event EventHandler? LocaleChanged { add { } remove { } }
+        public Task LoadAsync(string code, CancellationToken token = default) => Task.CompletedTask;
     }
 
     private static TargetWindowInfo CreateTargetInfo(
@@ -229,6 +257,7 @@ public sealed class InjectionTargetConfirmerTests
         public IntPtr ForegroundWindow { get; init; } = Target;
 
         public IntPtr GetForegroundWindow() => ForegroundWindow;
+        public IntPtr GetKeyboardLayout(IntPtr window) => new(1);
 
         public void EnqueueInfo(TargetWindowInfo info) => _infos.Enqueue(info);
 
@@ -249,6 +278,7 @@ public sealed class InjectionTargetConfirmerTests
 
     private sealed class FakeTargetConfirmationPrompt : ITargetConfirmationPrompt
     {
+        public Action? OnConfirm { get; init; }
         public bool ConfirmResult { get; init; } = true;
 
         public int ConfirmCallCount { get; private set; }
@@ -261,6 +291,7 @@ public sealed class InjectionTargetConfirmerTests
         {
             ConfirmCallCount++;
             LastConfirmMessage = message;
+            OnConfirm?.Invoke();
             return ConfirmResult;
         }
 

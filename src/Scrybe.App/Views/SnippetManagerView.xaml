@@ -5,6 +5,15 @@
              Background="{StaticResource BackgroundBrush}"
              UseLayoutRounding="True">
 
+    <UserControl.Style>
+        <Style TargetType="UserControl">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ImportSnippetsCommand.IsRunning}" Value="True">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Style>
     <Grid Margin="{StaticResource SpacingLg}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="270" MinWidth="210" />
@@ -228,8 +237,12 @@
                 </Grid>
 
                 <Grid Grid.Row="4" Margin="0,12,0,0">
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,160,0">
-                        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusMessage}" AutomationProperties.LiveSetting="Polite" TextWrapping="Wrap">
                             <TextBlock.Style>
                                 <Style TargetType="{x:Type TextBlock}">
                                     <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
@@ -256,20 +269,27 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <WrapPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Command="{Binding ImportSnippetsCommand}" Content="{loc:Translate Exchange.Import}"
+                                Style="{StaticResource FeatureButtonStyle}" AutomationProperties.Name="{loc:Translate Exchange.Import}"/>
+                        <Button Command="{Binding ExportSnippetsCommand}" Content="{loc:Translate Exchange.Export}"
+                                Style="{StaticResource FeatureButtonStyle}" AutomationProperties.Name="{loc:Translate Exchange.Export}"/>
                         <Button Command="{Binding DeleteCommand}" Margin="0,0,8,0" Padding="{StaticResource PaddingButtonPrimary}" Background="{StaticResource ErrorBrush}" Foreground="{StaticResource ActionOnBrightBrush}" BorderThickness="0" AutomationProperties.Name="{loc:Translate Manager.Delete}">
                             <StackPanel Style="{StaticResource AppIconTextContentStyle}">
                                 <TextBlock Text="{StaticResource IconActionDelete}" Style="{StaticResource AppIconGlyphStyle}" />
                                 <TextBlock Text="{loc:Translate Manager.Delete}" Style="{StaticResource AppIconTextStyle}" />
                             </StackPanel>
                         </Button>
+                        <Button Command="{Binding ReloadFromDiskCommand}" Foreground="{DynamicResource TextPrimaryBrush}" Background="{DynamicResource CardBrush}" Padding="{StaticResource PaddingButtonPrimary}" Content="{loc:Translate Persist.Reload}"
+                                AutomationProperties.Name="{loc:Translate Persist.Reload}"
+                                ToolTip="{loc:Translate Persist.ReloadHelp}" />
                         <Button Command="{Binding SaveCommand}" Padding="{StaticResource PaddingButtonPrimary}" Background="{StaticResource AccentBrush}" Foreground="{StaticResource ActionOnBrightBrush}" BorderThickness="0" FontWeight="SemiBold" AutomationProperties.Name="{loc:Translate Manager.Save}">
                             <StackPanel Style="{StaticResource AppIconTextContentStyle}">
                                 <TextBlock Text="{StaticResource IconActionSave}" Style="{StaticResource AppIconGlyphStyle}" />
                                 <TextBlock Text="{loc:Translate Manager.Save}" Style="{StaticResource AppIconTextStyle}" />
                             </StackPanel>
                         </Button>
-                    </StackPanel>
+                    </WrapPanel>
                 </Grid>
             </Grid>
     </Grid>

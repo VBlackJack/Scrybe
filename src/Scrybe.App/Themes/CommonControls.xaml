@@ -10,6 +10,17 @@
         DynamicResource so styles follow the active theme.
     -->
 
+    <sys:Double x:Key="ReviewWindowWidth">920</sys:Double>
+    <sys:Double x:Key="ReviewWindowHeight">620</sys:Double>
+    <sys:Double x:Key="ProfileListHeight">160</sys:Double>
+    <FontFamily x:Key="CodeFontFamily">Consolas</FontFamily>
+    <Style x:Key="FeatureButtonStyle" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        <Setter Property="Padding" Value="{DynamicResource PaddingButtonPrimary}"/>
+        <Setter Property="Margin" Value="{DynamicResource SpacingXs}"/>
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource AppFocusVisualStyle}"/>
+    </Style>
     <!-- Typography -->
     <sys:Double x:Key="FontSizeSmallCaption">11</sys:Double>
     <sys:Double x:Key="FontSizeCaption">12</sys:Double>

@@ -29,7 +29,7 @@ namespace Scrybe.App.Services;
 /// string and types it through the active strategy (Unicode or scancode). A single injection runs at a
 /// time, with an emergency abort, a runtime mode toggle for the integrity A/B, and localized confirmations.
 /// </summary>
-public sealed class InjectionCoordinator
+public sealed partial class InjectionCoordinator
 {
     private readonly IKeystrokeInjector _unicodeInjector;
     private readonly IKeystrokeInjector _scancodeInjector;
@@ -39,6 +39,7 @@ public sealed class InjectionCoordinator
 
     private readonly AppSettings _settings;
 
+    private readonly Lock _cancellationGate = new();
     private CancellationTokenSource? _activeInjection;
     private int _injectionInProgress;
 
@@ -72,14 +73,14 @@ public sealed class InjectionCoordinator
         _settings = settings;
     }
 
-    private IKeystrokeInjector CurrentInjector
-        => _settings.InjectionMode == InjectionMode.Unicode ? _unicodeInjector : _scancodeInjector;
+    private IKeystrokeInjector InjectorFor(IInjectionContext? context)
+        => (context?.Profile?.Mode ?? _settings.InjectionMode) == InjectionMode.Unicode ? _unicodeInjector : _scancodeInjector;
 
     /// <summary>Whether there is OCR text available for the "inject last text" action.</summary>
     public bool HasLastText => !string.IsNullOrEmpty(_textStore.LastText);
 
     /// <summary>Types the last OCR text into the foreground window. Ignored if an injection is already running.</summary>
-    public Task InjectLastTextAsync()
+    public Task InjectLastTextAsync(IInjectionContext? context = null)
     {
         string? text = _textStore.LastText;
         if (string.IsNullOrEmpty(text))
@@ -89,16 +90,16 @@ public sealed class InjectionCoordinator
             return Task.CompletedTask;
         }
 
-        return RunInjectionAsync(text, "OCR text");
+        return RunInjectionAsync(text, "OCR text", context);
     }
 
     /// <summary>Injects the known reference string of the given length (integrity A/B harness).</summary>
     /// <param name="length">The reference length to inject.</param>
-    public Task InjectReferenceAsync(int length) => RunInjectionAsync(ReferenceText.OfLength(length), $"reference[{length}]");
+    public Task InjectReferenceAsync(int length, IInjectionContext? context = null) => RunInjectionAsync(ReferenceText.OfLength(length), $"reference[{length}]", context);
 
     /// <summary>Injects arbitrary resolved text (for example a filled snippet) into the foreground window.</summary>
     /// <param name="text">The text to type.</param>
-    public Task InjectTextAsync(string text) => RunInjectionAsync(text, "snippet");
+    public Task InjectTextAsync(string text, IInjectionContext? context = null) => RunInjectionAsync(text, "snippet", context);
 
     /// <summary>Injects a secret into the foreground window without logging the value or using the clipboard.</summary>
     /// <param name="text">The secret text to type.</param>
@@ -106,8 +107,8 @@ public sealed class InjectionCoordinator
     /// Whether successful completion should be reported by this coordinator. Failure outcomes are always reported here.
     /// </param>
     /// <returns>The injection outcome.</returns>
-    public Task<InjectionResult> InjectSecretAsync(char[] text, bool notifySuccess = true)
-        => RunSecretInjectionAsync(text, notifySuccess);
+    public Task<InjectionResult> InjectSecretAsync(char[] text, bool notifySuccess = true, IInjectionContext? context = null)
+        => RunSecretInjectionAsync(text, notifySuccess, context);
 
     /// <summary>Switches the active injection strategy and reports the new mode.</summary>
     public void ToggleMode()
@@ -142,15 +143,17 @@ public sealed class InjectionCoordinator
     /// <summary>Cancels an in-progress injection immediately (emergency abort).</summary>
     public void Abort()
     {
-        CancellationTokenSource? cancellation = _activeInjection;
-        if (cancellation is not null)
+        lock (_cancellationGate)
         {
-            FileLogger.Info("Injection abort requested.");
-            cancellation.Cancel();
+            if (_activeInjection is not null)
+            {
+                FileLogger.Info("Injection abort requested.");
+                _activeInjection.Cancel();
+            }
         }
     }
 
-    private async Task RunInjectionAsync(string text, string label)
+    private async Task RunInjectionAsync(string text, string label, IInjectionContext? context)
     {
         if (Interlocked.CompareExchange(ref _injectionInProgress, 1, 0) != 0)
         {
@@ -159,34 +162,34 @@ public sealed class InjectionCoordinator
         }
 
         CancellationTokenSource cancellation = new();
-        _activeInjection = cancellation;
+        lock (_cancellationGate) { _activeInjection = cancellation; }
 
         try
         {
             KeystrokeSequence sequence = KeystrokeBuilder.Build(text);
             FileLogger.Info(
-                $"Injecting {label} via {_settings.InjectionMode}: {sequence.Strokes.Count} keystrokes, {sequence.SkippedCharacters} chars skipped.");
+                $"Injecting {label} via {context?.Profile?.Mode ?? _settings.InjectionMode}: {sequence.Strokes.Count} keystrokes, {sequence.SkippedCharacters} chars skipped.");
 
             long startTimestamp = Stopwatch.GetTimestamp();
-            InjectionResult result = await CurrentInjector.InjectAsync(sequence, cancellation.Token).ConfigureAwait(false);
+            InjectionResult result = await InjectorFor(context).InjectAsync(sequence, cancellation.Token, Track(context, sequence.Strokes.Count)).ConfigureAwait(false);
             double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
 
             HandleResult(result, sequence.SkippedCharacters, elapsedMs, notifySuccess: true);
         }
         catch (Exception exception)
         {
+            FinishProgress(new InjectionResult(false, 0, false, false, InjectionFailureReason.NativeFailure));
             FileLogger.Error("Injection failed.", exception);
             _notification.Notify(_localization["AppTitle"], _localization["Inject.Failed"]);
         }
         finally
         {
-            _activeInjection = null;
-            cancellation.Dispose();
+            lock (_cancellationGate) { _activeInjection = null; cancellation.Dispose(); }
             Interlocked.Exchange(ref _injectionInProgress, 0);
         }
     }
 
-    private async Task<InjectionResult> RunSecretInjectionAsync(char[] text, bool notifySuccess)
+    private async Task<InjectionResult> RunSecretInjectionAsync(char[] text, bool notifySuccess, IInjectionContext? context)
     {
         ArgumentNullException.ThrowIfNull(text);
 
@@ -198,17 +201,17 @@ public sealed class InjectionCoordinator
         }
 
         CancellationTokenSource cancellation = new();
-        _activeInjection = cancellation;
+        lock (_cancellationGate) { _activeInjection = cancellation; }
 
         try
         {
             int plannedStrokes = KeystrokeBuilder.CountStrokes(text.AsSpan());
             int skippedCharacters = KeystrokeBuilder.CountSkipped(text.AsSpan());
             FileLogger.Info(
-                $"Injecting secret via {_settings.InjectionMode}: {plannedStrokes} keystrokes, {skippedCharacters} chars skipped.");
+                $"Injecting secret via {context?.Profile?.Mode ?? _settings.InjectionMode}: {plannedStrokes} keystrokes, {skippedCharacters} chars skipped.");
 
             long startTimestamp = Stopwatch.GetTimestamp();
-            InjectionResult result = await CurrentInjector.InjectAsync(text.AsMemory(), cancellation.Token).ConfigureAwait(false);
+            InjectionResult result = await InjectorFor(context).InjectAsync(text.AsMemory(), cancellation.Token, Track(context, plannedStrokes)).ConfigureAwait(false);
             double elapsedMs = Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds;
 
             HandleResult(result, skippedCharacters, elapsedMs, notifySuccess);
@@ -216,20 +219,26 @@ public sealed class InjectionCoordinator
         }
         catch (Exception exception)
         {
+            FinishProgress(new InjectionResult(false, 0, false, false, InjectionFailureReason.NativeFailure));
             FileLogger.Error("Injection failed.", exception);
             _notification.Notify(_localization["AppTitle"], _localization["Inject.Failed"]);
             return new InjectionResult(Success: false, KeystrokesSent: 0, UipiBlocked: false, Aborted: false);
         }
         finally
         {
-            _activeInjection = null;
-            cancellation.Dispose();
+            lock (_cancellationGate) { _activeInjection = null; cancellation.Dispose(); }
             Interlocked.Exchange(ref _injectionInProgress, 0);
         }
     }
 
     private void HandleResult(InjectionResult result, int skippedCharacters, double elapsedMs, bool notifySuccess)
     {
+        FinishProgress(result);
+        if (result.Reason is InjectionFailureReason.TargetChanged or InjectionFailureReason.Unmappable or InjectionFailureReason.NativeFailure)
+        {
+            _notification.Notify(_localization["AppTitle"], _localization[_progress.StatusKey]);
+            return;
+        }
         if (result.UipiBlocked)
         {
             _notification.Notify(_localization["AppTitle"], _localization["Inject.UipiBlocked"]);
@@ -251,7 +260,7 @@ public sealed class InjectionCoordinator
         }
 
         FileLogger.Info(
-            $"Injection complete via {_settings.InjectionMode}: {result.KeystrokesSent} key events, {skippedCharacters} chars skipped, {elapsedMs:F0}ms.");
+            $"Injection complete: {result.KeystrokesSent} key events, {skippedCharacters} chars skipped, {elapsedMs:F0}ms.");
         if (notifySuccess)
         {
             _notification.Notify(

@@ -87,7 +87,7 @@
       "scrybe.ocr": {
         "type": "Project",
         "dependencies": {
-          "Scrybe.Core": "[1.0.615.2, )",
+          "Scrybe.Core": "[1.0.906.1, )",
           "Tesseract": "[5.2.0, )"
         }
       }

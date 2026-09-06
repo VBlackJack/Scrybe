@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using Scrybe.Core.Models;
+
 namespace Scrybe.Core.Interfaces;
 
 /// <summary>
@@ -26,6 +28,15 @@ public interface IClipboardService
     /// <param name="cancellationToken">Token used to cancel between retries.</param>
     /// <returns>The clipboard text, or <see langword="null"/> when unavailable or non-text.</returns>
     Task<string?> GetTextAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Reads text and its clipboard version with retries.</summary>
+    /// <param name="cancellationToken">Cancellation between retries.</param>
+    Task<ClipboardSnapshot?> GetSnapshotAsync(CancellationToken cancellationToken = default) => Task.FromResult<ClipboardSnapshot?>(null);
+
+    /// <summary>Clears only the version read for this operation; never clears newer content.</summary>
+    /// <param name="version">Expected clipboard version.</param>
+    /// <param name="cancellationToken">Cancellation between retries.</param>
+    Task<bool> TryClearAsync(uint version, CancellationToken cancellationToken = default) => Task.FromResult(false);
 
     /// <summary>Sets <paramref name="text"/> on the clipboard, retrying on transient failures.</summary>
     /// <param name="text">The text to place on the clipboard.</param>

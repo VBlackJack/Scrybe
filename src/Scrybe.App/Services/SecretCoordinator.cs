@@ -86,16 +86,16 @@ public sealed class SecretCoordinator
             _localization["Secrets.ConfirmTitle"],
             _localization["Secrets.ConfirmTarget"],
             _localization["Secrets.TargetUnavailable"],
-            _localization["Secrets.UntitledTarget"]))
+            _localization["Secrets.UntitledTarget"], out IInjectionContext? context))
         {
             return;
         }
 
         FileLogger.Info("Secret injection requested after target confirmation.");
-        await InjectSecretAsync(secretId).ConfigureAwait(false);
+        await InjectSecretAsync(secretId, context).ConfigureAwait(false);
     }
 
-    private async Task InjectSecretAsync(string secretId)
+    private async Task InjectSecretAsync(string secretId, IInjectionContext? context)
     {
         char[]? secret = null;
         try
@@ -107,7 +107,7 @@ public sealed class SecretCoordinator
                 return;
             }
 
-            await _injection.InjectSecretAsync(secret).ConfigureAwait(false);
+            await _injection.InjectSecretAsync(secret, context: context).ConfigureAwait(false);
         }
         catch (Exception exception)
         {

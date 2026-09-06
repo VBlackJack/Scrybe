@@ -21,4 +21,4 @@ namespace Scrybe.Core.Models;
 /// <param name="KeystrokesSent">Number of key events actually sent.</param>
 /// <param name="UipiBlocked">Whether injection was blocked because the target is a higher integrity level.</param>
 /// <param name="Aborted">Whether injection was cancelled by the emergency abort.</param>
-public sealed record InjectionResult(bool Success, int KeystrokesSent, bool UipiBlocked, bool Aborted);
+public sealed record InjectionResult(bool Success, int KeystrokesSent, bool UipiBlocked, bool Aborted, InjectionFailureReason Reason = InjectionFailureReason.None);

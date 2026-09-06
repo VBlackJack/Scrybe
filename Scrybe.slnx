@@ -7,4 +7,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Scrybe.Core.Tests/Scrybe.Core.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Scrybe.Validation/Scrybe.Validation.csproj" />
+  </Folder>
 </Solution>

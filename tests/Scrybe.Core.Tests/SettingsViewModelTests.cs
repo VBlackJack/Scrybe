@@ -29,6 +29,66 @@ namespace Scrybe.Core.Tests;
 public sealed class SettingsViewModelTests
 {
     [Fact]
+    public async Task FeatureDraftsRejectInvalidAndDuplicateProfilesThenPersistTogether()
+    {
+        AppSettings settings = new();
+        InMemorySettingsStore store = new();
+        SettingsViewModel model = new(settings, store, new TestLocalizationManager(), new TestNotificationService(),
+            new HotkeyRegistrar(new FakeHotkeyService()), new NoopStartupRegistration());
+        model.ReviewOcrBeforeCopy = true;
+        model.AddProfileCommand.Execute(null);
+        model.SelectedProfile!.ProcessName = "mstsc";
+        model.SelectedProfile.KeyDelayMs = "invalid";
+        await model.SaveCommand.ExecuteAsync(null);
+        Assert.True(model.IsStatusError);
+        Assert.Empty(settings.InjectionProfiles);
+        Assert.False(settings.ReviewOcrBeforeCopy);
+        model.SelectedProfile.KeyDelayMs = "75";
+        model.SelectedProfile.EnterExtraDelayMs = "200";
+        await model.SaveCommand.ExecuteAsync(null);
+        Assert.False(model.IsStatusError);
+        Assert.True(settings.ReviewOcrBeforeCopy);
+        Assert.Equal(75, Assert.Single(settings.InjectionProfiles).KeyDelayMs);
+        model.AddProfileCommand.Execute(null);
+        model.SelectedProfile!.ProcessName = "MSTSC";
+        await model.SaveCommand.ExecuteAsync(null);
+        Assert.True(model.IsStatusError);
+        Assert.Single(settings.InjectionProfiles);
+    }
+
+    [Fact]
+    public async Task ReloadAfterConflict_PreservesFormWithoutWriting_UntilExplicitSave()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "ScrybeSettingsRecovery", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            string path = Path.Combine(directory, "settings.json");
+            Scrybe.Core.Settings.JsonSettingsStore store = new(path);
+            Assert.True(await store.SaveAsync(new AppSettings()));
+            AppSettings settings = (await store.LoadAsync()).Settings;
+            SettingsViewModel model = new(settings, store, new TestLocalizationManager(), new TestNotificationService(),
+                new HotkeyRegistrar(new FakeHotkeyService()), new NoopStartupRegistration());
+            model.InjectionKeyDelayMs = 42;
+            Scrybe.Core.Settings.JsonSettingsStore competing = new(path);
+            AppSettings changed = (await competing.LoadAsync()).Settings;
+            changed.InjectionKeyDelayMs = 33;
+            Assert.True(await competing.SaveAsync(changed));
+            await model.SaveCommand.ExecuteAsync(null);
+            Assert.True(model.IsStatusError);
+            byte[] original = await File.ReadAllBytesAsync(path);
+            await model.ReloadFromDiskCommand.ExecuteAsync(null);
+            Assert.Equal(42, model.InjectionKeyDelayMs);
+            Assert.True(model.HasPendingChanges);
+            Assert.Equal(original, await File.ReadAllBytesAsync(path));
+            await model.SaveCommand.ExecuteAsync(null);
+            Assert.False(model.IsStatusError);
+            Assert.Equal(42, (await new Scrybe.Core.Settings.JsonSettingsStore(path).LoadAsync()).Settings.InjectionKeyDelayMs);
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    [Fact]
     public async Task Save_WithEditedClipboardAndHistoryHotkeys_PersistsAndRegistersSevenBindings()
     {
         AppSettings settings = new();

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using Scrybe.Core.Interfaces;
+
 namespace Scrybe.App.Services;
 
 /// <summary>Confirms and restores the foreground target before password-grade injection.</summary>
@@ -33,5 +35,5 @@ public interface IInjectionTargetConfirmer
         string confirmTitle,
         string confirmMessageTemplate,
         string targetUnavailableMessage,
-        string untitledTargetText);
+        string untitledTargetText, out IInjectionContext? context);
 }

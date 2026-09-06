@@ -14,88 +14,36 @@
  * limitations under the License.
  */
 
-using System.Text.Json;
 using Scrybe.Core.Interfaces;
 using Scrybe.Core.IO;
-using Scrybe.Core.Logging;
 using Scrybe.Core.Models;
 
 namespace Scrybe.Core.History;
 
-/// <summary>
-/// JSON store for DPAPI-protected OCR capture history. Only ciphertext and non-secret metadata are
-/// persisted; missing or corrupt files load as an empty history so Scrybe keeps starting.
-/// </summary>
-public sealed class JsonCaptureHistoryStore : ICaptureHistoryStore
+/// <summary>JSON collection store with quarantine, failed-read admission and stale-write protection.</summary>
+public sealed class JsonCaptureHistoryStore : ICaptureHistoryStore, IStoreReadState
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-    };
+    private readonly JsonStoreFile<List<CaptureHistoryEntry>> _file;
 
-    private readonly string _filePath;
+    /// <summary>Initializes the store at the supplied path.</summary>
+    /// <param name="filePath">Path to the JSON store.</param>
+    public JsonCaptureHistoryStore(string filePath) => _file = new(filePath);
 
-    /// <summary>Initializes the store backed by <paramref name="filePath"/>.</summary>
-    /// <param name="filePath">Absolute path to the protected history JSON file.</param>
-    public JsonCaptureHistoryStore(string filePath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-        _filePath = filePath;
-    }
+    /// <inheritdoc />
+    public bool CanSave => _file.CanSave;
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<CaptureHistoryEntry>> LoadAsync(CancellationToken cancellationToken = default)
     {
-        if (!File.Exists(_filePath))
-        {
-            return [];
-        }
-
-        try
-        {
-            await using FileStream stream = File.OpenRead(_filePath);
-            List<CaptureHistoryEntry>? entries = await JsonSerializer
-                .DeserializeAsync<List<CaptureHistoryEntry>>(stream, SerializerOptions, cancellationToken)
-                .ConfigureAwait(false);
-            return entries?.Where(IsValid).ToList() ?? [];
-        }
-        catch (JsonException exception)
-        {
-            FileLogger.Error($"Failed to read capture history from {_filePath}; starting with an empty history.", exception);
-            CorruptJsonQuarantine.TryMoveAside(_filePath, "capture history");
-            return [];
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to read capture history from {_filePath}; starting with an empty history.", exception);
-            return [];
-        }
+        (List<CaptureHistoryEntry>? entries, _) = await _file.LoadAsync(
+            entries => entries.All(entry => entry is not null && !string.IsNullOrWhiteSpace(entry.Id) && !string.IsNullOrWhiteSpace(entry.ProtectedText) && entry.CharCount >= 0), cancellationToken).ConfigureAwait(false);
+        return entries ?? [];
     }
 
     /// <inheritdoc />
-    public async Task<bool> SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default)
+    public Task<bool> SaveAsync(IReadOnlyList<CaptureHistoryEntry> entries, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entries);
-
-        try
-        {
-            await AtomicFileWriter
-                .WriteAsync(
-                    _filePath,
-                    (stream, token) => JsonSerializer.SerializeAsync(stream, entries, SerializerOptions, token),
-                    cancellationToken)
-                .ConfigureAwait(false);
-            return true;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            FileLogger.Error($"Failed to save capture history to {_filePath}.", exception);
-            return false;
-        }
+        return _file.SaveAsync(entries.ToList(), cancellationToken);
     }
-
-    private static bool IsValid(CaptureHistoryEntry entry)
-        => !string.IsNullOrWhiteSpace(entry.Id)
-        && !string.IsNullOrWhiteSpace(entry.ProtectedText)
-        && entry.CharCount >= 0;
 }

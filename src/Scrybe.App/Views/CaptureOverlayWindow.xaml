@@ -56,25 +56,25 @@
             </Border>
 
             <!-- Live physical-pixel dimensions readout. -->
-            <Border x:Name="ReadoutBorder"
+            <Border x:Name="ReadoutBorder" MaxWidth="{Binding ActualWidth, ElementName=RootGrid}"
                     Background="{DynamicResource CardBrush}"
                     Padding="{StaticResource PaddingSectionCard}"
                     CornerRadius="4"
                     Visibility="Collapsed"
                     IsHitTestVisible="False">
-                <TextBlock x:Name="ReadoutText"
+                <TextBlock x:Name="ReadoutText" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            FontSize="{StaticResource FontSizeBody}"
                            FontWeight="SemiBold" />
             </Border>
 
             <!-- Instructions hint, hidden once dragging starts. -->
-            <Border x:Name="HintBorder"
+            <Border x:Name="HintBorder" MaxWidth="{Binding ActualWidth, ElementName=RootGrid}"
                     Background="{DynamicResource SurfaceBrush}"
                     Padding="{StaticResource PaddingSectionCard}"
                     CornerRadius="4"
                     IsHitTestVisible="False">
-                <TextBlock x:Name="HintText"
+                <TextBlock x:Name="HintText" TextWrapping="Wrap"
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            FontSize="{StaticResource FontSizeBody}" />
             </Border>

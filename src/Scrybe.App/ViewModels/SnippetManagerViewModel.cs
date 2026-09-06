@@ -40,6 +40,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     private readonly SnippetLibrary _library;
     private readonly ILocalizationManager _localization;
     private readonly IConfirmationService _confirmation;
+    private readonly SnippetExchangeService? _exchange;
     private bool _suppressPendingChanges;
     private bool _suppressDiscardPrompt;
     private bool _restoringRejectedSelection;
@@ -79,7 +80,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     public SnippetManagerViewModel(
         SnippetLibrary library,
         ILocalizationManager localization,
-        IConfirmationService confirmation)
+        IConfirmationService confirmation, SnippetExchangeService? exchange = null)
     {
         ArgumentNullException.ThrowIfNull(library);
         ArgumentNullException.ThrowIfNull(localization);
@@ -87,6 +88,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
         _library = library;
         _localization = localization;
         _confirmation = confirmation;
+        _exchange = exchange;
         Snippets = new ObservableCollection<Snippet>(library.Snippets);
         ParameterRows.CollectionChanged += OnParameterRowsCollectionChanged;
     }
@@ -190,6 +192,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task Save()
     {
+        if (ReloadFromDiskCommand.IsRunning || ImportSnippetsCommand.IsRunning) { return; }
         if (string.IsNullOrWhiteSpace(Name) || string.IsNullOrWhiteSpace(Template))
         {
             StatusMessage = _localization["Manager.NameTemplateRequired"];
@@ -219,6 +222,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
             parameters);
 
         bool persisted = await _library.SaveAsync(snippet).ConfigureAwait(true);
+        if (!persisted) { ShowSaveFailure(); return; }
         _suppressDiscardPrompt = true;
         try
         {
@@ -303,6 +307,7 @@ public sealed partial class SnippetManagerViewModel : ObservableObject
     [RelayCommand]
     private async Task Delete()
     {
+        if (ImportSnippetsCommand.IsRunning) { return; }
         if (SelectedSnippet is null)
         {
             return;
